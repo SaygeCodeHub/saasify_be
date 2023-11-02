@@ -62,6 +62,16 @@ class Category(Base):
         return value
 
 
+class Brand(Base):
+    __tablename__ = "brands"
+
+    brand_id = Column(BIGINT, autoincrement=True, primary_key=True)
+    brand_name = Column(String, nullable=False)
+    brand_image = Column(String, nullable=False)
+
+
+
+
 class Products(Base):
     __tablename__ = "products"
 
