@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel, EmailStr
 
 
@@ -30,20 +30,23 @@ class CompanyUpdateDetails(BaseModel):
 
 
 class CompanySignUp(BaseModel):
+    signup_credentials: Union[str, int]
     company_id: Optional[str] | None = None
     company_email: str | None = None
     company_contact: int | None = None
-    company_password: str
+    password: str
+    company_domain: str | None = " "
 
     class Config:
         from_attributes = True
 
 
 class LoginFlow(BaseModel):
+    login_credentials: Union[str, int]
     company_contact: int | None = None
     company_email: str | None = None
     employee_contact: int | None = None
-    login_password: str
+    password: str
 
     class Config:
         from_attributes = True

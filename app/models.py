@@ -70,8 +70,6 @@ class Brand(Base):
     brand_image = Column(String, nullable=False)
 
 
-
-
 class Products(Base):
     __tablename__ = "products"
 
@@ -118,4 +116,3 @@ class Branch(Base):
     company_id = Column(String, ForeignKey("companies.company_id", ondelete="CASCADE"))
 
     company = relationship("Companies")
-
