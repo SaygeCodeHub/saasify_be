@@ -60,3 +60,19 @@ class NewUsers(BaseModel):
     user_image: str | None = None
     user_emailId: str | None = None
     user_password: str
+
+
+class Branch(BaseModel):
+    branch_id: int | None = None
+    branch_name: str
+    branch_address: str
+    branch_email: str
+    branch_number: int
+    company_id: int | None = None
+
+
+class BranchUpdate(BaseModel):
+    branch_name: Optional[str] | None = None
+    branch_address: Optional[str] | None = None
+    branch_email: Optional[str] | None = None
+    branch_number: Optional[int] | None = None

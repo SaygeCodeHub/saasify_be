@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 from . import models
 from .database import engine
-from .routes import (on_boarding)
+from .routes import (on_boarding, branches)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
@@ -18,3 +18,4 @@ app.add_middleware(
     allow_headers=["*"])
 
 app.include_router(on_boarding.router)
+app.include_router(branches.router)
