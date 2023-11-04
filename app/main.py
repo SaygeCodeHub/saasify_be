@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
+
 from . import models
 from .database import engine
 from .routes import (on_boarding)

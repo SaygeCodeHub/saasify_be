@@ -1,179 +1,62 @@
-from uuid import uuid4
-from fastapi import APIRouter, Depends
-from passlib.context import CryptContext
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from app import schemas, models
 from app.database import get_db
-from app.models import Category, Products, ProductVariant
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def welcome_api_product(branch_id, db):
-    categories = db.query(Category).all()
-    for category in categories:
-        products = db.query(Products).filter(Products.category_id == category.category_id).all()
-        for product in products:
-            variants = db.query(ProductVariant).filter(ProductVariant.product_id == product.product_id).filter(
-                ProductVariant.branch_id == branch_id).all()
-            if variants:
-                return True
-            else:
-                return False
-
-
-def login_signup_response(company, db):
-    response_data = {
-        "company_id": company.company_id if company.company_id is not None else "",
-        "company_contact": str(company.company_contact) if company.company_contact is not None else "",
-        "company_email": company.company_email if company.company_email is not None else "",
-        "company_name": company.company_name if company.company_name is not None else "",
-        "company_domain": company.company_domain if company.company_domain is not None else "",
-        "branches": [], "role_id": 0000}
-    products_available = False
-    company_id = company.company_id
-    branches = db.query(models.Branch).filter(models.Branch.company_id == company_id).all()
-    for branch in branches:
-        categories = db.query(Category).all()
-        for category in categories:
-            products = db.query(Products).filter(Products.category_id == category.category_id).all()
-            for product in products:
-                variants = db.query(ProductVariant).filter(
-                    ProductVariant.product_id == product.product_id).filter(
-                    ProductVariant.branch_id == branch.branch_id).all()
-                if variants:
-                    products_available = True
-                else:
-                    products_available = False
-            response_data['branches'] = [{
-                'branch_id': branch.branch_id if branch.branch_id is not None else "",
-                'branch_email': branch.branch_email if branch.branch_email is not None else "",
-                'branch_name': branch.branch_name if branch.branch_name is not None else "",
-                'branch_number': branch.branch_number if branch.branch_number is not None else "",
-                'branch_address': branch.branch_address if branch.branch_address is not None else "",
-                "products_available": products_available}]
-    return response_data
-
-
-@router.post('/signup')
-def signup(company_data: schemas.CompanySignUp, db: Session = Depends(get_db)):
+@router.post('/authenticateUser')
+def create_user(authentication: schemas.Authentication, response: Response, db: Session = Depends(get_db)):
     try:
-        signup_credentials = company_data.signup_credentials
-        if isinstance(signup_credentials, str):
-            if signup_credentials.isdigit():
-                company_data.company_contact = int(signup_credentials)
-                company_exists = db.query(models.Companies).filter(
-                    (models.Companies.company_contact == signup_credentials)).first()
-            else:
-                company_data.company_email = signup_credentials
-                company_exists = db.query(models.Companies).filter(
-                    (models.Companies.company_email == signup_credentials)).first()
-        elif isinstance(signup_credentials, int):
-            company_data.company_contact = signup_credentials
-            company_exists = db.query(models.Companies).filter(
-                (models.Companies.company_contact == signup_credentials)).first()
+        user_exists = db.query(models.Users).get(
+            authentication.user_id)
+        companies = []
+        if not user_exists:
+            try:
+                new_user_data = models.Users(
+                    **authentication.model_dump())
+                db.add(new_user_data)
+                db.commit()
+                db.refresh(new_user_data)
 
-        if company_exists:
-            return {
-                "status": 409,
-                "message": "Company already exists",
-                "data": {"company_id": "", "company_contact": "", "company_email": "", "company_name": "",
-                         "branches": [], "role_id": 0}}
-        else:
-            hashed_password = pwd_context.hash(company_data.password)
-            company_id = uuid4().hex
-            new_company = models.Companies(
-                company_id=company_id,
-                company_email=company_data.company_email,
-                company_contact=company_data.company_contact,
-                company_password=hashed_password,
-                company_domain=company_data.company_domain
-            )
-            new_user = models.Users(
-                user_contact=company_data.company_contact,
-                user_emailId=company_data.company_email,
-                user_password=company_data.password)
-            db.add(new_company)
-            db.add(new_user)
-            db.commit()
-            company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-            response_data = login_signup_response(company, db)
-            return {
-                "status": 200,
-                "message": "User Signed Up!",
-                "data": response_data}
+                return {"status": 200, "message": "User successfully Authenticated",
+                        "data": {"user_name": new_user_data.user_name, "user_id": new_user_data.user_id,
+                                 "user_contact": new_user_data.user_contact, "companies": []}}
+            except Exception:
+                response.status_code = 200
+                return {"status": 204, "message": "User is NOT registered, please sing up", "data": {"companies": []}}
+
+        update = db.query(models.Users).filter(models.Users.user_id == authentication.user_id).update({
+            "user_name": authentication.user_name})
+        db.query(update)
+        db.commit()
+
+        user_update = db.query(models.Users).get(authentication.user_id)
+        company_user_data = db.query(models.UserCompany).filter(
+            models.UserCompany.user_id == authentication.user_id).all()
+
+        for company in company_user_data:
+            company_data = db.query(models.Companies).filter(
+                and_(models.Companies.company_id == models.Companies.company_id,
+                     models.Companies.company_id == company.company_id)).first()
+
+            companies.append({
+                "company_id": company_data.company_id,
+                "company_domain": company_data.company_domain if company_data.company_domain is not None else "",
+                "company_email": company_data.company_email if company_data.company_email is not None else "",
+                "company_name": company_data.company_name if company_data.company_name is not None else "",
+                "services": company_data.services if company_data.services is not None else "",
+                "company_logo": company_data.company_logo if company_data.company_logo is not None else [],
+                "company_contact": company_data.company_contact,
+                "company_address": company_data.company_address if company_data.company_address is not None else "",
+                "onboarding_date": company_data.onboarding_date
+            })
+
+        return {"status": 200, "message": "User successfully Authenticated",
+                "data": {"user_name": user_update.user_name, "user_id": user_update.user_id,
+                         "user_contact": user_update.user_contact, "companies": companies}}
     except Exception as e:
-        print(repr(e))
-        return {"status": 500, "message": "Internal Server Error", "data": {"company_id": "", "company_contact": "",
-                                                                            "company_email": "", "company_name": "",
-                                                                            "branches": [], "role_id": 0}}
-
-
-@router.post('/login')
-async def login(login_data: schemas.LoginFlow, db: Session = Depends(get_db)):
-    try:
-        login_credentials = login_data.login_credentials
-        if login_credentials.isdigit():
-            company_contact = int(login_credentials)
-            company = db.query(models.Companies).filter(
-                models.Companies.company_contact == company_contact).first()
-        else:
-            company_email = login_credentials
-            company = db.query(models.Companies).filter(
-                models.Companies.company_email == company_email).first()
-        if not company:
-            return {
-                "status": 404,
-                "message": "User not found",
-                "data": {"company_id": "", "company_contact": "", "company_email": "",
-                         "company_name": "", "branches": [], "role_id": 0}}
-        if pwd_context.verify(login_data.password, company.company_password if company else ""):
-            response_data = login_signup_response(company, db)
-            return {"status": 200, "message": "Login successful", "data": response_data}
-        else:
-            return {"status": 401, "message": "Incorrect password",
-                    "data": {"company_id": "", "company_contact": "",
-                             "company_email": "", "company_name": "", "branches": [], "role_id": 0}}
-    except Exception as e:
-        print(repr(e))
-        return {"status": 500, "message": "Internal Server Error", "data": {"company_id": "", "company_contact": "",
-                "company_email": "", "company_name": "", "branches": [], "role_id": 0}}
-
-
-@router.get('/welcome')
-def signup(company_id: str, branch_id: int, role_id: int, db: Session = Depends(get_db)):
-    try:
-        products_available = False
-        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-        if company:
-            branch = db.query(models.Branch).filter(models.Branch.branch_id == branch_id).filter(
-                models.Branch.company_id == company_id).first()
-            if branch:
-                categories = db.query(Category).all()
-                for category in categories:
-                    products = db.query(Products).filter(Products.category_id == category.category_id).all()
-                    for product in products:
-                        variants = db.query(ProductVariant).filter(
-                            ProductVariant.product_id == product.product_id).filter(
-                            ProductVariant.branch_id == branch.branch_id).all()
-                        if variants:
-                            products_available = True
-                        else:
-                            products_available = False
-                response_data = {"companyId": company.company_id if company.company_id is not None else "",
-                                 "company_name": company.company_name if company.company_name is not None else "",
-                                 "role_id": 0,
-                                 'branch_id': branch.branch_id if branch.branch_id is not None else "",
-                                 'branch_email': branch.branch_email if branch.branch_email is not None else "",
-                                 'branch_name': branch.branch_name if branch.branch_name is not None else "",
-                                 'branch_number': branch.branch_number if branch.branch_number is not None else "",
-                                 'branch_address': branch.branch_address if branch.branch_address is not None else "",
-                                 "products_available": products_available}
-                return {"status": 200, "message": "Welcome API success", "data": response_data}
-            else:
-                return {"status": 404, "message": "Branch does NOT exist", "data": {"branches": {}, "role_id": role_id}}
-        return {"status": 404, "message": "Company does NOT exist", "data": {"branches": {}, "role_id": role_id}}
-    except Exception as e:
-        print(repr(e))
-    return {"status": 500, "message": "Internal Server Error", "data": {"branches": {}, "role_id": role_id}}
+        response.status_code = 404
+        return {"status": 404, "message": e, "data": {"companies": []}}
