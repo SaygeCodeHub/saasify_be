@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, List
 from pydantic import BaseModel, EmailStr
 
 
@@ -60,3 +60,58 @@ class NewUsers(BaseModel):
     user_image: str | None = None
     user_emailId: str | None = None
     user_password: str
+
+class ProductInput(BaseModel):
+    product_name: str
+    brand_name: str
+    branch_id: int
+    barcode_no: int
+    image: List[str]
+    description: str
+    category_name: str
+    variant_cost: float
+    discounted_cost: float
+    stock: int
+    quantity: int
+    measuring_unit: str
+    is_published: bool
+
+    class Config:
+        arbitrary_types_allowed = True
+
+class ProductVariant(BaseModel):
+    variant_cost: float
+    discounted_cost: float
+    stock: int
+    quantity: int
+    measuring_unit: str
+    image: List[str]
+    # description: str
+    barcode_no: int
+    is_published: bool
+
+class ProductEdit(BaseModel):
+    branch_id: int
+    product_name: Optional[str] = None
+    brand_name: Optional[str] = None
+    description: Optional[str] = None
+    category_name: Optional[str] = None
+    barcode_no: Optional[int] = None
+    variant_cost: Optional[float] = None
+    discounted_cost: Optional[float] = None
+    stock: Optional[int] = None
+    quantity: Optional[int] = None
+    measuring_unit: Optional[str] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+class ProductUpdate(BaseModel):
+    branch_id: int
+    product_name: Optional[str] = None
+    description: Optional[str] = None
+    category_name: Optional[str] = None
+
+
+    class Config:
+        arbitrary_types_allowed = True

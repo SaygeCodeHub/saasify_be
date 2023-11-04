@@ -116,3 +116,17 @@ class Branch(Base):
     company_id = Column(String, ForeignKey("companies.company_id", ondelete="CASCADE"))
 
     company = relationship("Companies")
+
+class Stock(Base):
+    __tablename__ = "stock"
+
+    stock_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    product_id = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"), nullable=False)
+    variant_id = Column(Integer, ForeignKey("product_variants.variant_id", ondelete="CASCADE"), nullable=False)
+    current_stock_count = Column(Integer, nullable=False)
+    barcode_no = Column(Integer, nullable=False)
+    reorder_stock_at = Column(Integer, nullable=True)
+    perishable = Column(Boolean, nullable=True)
+
+    product = relationship("Products")
+    variant = relationship("ProductVariant")
