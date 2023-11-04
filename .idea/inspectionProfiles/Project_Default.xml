@@ -4,7 +4,7 @@
     <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredPackages">
         <value>
-          <list size="35">
+          <list size="68">
             <item index="0" class="java.lang.String" itemvalue="httpx" />
             <item index="1" class="java.lang.String" itemvalue="greenlet" />
             <item index="2" class="java.lang.String" itemvalue="PyYAML" />
@@ -40,6 +40,39 @@
             <item index="32" class="java.lang.String" itemvalue="httpcore" />
             <item index="33" class="java.lang.String" itemvalue="idna" />
             <item index="34" class="java.lang.String" itemvalue="ujson" />
+            <item index="35" class="java.lang.String" itemvalue="protobuf" />
+            <item index="36" class="java.lang.String" itemvalue="PyJWT" />
+            <item index="37" class="java.lang.String" itemvalue="rsa" />
+            <item index="38" class="java.lang.String" itemvalue="firebase-admin" />
+            <item index="39" class="java.lang.String" itemvalue="googleapis-common-protos" />
+            <item index="40" class="java.lang.String" itemvalue="cffi" />
+            <item index="41" class="java.lang.String" itemvalue="httplib2" />
+            <item index="42" class="java.lang.String" itemvalue="google-cloud-storage" />
+            <item index="43" class="java.lang.String" itemvalue="pyasn1" />
+            <item index="44" class="java.lang.String" itemvalue="pycparser" />
+            <item index="45" class="java.lang.String" itemvalue="requests" />
+            <item index="46" class="java.lang.String" itemvalue="pyasn1-modules" />
+            <item index="47" class="java.lang.String" itemvalue="google-resumable-media" />
+            <item index="48" class="java.lang.String" itemvalue="google-auth-httplib2" />
+            <item index="49" class="java.lang.String" itemvalue="grpcio-status" />
+            <item index="50" class="java.lang.String" itemvalue="urllib3" />
+            <item index="51" class="java.lang.String" itemvalue="pyparsing" />
+            <item index="52" class="java.lang.String" itemvalue="passlib" />
+            <item index="53" class="java.lang.String" itemvalue="google-api-core" />
+            <item index="54" class="java.lang.String" itemvalue="uritemplate" />
+            <item index="55" class="java.lang.String" itemvalue="google-crc32c" />
+            <item index="56" class="java.lang.String" itemvalue="cryptography" />
+            <item index="57" class="java.lang.String" itemvalue="pandas" />
+            <item index="58" class="java.lang.String" itemvalue="proto-plus" />
+            <item index="59" class="java.lang.String" itemvalue="cachetools" />
+            <item index="60" class="java.lang.String" itemvalue="charset-normalizer" />
+            <item index="61" class="java.lang.String" itemvalue="google-api-python-client" />
+            <item index="62" class="java.lang.String" itemvalue="grpcio" />
+            <item index="63" class="java.lang.String" itemvalue="CacheControl" />
+            <item index="64" class="java.lang.String" itemvalue="google-cloud-firestore" />
+            <item index="65" class="java.lang.String" itemvalue="google-cloud-core" />
+            <item index="66" class="java.lang.String" itemvalue="msgpack" />
+            <item index="67" class="java.lang.String" itemvalue="google-auth" />
           </list>
         </value>
       </option>
@@ -47,7 +80,22 @@
     <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="ignoredErrors">
         <list>
-          <option value="E303" />
+          <option value="E501" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N803" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="application.statisticsItems" />
+          <option value="int.where" />
         </list>
       </option>
     </inspection_tool>
