@@ -1,62 +1,60 @@
-from fastapi import APIRouter, Depends, Response
-from sqlalchemy import and_
+from fastapi import APIRouter, Depends
+from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert
 from sqlalchemy.orm import Session
 from app import schemas, models
-from app.database import get_db
+from app.database import get_db, engine
 
 router = APIRouter()
+metadata = MetaData()
 
 
-@router.post('/authenticateUser')
-def create_user(authentication: schemas.Authentication, response: Response, db: Session = Depends(get_db)):
+@router.post('/v1/{userId}/addCompany')
+def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depends(get_db)):
     try:
         user_exists = db.query(models.Users).get(
-            authentication.user_id)
-        companies = []
-        if not user_exists:
-            try:
-                new_user_data = models.Users(
-                    **authentication.model_dump())
-                db.add(new_user_data)
-                db.commit()
-                db.refresh(new_user_data)
+            userId)
+        if user_exists is not None:
+            models.Companies.owner = userId
+            new_company = models.Companies(company_name=company.company_name,
+                                           company_domain=company.company_domain)
+            db.add(new_company)
+            db.commit()
+            db.refresh(new_company)
+            user_company = models.UserCompany(user_id=userId, company_id=new_company.company_id)
+            db.add(user_company)
+            db.commit()
+            company_id = new_company.company_id
+            metadata.reflect(bind=db.bind)
 
-                return {"status": 200, "message": "User successfully Authenticated",
-                        "data": {"user_name": new_user_data.user_name, "user_id": new_user_data.user_id,
-                                 "user_contact": new_user_data.user_contact, "companies": []}}
-            except Exception:
-                response.status_code = 200
-                return {"status": 204, "message": "User is NOT registered, please sing up", "data": {"companies": []}}
+            Table(
+                company_id + "_branches",
+                metadata,
+                Column("branch_id", BIGINT, primary_key=True, autoincrement=True),
+                Column("branch_name", String, nullable=False),
+                Column("branch_address", String, nullable=False),
+                Column("branch_contact", BIGINT, nullable=True))
+            Table(
+                company_id + "_employee",
+                metadata,
+                Column("employee_id", BIGINT, primary_key=True, autoincrement=True),
+                Column("employee_name", String, nullable=True),
+                Column("employee_contact", BIGINT, nullable=False),
+                Column("employee_password", String, nullable=False),
+                Column("employee_gender", String, nullable=True),
+                Column("employee_branch_id", BIGINT, nullable=True))
+            metadata.create_all(engine)
 
-        update = db.query(models.Users).filter(models.Users.user_id == authentication.user_id).update({
-            "user_name": authentication.user_name})
-        db.query(update)
-        db.commit()
+            branch_table = Table(new_company.company_id + "_branches", metadata, autoload_with=db.bind)
+            db.execute(insert(branch_table),
+                       {"branch_name": company.branch_name, "branch_contact": company.branch_contact,
+                        "branch_address": company.branch_address})
 
-        user_update = db.query(models.Users).get(authentication.user_id)
-        company_user_data = db.query(models.UserCompany).filter(
-            models.UserCompany.user_id == authentication.user_id).all()
+            db.commit()
 
-        for company in company_user_data:
-            company_data = db.query(models.Companies).filter(
-                and_(models.Companies.company_id == models.Companies.company_id,
-                     models.Companies.company_id == company.company_id)).first()
+            return {"status": 200, "message": "Company created successfully",
+                    "data": {}}
 
-            companies.append({
-                "company_id": company_data.company_id,
-                "company_domain": company_data.company_domain if company_data.company_domain is not None else "",
-                "company_email": company_data.company_email if company_data.company_email is not None else "",
-                "company_name": company_data.company_name if company_data.company_name is not None else "",
-                "services": company_data.services if company_data.services is not None else "",
-                "company_logo": company_data.company_logo if company_data.company_logo is not None else [],
-                "company_contact": company_data.company_contact,
-                "company_address": company_data.company_address if company_data.company_address is not None else "",
-                "onboarding_date": company_data.onboarding_date
-            })
+        return {"status": 204, "message": "User doesn't exist", "data": user_exists}
 
-        return {"status": 200, "message": "User successfully Authenticated",
-                "data": {"user_name": user_update.user_name, "user_id": user_update.user_id,
-                         "user_contact": user_update.user_contact, "companies": companies}}
     except Exception as e:
-        response.status_code = 404
-        return {"status": 404, "message": e, "data": {"companies": []}}
+        return {"status": 500, "message": e, "data": {}}
