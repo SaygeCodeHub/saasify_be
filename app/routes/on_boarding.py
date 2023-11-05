@@ -61,4 +61,4 @@ def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depen
         return {"status": 204, "message": "User doesn't exist", "data": user_exists}
 
     except Exception as e:
-        return {"status": 500, "message": e, "data": {}}
+        return {"status": 500, "message": "Something when wrong", "data": {}}
