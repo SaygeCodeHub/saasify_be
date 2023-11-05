@@ -8,18 +8,17 @@ from .database import Base
 class Companies(Base):
     __tablename__ = "companies"
 
-    company_id = Column(String, nullable=True, primary_key=True, unique=True,
+    company_id = Column(String, nullable=False, primary_key=True, unique=True,
                         server_default=text("EXTRACT(EPOCH FROM NOW())::BIGINT"))
-    company_name = Column(String, nullable=True, unique=True)
+    company_name = Column(String, nullable=False)
     company_domain = Column(String, nullable=True)
     company_logo = Column(String, nullable=True)
     company_email = Column(String, nullable=True)
     services = Column(String, nullable=True)
-    company_contact = Column(BIGINT, nullable=True)
-    company_address = Column(String, nullable=True)
-    onboarding_date = Column(TIMESTAMP(timezone=True), nullable=True, server_default=text('now()'))
+    owner = Column(String, ForeignKey('users.user_id'), nullable=False)
+    onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
-    @validates('company_name', 'company_password', 'company_email', 'company_contact', 'company_address')
+    @validates('company_name', 'company_email', 'company_contact')
     def empty_string_to_null(self, key, value):
         if isinstance(value, str) and value == '':
             return None

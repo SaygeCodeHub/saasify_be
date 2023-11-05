@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 
 from . import models
 from .database import engine
-from .routes import (on_boarding)
+from .routes import authentication, on_boarding
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
@@ -18,4 +18,5 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"])
 
+app.include_router(authentication.router)
 app.include_router(on_boarding.router)
