@@ -14,9 +14,9 @@ def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depen
         user_exists = db.query(models.Users).get(
             userId)
         if user_exists is not None:
-            models.Companies.owner = userId
+            company.owner = userId
             new_company = models.Companies(company_name=company.company_name,
-                                           company_domain=company.company_domain)
+                                           company_domain=company.company_domain, owner=company.owner)
             db.add(new_company)
             db.commit()
             db.refresh(new_company)
@@ -43,16 +43,20 @@ def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depen
                 Column("employee_gender", String, nullable=True),
                 Column("employee_branch_id", BIGINT, nullable=True))
             metadata.create_all(engine)
+            try:
+                branch_table = Table(new_company.company_id + "_branches", metadata, autoload_with=db.bind)
 
-            branch_table = Table(new_company.company_id + "_branches", metadata, autoload_with=db.bind)
-            db.execute(insert(branch_table),
-                       {"branch_name": company.branch_name, "branch_contact": company.branch_contact,
-                        "branch_address": company.branch_address})
+                db.execute(insert(branch_table),
+                           {"branch_name": company.branch_name, "branch_contact": company.branch_contact,
+                            "branch_address": company.branch_address})
 
-            db.commit()
-
-            return {"status": 200, "message": "Company created successfully",
-                    "data": {}}
+                db.commit()
+                return {"status": 200, "message": "Company created successfully",
+                        "data": {}}
+            except Exception as e:
+                db.rollback()
+                return {"status": 204, "message": e,
+                        "data": {}}
 
         return {"status": 204, "message": "User doesn't exist", "data": user_exists}
 
