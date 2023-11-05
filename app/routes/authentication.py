@@ -47,7 +47,7 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
                 "onboarding_date": company_data.onboarding_date,
                 "is_owner": True if company_data.owner == authentication.user_id else False,
                 "branches": get_all_branches(company_data.company_id, db)})
-        if authentication.user_name is None:
+        if authentication.user_name == "":
             return {"status": 200, "message": "User successfully Authenticated",
                     "data": {"user": {"user_name": user_exists.user_name, "user_id": user_exists.user_id,
                                       "user_contact": user_exists.user_contact}, "companies": companies}}
@@ -63,7 +63,7 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
                     "data": {"user": {"user_name": user_update.user_name, "user_id": user_update.user_id,
                                       "user_contact": user_update.user_contact}, "companies": companies}}
     except Exception as e:
-        return {"status": 500, "message": e, "data": {"user": {}, "companies": []}}
+        return {"status": 500, "message": "Something went wrong", "data": {"user": {}, "companies": []}}
 
 
 def get_all_branches(companyId: str, db=Depends(get_db)):
