@@ -20,3 +20,8 @@ app.add_middleware(
 
 app.include_router(authentication.router)
 app.include_router(on_boarding.router)
+
+
+@app.get('/')
+def root():
+    return {'message': 'hello world'}

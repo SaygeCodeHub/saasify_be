@@ -31,7 +31,7 @@ def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depen
                 metadata,
                 Column("branch_id", BIGINT, primary_key=True, autoincrement=True),
                 Column("branch_name", String, nullable=False),
-                Column("branch_address", String, nullable=False),
+                Column("branch_address", String, nullable=True),
                 Column("branch_contact", BIGINT, nullable=True))
             Table(
                 company_id + "_employee",
@@ -55,10 +55,11 @@ def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depen
                         "data": {}}
             except Exception as e:
                 db.rollback()
-                return {"status": 204, "message": e,
-                        "data": {}}
+                print(e)
+                return {"status": 204, "message": "failed to add a branch", "data": {}}
 
         return {"status": 204, "message": "User doesn't exist", "data": user_exists}
 
     except Exception as e:
+        print(e)
         return {"status": 500, "message": "Something when wrong", "data": {}}

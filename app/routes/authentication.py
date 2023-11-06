@@ -62,7 +62,8 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
             return {"status": 200, "message": "User successfully Authenticated",
                     "data": {"user": {"user_name": user_update.user_name, "user_id": user_update.user_id,
                                       "user_contact": user_update.user_contact}, "companies": companies}}
-    except Exception as e:
+    except Exception as a:
+        print(a)
         return {"status": 500, "message": "Something went wrong", "data": {"user": {}, "companies": []}}
 
 
