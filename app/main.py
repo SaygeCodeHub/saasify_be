@@ -327,7 +327,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "product_description": product.product_description,
                                 "image": variant.images,
                                 "unit": variant.unit,
-                                "barcode_no": variant.barcode})
+                                "barcode": variant.barcode, "draft": variant.draft,
+                                "restock_reminder": variant.restock_reminder})
 
                         return {"status": 200, "data": products, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
@@ -392,8 +393,9 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                             "stock": variant.stock,
                                             "images": variant.images,
                                             "unit": variant.unit,
-                                            "barcode": variant.barcode
-                                        }
+                                            "barcode": variant.barcode,
+                                            "restock_reminder": variant.restock_reminder,
+                                            "draft": variant.draft}
                                         product_data["variants"].append(variant_data)
                                 category_data["products"].append(product_data)
                             response_data.append(category_data)
