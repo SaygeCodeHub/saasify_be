@@ -83,7 +83,7 @@ class AddProducts(BaseModel):
     cost: float
     quantity: int
     unit: str
-    images: List[str]
+    images: Optional[List[str]] | None = []
     draft: bool
     restock_reminder: int
     discount_percent: Optional[float] | None = None
