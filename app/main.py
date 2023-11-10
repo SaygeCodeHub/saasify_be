@@ -550,14 +550,14 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
 
                         return {"status": 200, "data": {}, "message": "variants deleted successfully"}
                     except sqlalchemy.exc.NoSuchTableError:
-                        return {"status": 200, "data": {}, "message": "Wrong variant tabel"}
+                        return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
                 else:
-                    return {"status": 200, "data": [], "message": "Branch doesnt exist"}
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
                 return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
 
         else:
-            return {"status": 200, "data": [], "message": "Wrong Company"}
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
 
     else:
-        return {"status": 200, "data": [], "message": "un authorized"}
+        return {"status": 204, "data": {}, "message": "un authorized"}
