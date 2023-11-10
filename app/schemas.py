@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from datetime import date
 
 
@@ -8,7 +8,6 @@ class Companies(BaseModel):
     company_name: str
     company_domain: str
     company_logo: str | None = None
-    company_email: EmailStr | None = None
     services: str | None = None
     owner: str | None = None
 
@@ -45,6 +44,66 @@ class CreateCompany(Companies, Branch):
 
 class AllBranches(BaseModel):
     branches: List[Branch]
+
+    class Config:
+        from_attributes = True
+
+
+class GetBranch(BaseModel):
+    data: Branch
+
+    class Config:
+        from_attributes = True
+
+
+class AddVariants(BaseModel):
+    product_id: int
+    stock: int
+    barcode: int
+    cost: float
+    quantity: int
+    unit: str
+    images: List[str]
+    draft: bool
+    restock_reminder: int
+    discount_percent: Optional[float] | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class AddProducts(BaseModel):
+    product_id: Optional[int] | None = None
+    category_name: str
+    brand_name: str
+    stock: int | None = 0
+    product_name: str
+    barcode: int
+    product_description: str
+    cost: float
+    quantity: int
+    unit: str
+    images: List[str]
+    draft: bool
+    restock_reminder: int
+    discount_percent: Optional[float] | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class Categories(BaseModel):
+    category_id: int
+    category_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class GetAllCategories(BaseModel):
+    status: int
+    data: List[Categories]
+    message: str
 
     class Config:
         from_attributes = True

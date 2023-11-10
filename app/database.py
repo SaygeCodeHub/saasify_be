@@ -2,10 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "postgresql://db_saasify_user:V45gnfQG3nZzPXzTRId6iE0hP3wL3X23@dpg-cl3idg0t3kic73dclg0g-a.oregon-postgres.render.com/db_saasify?sslmode=require"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Mun1chad$@localhost:5432/postgres"
 
-# "postgresql://postgres:Mun1chad$@localhost/postgres"
 #
+# "postgresql://db_saasify_bb5z_user:SeyzkwBSm2YpekFp4VhHpqMaCYjTpVBX@dpg-cl6nv7oicrhc73fp5750-a.singapore-postgres.render.com/db_saasify_bb5z"
+
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
