@@ -507,56 +507,58 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-# @app.delete('/{userId}/{companyId}/{branchId}/deleteVariant')
-# def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, userId: str, branchId: str,
-#                     db=Depends(get_db)):
-#     user = db.query(models.Users).get(userId)
-#     if user:
-#         company = db.query(models.Companies).get(companyId)
-#         if company:
-#             metadata.reflect(bind=db.bind)
-#             try:
-#                 branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
-#
-#                 branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
-#                 if branch:
-#                     table_name = f"{companyId}_{branchId}"
-#                     try:
-#                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
-#                         for variant in deleteVariants.variant_ids:
-#                             variant_exists = db.query(variant_table).filter(
-#                                 variant_table.c.variant_id == variant).first()
-#                             if not variant_exists:
-#                                 return {"status": 204, "data": {}, "message": "Incorrect variant id"}
-#
-#                         delete_variants = delete(variant_table).where(
-#                             variant_table.c.variant_id.in_(deleteVariants.variant_ids))
-#
-#                         db.execute(delete_variants)
-#                         db.commit()
-#
-#                         product_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
-#                         products = db.query(product_table).all()
-#                         for product in products:
-#                             product_exist = db.query(variant_table).filter(
-#                                 variant_table.c.product_id == product.product_id).first()
-#                             if not product_exist:
-#                                 delete_product = delete(product_table).where(
-#                                     product_table.c.product_id is product.product_id)
-#
-#                                 db.execute(delete_product)
-#                                 db.commit()
-#
-#                         return {"status": 200, "data": {}, "message": "variants deleted successfully"}
-#                     except sqlalchemy.exc.NoSuchTableError:
-#                         return {"status":200, "data":{}, "message":"Wrong variant tabel"}
-#                 else:
-#                     return {"status": 200, "data": [], "message": "Branch doesnt exist"}
-#             except sqlalchemy.exc.NoSuchTableError:
-#                 return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
-#
-#         else:
-#             return {"status": 200, "data": [], "message": "Wrong Company"}
-#
-#     else:
-#         return {"status": 200, "data": [], "message": "un authorized"}
+@app.delete('/{userId}/{companyId}/{branchId}/deleteVariant')
+def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, userId: str, branchId: str,
+                    db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        # variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        for variant in deleteVariants.variant_ids:
+                            variant_exists = db.query(variant_table).filter(
+                                variant_table.c.variant_id == variant).first()
+                            if not variant_exists:
+                                return {"status": 204, "data": {}, "message": "Incorrect variant id"}
+
+                        delete_variants = delete(variant_table).where(
+                            variant_table.c.variant_id.in_(deleteVariants.variant_ids))
+
+                        db.execute(delete_variants)
+                        db.commit()
+                        products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
+                        variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+
+                        products = db.query(products_table).all()
+                        for product in products:
+                            variants = db.query(variant_table).filter(
+                                variant_table.c.product_id == product.product_id).all()
+                            if not variants:
+                                delete_product = delete(products_table).where(
+                                    products_table.c.product_id.in_([product.product_id]))
+
+                                db.execute(delete_product)
+                                db.commit()
+
+                        return {"status": 200, "data": {}, "message": "variants deleted successfully"}
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 200, "data": {}, "message": "Wrong variant tabel"}
+                else:
+                    return {"status": 200, "data": [], "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+
+        else:
+            return {"status": 200, "data": [], "message": "Wrong Company"}
+
+    else:
+        return {"status": 200, "data": [], "message": "un authorized"}
