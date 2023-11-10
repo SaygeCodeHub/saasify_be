@@ -166,7 +166,6 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                 if branch:
                     table_name = f"{companyId}_{branchId}"
                     try:
-                        product_id = ""
                         category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
                         products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
@@ -191,18 +190,22 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                             db.commit()
 
                         if createProduct.product_id:
+                            print(createProduct.product_id)
                             product_check = db.query(products_table).filter(
                                 products_table.c.product_id == createProduct.product_id).first()
                             if product_check:
                                 product_id = createProduct.product_id
                         else:
+                            print('createProduct.product_id else')
                             product = db.query(products_table).filter(
                                 products_table.c.category_id == category_id).filter(
                                 products_table.c.brand_id == brand_id).filter(
                                 products_table.c.product_name == createProduct.product_name).first()
                             if product:
+                                print('product')
                                 return {"status": 204, "data": product.product_id, "message": "Product already exists"}
                             else:
+                                print('else')
                                 product_added = insert(products_table).returning(products_table.c.product_id)
                                 product_id = db.execute(product_added,
                                                         {"category_id": category_id,
@@ -316,7 +319,6 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "variant_id": variant.variant_id,
                                 "variant_cost": variant.cost,
                                 "quantity": variant.quantity,
-                                "discounted_cost": None,
                                 "discount_percent": variant.discount_percent,
                                 "stock": variant.stock,
                                 "description": product.product_description,
@@ -331,7 +333,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             except sqlalchemy.exc.NoSuchTableError:
                 return {"status": 204, "data": [], "message": "table not exist branch"}
         else:
-            return {"status": 204, "data": [], "message": "not comapny"}
+            return {"status": 204, "data": [], "message": "Company does not exists"}
 
     else:
-        return {"status": 204, "data": [], "message": "not user"}
+        return {"status": 204, "data": [], "message": "User does not exists"}
