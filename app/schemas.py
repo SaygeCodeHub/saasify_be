@@ -92,6 +92,20 @@ class AddProducts(BaseModel):
         from_attributes = True
 
 
+class EditProduct(AddProducts):
+    variant_id: Optional[int] | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class DeleteVariants(BaseModel):
+    variant_ids: List[int]
+
+    class Config:
+        from_attributes = True
+
+
 class Categories(BaseModel):
     category_id: int
     category_name: str

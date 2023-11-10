@@ -10,7 +10,7 @@ from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignKey, Double, JSON, Boolean
+from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignKey, Double, JSON, Boolean, update
 from starlette.responses import JSONResponse
 
 from . import models, schemas
@@ -196,23 +196,21 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                             if product_check:
                                 product_id = createProduct.product_id
                         else:
-                            print('createProduct.product_id else')
                             product = db.query(products_table).filter(
                                 products_table.c.category_id == category_id).filter(
                                 products_table.c.brand_id == brand_id).filter(
                                 products_table.c.product_name == createProduct.product_name).first()
                             if product:
-                                print('product')
                                 return {"status": 204, "data": product.product_id, "message": "Product already exists"}
                             else:
-                                print('else')
-                                product_added = insert(products_table).returning(products_table.c.product_id)
-                                product_id = db.execute(product_added,
-                                                        {"category_id": category_id,
-                                                         "brand_id": brand_id,
-                                                         "product_name": createProduct.product_name,
-                                                         "product_description": createProduct.product_description}
-                                                        ).fetchone()[0]
+                                product_added = insert(products_table).returning(products_table)
+                                products = db.execute(product_added,
+                                                      {"category_id": category_id,
+                                                       "brand_id": brand_id,
+                                                       "product_name": createProduct.product_name,
+                                                       "product_description": createProduct.product_description}
+                                                      ).fetchone()[0]
+                                product_id = products
                                 db.commit()
 
                         variant = db.query(variant_table).filter(
@@ -220,10 +218,10 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                         if variant:
                             return {"status": 204, "data": {}, "message": "variant already exists"}
                         else:
-                            variant_added = insert(variant_table)
+                            variant_added = insert(variant_table).returning(variant_table)
                             db.execute(variant_added,
                                        {"product_id": product_id,
-                                        "cost": brand_id,
+                                        "cost": createProduct.cost,
                                         "stock": createProduct.stock,
                                         "quantity": createProduct.quantity,
                                         "unit": createProduct.unit,
@@ -234,14 +232,19 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                         "restock_reminder": createProduct.restock_reminder,
                                         })
                             db.commit()
-                            return {"status": 200, "data": {}, "message": "Product Added successfully"}
+                            return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                            "brand_name": createProduct.brand_name,
+                                                            "product_name": createProduct.product_name,
+                                                            "product_id": product_id,
+                                                            "product_description": createProduct.product_description},
+                                    "message": "Product Added successfully"}
 
                     except sqlalchemy.exc.NoSuchTableError:
-                        return schemas.GetAllCategories(status=200, data=[], message="Wrong category tabel")
+                        return {"status": 200, "data": [], "message": "Wrong category table"}
                 else:
                     return {"status": 200, "data": [], "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
-                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+                return {"status": 200, "data": [], "message": "Wrong branch table"}
 
         else:
             return {"status": 200, "data": [], "message": "Wrong Company"}
@@ -337,3 +340,135 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
     else:
         return {"status": 204, "data": [], "message": "User does not exists"}
+
+
+@app.put('/{userId}/{companyId}/{branchId}/editProduct')
+def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
+                        brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
+                        products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
+                        variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        category = db.query(category_table).filter(
+                            category_table.c.category_name == createProduct.category_name).first()
+                        if category:
+                            category_id = category.category_id
+                        else:
+                            category_added = insert(category_table).returning(category_table.c.category_id)
+                            category_id = db.execute(category_added,
+                                                     {"category_name": createProduct.category_name}).fetchone()[0]
+                            db.commit()
+                        brand = db.query(brand_table).filter(
+                            brand_table.c.brand_name == createProduct.brand_name).first()
+                        if brand:
+                            brand_id = brand.brand_id
+                        else:
+                            brand_added = insert(brand_table).returning(brand_table.c.brand_id)
+                            brand_id = db.execute(brand_added,
+                                                  {"brand_name": createProduct.brand_name}).fetchone()[0]
+                            db.commit()
+
+                        if createProduct.product_id:
+                            print(createProduct.product_id)
+                            product_check = db.query(products_table).filter(
+                                products_table.c.product_id == createProduct.product_id).first()
+                            if product_check:
+                                product_id = createProduct.product_id
+                                update_product = update(products_table).values(category_id=category_id,
+                                                                               brand_id=brand_id,
+                                                                               product_name=createProduct.product_name,
+                                                                               product_description=createProduct.product_description)
+                                update_product = db.execute(update_product.where(
+                                    products_table.c.product_id == product_id))
+                                db.commit()
+                            else:
+                                return {"status": 204, "data": {}, "message": "Invalid product id"}
+
+                            if createProduct.variant_id:
+                                variant = db.query(variant_table).filter(
+                                    variant_table.c.variant_id == createProduct.variant_id).first()
+                                if variant:
+                                    variant_update = update(variant_table).values(product_id=product_id,
+                                                                                  cost=createProduct.cost,
+                                                                                  stock=createProduct.stock,
+                                                                                  quantity=createProduct.quantity,
+                                                                                  unit=createProduct.unit,
+                                                                                  discount_percent=createProduct.discount_percent,
+                                                                                  images=createProduct.images,
+                                                                                  draft=createProduct.draft,
+                                                                                  barcode=createProduct.barcode,
+                                                                                  restock_reminder=createProduct.restock_reminder
+                                                                                  )
+                                    update_variants = db.execute(variant_update.where(
+                                        variant_table.c.variant_id == createProduct.variant_id))
+                                    db.commit()
+                                    return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                                    "brand_name": createProduct.brand_name,
+                                                                    "product_name": createProduct.product_name,
+                                                                    "product_id": product_id,
+                                                                    "product_description": createProduct.product_description},
+                                            "message": "Product Added successfully"}
+                                else:
+                                    return {"status": 204, "data": {}, "message": "invalid variant id"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return schemas.GetAllCategories(status=200, data=[], message="Wrong category tabel")
+                else:
+                    return {"status": 200, "data": [], "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+
+        else:
+            return {"status": 200, "data": [], "message": "Wrong Company"}
+
+    else:
+        return {"status": 200, "data": [], "message": "un authorized"}
+
+
+# @app.delete('/{userId}/{companyId}/{branchId}/deleteVariant')
+# def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, userId: str, branchId: str,
+#                     db=Depends(get_db)):
+#     user = db.query(models.Users).get(userId)
+#     if user:
+#         company = db.query(models.Companies).get(companyId)
+#         if company:
+#             metadata.reflect(bind=db.bind)
+#             try:
+#                 branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+#
+#                 branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+#                 if branch:
+#                     table_name = f"{companyId}_{branchId}"
+#                     try:
+#                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+#                         for variant in deleteVariants:
+#                             variant_exists = db.query(variant_table).filter(
+#                                 variant_table.c.variant_id == variant).first()
+#                             if not variant_exists:
+#                                 return {"status": 204, "data": {}, "message": "Incorrect variant id"}
+#
+#
+#
+#                     except sqlalchemy.exc.NoSuchTableError:
+#                         return schemas.GetAllCategories(status=200, data=[], message="Wrong variant tabel")
+#                 else:
+#                     return {"status": 200, "data": [], "message": "Branch doesnt exist"}
+#             except sqlalchemy.exc.NoSuchTableError:
+#                 return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+#
+#         else:
+#             return {"status": 200, "data": [], "message": "Wrong Company"}
+#
+#     else:
+#         return {"status": 200, "data": [], "message": "un authorized"}
