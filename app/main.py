@@ -60,7 +60,7 @@ def save_upload_file(upload_file: UploadFile, destination: str):
         upload_file.file.close()
 
 
-@app.post("/uploadImages")
+@app.post("/v1/uploadImages")
 async def upload_images(upload_files: List[UploadFile] = File(...)):
     image_urls = []
     for upload_file in upload_files:
@@ -78,7 +78,7 @@ async def upload_images(upload_files: List[UploadFile] = File(...)):
     return JSONResponse(content=response_data)
 
 
-@app.post('/{userId}/{companyId}/addBranch')
+@app.post('/v1/{userId}/{companyId}/addBranch')
 def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -152,7 +152,7 @@ def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Dep
         return {"status": 204, "message": "Un Authorized", "data": {}}
 
 
-@app.post('/{userId}/{companyId}/{branchId}/addProduct')
+@app.post('/v1/{userId}/{companyId}/{branchId}/addProduct')
 def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -253,7 +253,7 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-@app.get('/{userId}/{companyId}/{branchId}/getAllCategories')
+@app.get('/v1/{userId}/{companyId}/{branchId}/getAllCategories')
 def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -285,7 +285,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
         return schemas.GetAllCategories(status=204, data=[], message="User doesnt exist")
 
 
-@app.get('/{userId}/{companyId}/{branchId}/getAllProducts')
+@app.get('/v1/{userId}/{companyId}/{branchId}/getAllProducts')
 def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -341,7 +341,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
         return {"status": 204, "data": [], "message": "User does not exists"}
 
 
-@app.get('/{userId}/{companyId}/{branchId}/getProductsByCategory')
+@app.get('/v1/{userId}/{companyId}/{branchId}/getProductsByCategory')
 def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -413,7 +413,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
         return {"status": 204, "data": [], "message": "User does not exists"}
 
 
-@app.put('/{userId}/{companyId}/{branchId}/editProduct')
+@app.put('/v1/{userId}/{companyId}/{branchId}/editProduct')
 def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -507,7 +507,7 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-@app.delete('/{userId}/{companyId}/{branchId}/deleteVariant')
+@app.delete('/v1/{userId}/{companyId}/{branchId}/deleteVariant')
 def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, userId: str, branchId: str,
                     db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
@@ -522,7 +522,6 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
                 if branch:
                     table_name = f"{companyId}_{branchId}"
                     try:
-                        # variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
                         for variant in deleteVariants.variant_ids:
                             variant_exists = db.query(variant_table).filter(
