@@ -123,8 +123,7 @@ def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Dep
                            nullable=False),
                     Column("cost", Double, nullable=False),
                     Column("stock", BIGINT, nullable=False),
-
-                    Column("quantity", String, nullable=True),
+                    Column("quantity", BIGINT, nullable=True),
                     Column("unit", String, nullable=True),
                     Column("discount_cost", Double, nullable=True),
                     Column("discount_percent", Double, nullable=True),
@@ -201,7 +200,7 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                 products_table.c.brand_id == brand_id).filter(
                                 products_table.c.product_name == createProduct.product_name).first()
                             if product:
-                                return {"status": 204, "data": product.product_id, "message": "Product already exists"}
+                                return {"status": 204, "data": {}, "message": "Product already exists"}
                             else:
                                 product_added = insert(products_table).returning(products_table)
                                 products = db.execute(product_added,
@@ -240,17 +239,17 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                     "message": "Product Added successfully"}
 
                     except sqlalchemy.exc.NoSuchTableError:
-                        return {"status": 200, "data": [], "message": "Wrong category table"}
+                        return {"status": 204, "data": {}, "message": "Wrong category table"}
                 else:
-                    return {"status": 200, "data": [], "message": "Branch doesnt exist"}
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
-                return {"status": 200, "data": [], "message": "Wrong branch table"}
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
 
         else:
-            return {"status": 200, "data": [], "message": "Wrong Company"}
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
 
     else:
-        return {"status": 200, "data": [], "message": "un authorized"}
+        return {"status": 204, "data": {}, "message": "un authorized"}
 
 
 @app.get('/{userId}/{companyId}/{branchId}/getAllCategories')
@@ -321,9 +320,9 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "brand_id": brand.brand_id,
                                 "variant_id": variant.variant_id,
                                 "variant_cost": variant.cost,
-                                "quantity": variant.quantity,
+                                "quantity": int(variant.quantity),
                                 "discount_percent": variant.discount_percent,
-                                "stock": variant.stock,
+                                "stock": int(variant.stock),
                                 "description": product.product_description,
                                 "image": variant.images,
                                 "measuring_unit": variant.unit,
@@ -423,18 +422,17 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
                                     return {"status": 204, "data": {}, "message": "invalid variant id"}
 
                     except sqlalchemy.exc.NoSuchTableError:
-                        return schemas.GetAllCategories(status=200, data=[], message="Wrong category tabel")
+                        return {"status": 204, "data": {}, "message": "Wrong category tabel"}
                 else:
-                    return {"status": 200, "data": [], "message": "Branch doesnt exist"}
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
-                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+                return {"status": 204, "data": {}, "message": "Branch table"}
 
         else:
-            return {"status": 200, "data": [], "message": "Wrong Company"}
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
 
     else:
-        return {"status": 200, "data": [], "message": "un authorized"}
-
+        return {"status": 204, "data": {}, "message": "un authorized"}
 
 # @app.delete('/{userId}/{companyId}/{branchId}/deleteVariant')
 # def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, userId: str, branchId: str,
