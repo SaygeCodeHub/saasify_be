@@ -74,10 +74,10 @@ def get_all_branches(companyId: str, db=Depends(get_db)):
     branches = db.query(branch_table).all()
     branch_dicts = []
     for branch in branches:
-        branch_dicts = [{
+        branch_dicts.append({
             "branch_id": branch.branch_id,
             "branch_name": branch.branch_name,
             "branch_contact": branch.branch_contact,
-            "branch_address": branch.branch_address}]
+            "branch_address": branch.branch_address})
 
     return branch_dicts
