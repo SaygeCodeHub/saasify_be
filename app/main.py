@@ -10,8 +10,7 @@ from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignKey, Double, JSON, Boolean, update, \
-    delete
+from sqlalchemy import MetaData, Table, insert, update, delete
 from starlette.responses import JSONResponse
 
 from . import models, schemas
@@ -78,80 +77,6 @@ async def upload_images(upload_files: List[UploadFile] = File(...)):
     return JSONResponse(content=response_data)
 
 
-@app.post('/v1/{userId}/{companyId}/addBranch')
-def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Depends(get_db)):
-    user = db.query(models.Users).get(userId)
-    if user:
-        company = db.query(models.Companies).get(companyId)
-        if company:
-            metadata.reflect(bind=db.bind)
-            branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
-            stmt = insert(branch_table).returning(branch_table.c.branch_id)
-            inserted_id = db.execute(stmt,
-                                     {"branch_name": createBranch.branch_name,
-                                      "branch_contact": createBranch.branch_contact,
-                                      "branch_address": createBranch.branch_address}).fetchone()[0]
-            db.commit()
-            if inserted_id:
-                metadata.reflect(bind=db.bind)
-                table_name = f"{companyId}_{inserted_id}"
-
-                Table(
-                    table_name + "_categories",
-                    metadata,
-                    Column("category_id", BIGINT, primary_key=True, autoincrement=True),
-                    Column("category_name", String, nullable=False, unique=True))
-                Table(
-                    table_name + "_brands",
-                    metadata,
-                    Column("brand_id", BIGINT, primary_key=True, autoincrement=True),
-                    Column("brand_name", String, nullable=False))
-                Table(
-                    table_name + "_products",
-                    metadata,
-                    Column("product_id", BIGINT, primary_key=True, autoincrement=True),
-                    Column("product_name", String, nullable=False),
-                    Column("category_id", BIGINT,
-                           ForeignKey(f"{table_name}_categories.category_id", ondelete="CASCADE"), nullable=False),
-                    Column("product_description", String, nullable=False),
-                    Column("brand_id", BIGINT, ForeignKey(table_name + "_brands.brand_id", ondelete="CASCADE"),
-                           nullable=False))
-                Table(
-                    table_name + "_variants",
-                    metadata,
-                    Column("variant_id", BIGINT, primary_key=True, autoincrement=True),
-                    Column("product_id", BIGINT, ForeignKey(table_name + "_products.product_id", ondelete="CASCADE"),
-                           nullable=False),
-                    Column("cost", Double, nullable=False),
-                    Column("stock", BIGINT, nullable=False),
-                    Column("quantity", BIGINT, nullable=True),
-                    Column("unit", String, nullable=True),
-                    Column("discount_cost", Double, nullable=True),
-                    Column("discount_percent", Double, nullable=True),
-                    Column("images", JSON, nullable=True),
-                    Column("draft", Boolean, nullable=True),
-                    Column("barcode", BIGINT, nullable=True),
-                    Column("restock_reminder", BIGINT, nullable=True))
-                Table(
-                    table_name + "_inventory",
-                    metadata,
-                    Column("stock_id", BIGINT, primary_key=True, autoincrement=True),
-                    Column("stock", BIGINT, nullable=True),
-                    Column("variant_id", BIGINT, ForeignKey(table_name + "_variants.variant_id", ondelete="CASCADE"),
-                           nullable=False))
-
-                metadata.create_all(engine)
-
-                return {"status": 200, "message": "branch added successfully", "data": {}}
-            else:
-                return {"status": 204, "message": "Please enter valid data", "data": {}}
-        else:
-            return {"status": 204, "message": "Wrong company id", "data": {}}
-
-    else:
-        return {"status": 204, "message": "Un Authorized", "data": {}}
-
-
 @app.post('/v1/{userId}/{companyId}/{branchId}/addProduct')
 def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
@@ -170,6 +95,7 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
                         products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        stock_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
                         category = db.query(category_table).filter(
                             category_table.c.category_name == createProduct.category_name).first()
                         if category:
@@ -218,25 +144,31 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                         if variant:
                             return {"status": 204, "data": {}, "message": "variant already exists"}
                         else:
+                            stock_add = insert(stock_table).returning(stock_table)
+                            stock_id = db.execute(stock_add, {"stock": createProduct.stock}).fetchone()[0]
                             variant_added = insert(variant_table).returning(variant_table)
-                            db.execute(variant_added,
-                                       {"product_id": product_id,
-                                        "cost": createProduct.cost,
-                                        "stock": createProduct.stock,
-                                        "quantity": createProduct.quantity,
-                                        "unit": createProduct.unit,
-                                        "discount_percent": createProduct.discount_percent,
-                                        "images": createProduct.images,
-                                        "draft": createProduct.draft,
-                                        "barcode": createProduct.barcode,
-                                        "restock_reminder": createProduct.restock_reminder,
-                                        })
+                            variant_id = db.execute(variant_added,
+                                                    {"product_id": product_id,
+                                                     "cost": createProduct.cost,
+                                                     "quantity": createProduct.quantity,
+                                                     "unit": createProduct.unit,
+                                                     "stock_id": stock_id,
+                                                     "discount_percent": createProduct.discount_percent,
+                                                     "images": createProduct.images,
+                                                     "draft": createProduct.draft,
+                                                     "barcode": createProduct.barcode,
+                                                     "restock_reminder": createProduct.restock_reminder}).fetchone()[0]
+                            stock_update = update(stock_table).values(stock=createProduct.stock, variant_id=variant_id)
+                            update_stock = db.execute(stock_update.where(stock_table.c.stock_id == stock_id))
+
                             db.commit()
                             return {"status": 200, "data": {"category_name": createProduct.category_name,
                                                             "brand_name": createProduct.brand_name,
                                                             "product_name": createProduct.product_name,
                                                             "product_id": product_id,
-                                                            "product_description": createProduct.product_description},
+                                                            "product_description": createProduct.product_description,
+                                                            "stock_id": stock_id},
+
                                     "message": "Product Added successfully"}
 
                     except sqlalchemy.exc.NoSuchTableError:
@@ -303,6 +235,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                         category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
                         product_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
+                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
 
                         variants = db.query(variants_table).all()
                         products = []
@@ -312,6 +245,12 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             category = db.query(category_table).filter(
                                 category_table.c.category_id == product.category_id).first()
                             brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
+                            if variant.stock_id is None:
+                                stock_count = 0
+                            else:
+                                stock = db.query(inventory_table).filter(
+                                    inventory_table.c.stock_id == variant.stock_id).first()
+                                stock_count = stock.stock
                             products.append({
                                 "category_id": category.category_id,
                                 "category_name": category.category_name,
@@ -323,7 +262,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "cost": variant.cost,
                                 "quantity": int(variant.quantity),
                                 "discount_percent": variant.discount_percent,
-                                "stock": int(variant.stock),
+                                "stock": stock_count,
+                                "stock_id": variant.stock_id,
                                 "product_description": product.product_description,
                                 "image": variant.images,
                                 "unit": variant.unit,
@@ -360,6 +300,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                         category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
                         product_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
+                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
 
                         response_data = []
                         categories = db.query(category_table).all()
@@ -385,12 +326,20 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 if variants:
 
                                     for variant in variants:
+                                        if variant.stock_id is None:
+                                            stock_count = 0
+                                        else:
+                                            stock = db.query(inventory_table).filter(
+                                                inventory_table.c.stock_id == variant.stock_id).first()
+                                            stock_count = stock.stock
+
                                         variant_data = {
                                             "variant_id": variant.variant_id,
                                             "cost": variant.cost,
                                             "quantity": variant.quantity,
                                             "discount_percent": variant.discount_percent,
-                                            "stock": variant.stock,
+                                            "stock_id": variant.stock_id,
+                                            "stock": stock_count,
                                             "images": variant.images,
                                             "unit": variant.unit,
                                             "barcode": variant.barcode,
@@ -416,7 +365,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
 
 @app.put('/v1/{userId}/{companyId}/{branchId}/editProduct')
-def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
         company = db.query(models.Companies).get(companyId)
@@ -433,6 +382,8 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
                         products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
+
                         category = db.query(category_table).filter(
                             category_table.c.category_name == createProduct.category_name).first()
                         if category:
@@ -453,7 +404,6 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
                             db.commit()
 
                         if createProduct.product_id:
-                            print(createProduct.product_id)
                             product_check = db.query(products_table).filter(
                                 products_table.c.product_id == createProduct.product_id).first()
                             if product_check:
@@ -462,9 +412,10 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
                                                                                brand_id=brand_id,
                                                                                product_name=createProduct.product_name,
                                                                                product_description=createProduct.product_description)
-                                update_product = db.execute(update_product.where(
+                                db.execute(update_product.where(
                                     products_table.c.product_id == product_id))
                                 db.commit()
+
                             else:
                                 return {"status": 204, "data": {}, "message": "Invalid product id"}
 
@@ -472,18 +423,21 @@ def add_product(createProduct: schemas.EditProduct, companyId: str, userId: str,
                                 variant = db.query(variant_table).filter(
                                     variant_table.c.variant_id == createProduct.variant_id).first()
                                 if variant:
+                                    stock_update = update(inventory_table).values(stock=createProduct.stock,
+                                                                                  variant_id=variant.variant_id)
+                                    db.execute(
+                                        stock_update.where(inventory_table.c.stock_id == variant.stock_id))
                                     variant_update = update(variant_table).values(product_id=product_id,
                                                                                   cost=createProduct.cost,
-                                                                                  stock=createProduct.stock,
+                                                                                  stock_id=variant.stock_id,
                                                                                   quantity=createProduct.quantity,
                                                                                   unit=createProduct.unit,
                                                                                   discount_percent=createProduct.discount_percent,
                                                                                   images=createProduct.images,
                                                                                   draft=createProduct.draft,
                                                                                   barcode=createProduct.barcode,
-                                                                                  restock_reminder=createProduct.restock_reminder
-                                                                                  )
-                                    update_variants = db.execute(variant_update.where(
+                                                                                  restock_reminder=createProduct.restock_reminder)
+                                    db.execute(variant_update.where(
                                         variant_table.c.variant_id == createProduct.variant_id))
                                     db.commit()
                                     return {"status": 200, "data": {"category_name": createProduct.category_name,
@@ -551,6 +505,55 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
                                 db.commit()
 
                         return {"status": 200, "data": {}, "message": "variants deleted successfully"}
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.post('/v1/{userId}/{companyId}/{branchId}/updateStock')
+def update_stock(updateStock: schemas.UpdateStock, companyId: str, userId: str, branchId: str,
+                 db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        if not updateStock.stock_id:
+                            return {"status": 204, "data": {}, "message": "Invalid stock Id"}
+                        else:
+                            inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
+                            stock = db.query(inventory_table).filter(
+                                inventory_table.c.stock_id == updateStock.stock_id).first()
+                            if not stock:
+                                return {"status": 204, "data": {}, "message": "Stock id not found"}
+                            else:
+                                if updateStock.increment:
+                                    final_stock = stock.stock + updateStock.stock
+                                else:
+                                    final_stock = stock.stock - updateStock.stock
+                                stock_update = update(inventory_table).values(stock=final_stock,
+                                                                              variant_id=updateStock.variant_id)
+                                db.execute(
+                                    stock_update.where(inventory_table.c.stock_id == updateStock.stock_id))
+                                db.commit()
+                                return {"status": 200, "data": {}, "message": "Updated successfully"}
+
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
                 else:

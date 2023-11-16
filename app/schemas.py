@@ -121,3 +121,13 @@ class GetAllCategories(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UpdateStock(BaseModel):
+    stock_id: int
+    stock: int
+    variant_id: int
+    increment: bool
+
+    class Config:
+        from_attributes = True
