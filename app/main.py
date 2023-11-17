@@ -116,7 +116,6 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                             db.commit()
 
                         if createProduct.product_id:
-                            print(createProduct.product_id)
                             product_check = db.query(products_table).filter(
                                 products_table.c.product_id == createProduct.product_id).first()
                             if product_check:
@@ -138,38 +137,54 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                                       ).fetchone()[0]
                                 product_id = products
                                 db.commit()
+                        if createProduct.barcode:
+                            variant = db.query(variant_table).filter(
+                                variant_table.c.barcode == createProduct.barcode).first()
+                            if variant:
+                                return {"status": 204, "data": {}, "message": "variant already exists"}
+                            else:
+                                if createProduct.stock:
+                                    stock_add = insert(stock_table).returning(stock_table)
+                                    stock_id = db.execute(stock_add, {"stock": createProduct.stock}).fetchone()[0]
+                                    variant_added = insert(variant_table).returning(variant_table)
+                                    variant_id = db.execute(variant_added,
+                                                            {"product_id": product_id,
+                                                             "cost": createProduct.cost,
+                                                             "quantity": createProduct.quantity,
+                                                             "unit": createProduct.unit,
+                                                             "stock_id": stock_id,
+                                                             "discount_percent": createProduct.discount_percent,
+                                                             "images": createProduct.images,
+                                                             "draft": createProduct.draft,
+                                                             "barcode": createProduct.barcode,
+                                                             "restock_reminder": createProduct.restock_reminder}).fetchone()[0]
+                                    stock_update = update(stock_table).values(stock=createProduct.stock, variant_id=variant_id)
+                                    update_stock = db.execute(stock_update.where(stock_table.c.stock_id == stock_id))
 
-                        variant = db.query(variant_table).filter(
-                            variant_table.c.barcode == createProduct.barcode).first()
-                        if variant:
-                            return {"status": 204, "data": {}, "message": "variant already exists"}
-                        else:
-                            stock_add = insert(stock_table).returning(stock_table)
-                            stock_id = db.execute(stock_add, {"stock": createProduct.stock}).fetchone()[0]
-                            variant_added = insert(variant_table).returning(variant_table)
-                            variant_id = db.execute(variant_added,
-                                                    {"product_id": product_id,
-                                                     "cost": createProduct.cost,
-                                                     "quantity": createProduct.quantity,
-                                                     "unit": createProduct.unit,
-                                                     "stock_id": stock_id,
-                                                     "discount_percent": createProduct.discount_percent,
-                                                     "images": createProduct.images,
-                                                     "draft": createProduct.draft,
-                                                     "barcode": createProduct.barcode,
-                                                     "restock_reminder": createProduct.restock_reminder}).fetchone()[0]
-                            stock_update = update(stock_table).values(stock=createProduct.stock, variant_id=variant_id)
-                            update_stock = db.execute(stock_update.where(stock_table.c.stock_id == stock_id))
+                                    db.commit()
+                                    return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                                    "brand_name": createProduct.brand_name,
+                                                                    "product_name": createProduct.product_name,
+                                                                    "product_id": product_id,
+                                                                    "product_description": createProduct.product_description},
 
-                            db.commit()
-                            return {"status": 200, "data": {"category_name": createProduct.category_name,
-                                                            "brand_name": createProduct.brand_name,
-                                                            "product_name": createProduct.product_name,
-                                                            "product_id": product_id,
-                                                            "product_description": createProduct.product_description,
-                                                            "stock_id": stock_id},
+                                            "message": "Product Added successfully"}
+                                else:
+                                    variant_added = insert(variant_table).returning(variant_table)
+                                    variant_id = db.execute(variant_added,
+                                                            {"product_id": product_id,
+                                                             "cost": createProduct.cost,
+                                                             "quantity": createProduct.quantity,
+                                                             "unit": createProduct.unit,
+                                                             "stock_id": None,
+                                                             "discount_percent": createProduct.discount_percent,
+                                                             "images": createProduct.images,
+                                                             "draft": createProduct.draft,
+                                                             "barcode": createProduct.barcode,
+                                                             "restock_reminder": createProduct.restock_reminder}).fetchone()[
+                                        0]
 
-                                    "message": "Product Added successfully"}
+
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong category table"}
@@ -265,7 +280,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "stock": stock_count,
                                 "stock_id": variant.stock_id,
                                 "product_description": product.product_description,
-                                "image": variant.images,
+                                "images": variant.images,
                                 "unit": variant.unit,
                                 "barcode": variant.barcode, "draft": variant.draft,
                                 "restock_reminder": variant.restock_reminder})
@@ -393,15 +408,17 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
                             category_id = db.execute(category_added,
                                                      {"category_name": createProduct.category_name}).fetchone()[0]
                             db.commit()
-                        brand = db.query(brand_table).filter(
-                            brand_table.c.brand_name == createProduct.brand_name).first()
-                        if brand:
-                            brand_id = brand.brand_id
-                        else:
-                            brand_added = insert(brand_table).returning(brand_table.c.brand_id)
-                            brand_id = db.execute(brand_added,
-                                                  {"brand_name": createProduct.brand_name}).fetchone()[0]
-                            db.commit()
+
+                        if createProduct.brand_name is not None:
+                            brand = db.query(brand_table).filter(
+                                brand_table.c.brand_name == createProduct.brand_name).first()
+                            if brand:
+                                brand_id = brand.brand_id
+                            else:
+                                brand_added = insert(brand_table).returning(brand_table.c.brand_id)
+                                brand_id = db.execute(brand_added,
+                                                      {"brand_name": createProduct.brand_name}).fetchone()[0]
+                                db.commit()
 
                         if createProduct.product_id:
                             product_check = db.query(products_table).filter(
@@ -445,9 +462,42 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
                                                                     "product_name": createProduct.product_name,
                                                                     "product_id": product_id,
                                                                     "product_description": createProduct.product_description},
-                                            "message": "Product Added successfully"}
+                                            "message": "Product Edited successfully"}
                                 else:
                                     return {"status": 204, "data": {}, "message": "invalid variant id"}
+                            else:
+                                variant = db.query(variant_table).filter(
+                                    variant_table.c.barcode == createProduct.barcode).first()
+                                if variant:
+                                    return {"status": 204, "data": {}, "message": "variant already exists"}
+                                else:
+                                    stock_add = insert(inventory_table).returning(inventory_table)
+                                    stock_id = db.execute(stock_add, {"stock": createProduct.stock}).fetchone()[0]
+                                    variant_added = insert(variant_table).returning(variant_table)
+                                    variant_id = db.execute(variant_added,
+                                                            {"product_id": product_id,
+                                                             "cost": createProduct.cost,
+                                                             "quantity": createProduct.quantity,
+                                                             "unit": createProduct.unit,
+                                                             "stock_id": stock_id,
+                                                             "discount_percent": createProduct.discount_percent,
+                                                             "images": createProduct.images,
+                                                             "draft": createProduct.draft,
+                                                             "barcode": createProduct.barcode,
+                                                             "restock_reminder": createProduct.restock_reminder}).fetchone()[
+                                        0]
+                                    stock_update = update(inventory_table).values(stock=createProduct.stock,
+                                                                                  variant_id=variant_id)
+                                    db.execute(
+                                        stock_update.where(inventory_table.c.stock_id == stock_id))
+
+                                    db.commit()
+                                    return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                                    "brand_name": createProduct.brand_name,
+                                                                    "product_name": createProduct.product_name,
+                                                                    "product_id": product_id,
+                                                                    "product_description": createProduct.product_description},
+                                            "message": "Product Edited successfully"}
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong category tabel"}

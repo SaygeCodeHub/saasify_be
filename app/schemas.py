@@ -75,17 +75,17 @@ class AddVariants(BaseModel):
 class AddProducts(BaseModel):
     product_id: Optional[int] | None = None
     category_name: str
-    brand_name: str
+    brand_name: str | None = None
     stock: int | None = 0
     product_name: str
-    barcode: int
-    product_description: str
-    cost: float
-    quantity: int
-    unit: str
+    barcode: int | None = None
+    product_description: str | None = None
+    cost: float | None = None
+    quantity: int | None = None
+    unit: str | None = None
     images: Optional[List[str]] | None = []
-    draft: bool
-    restock_reminder: int
+    draft: bool | None = None
+    restock_reminder: int | None = None
     discount_percent: Optional[float] | None = None
 
     class Config:
@@ -94,6 +94,7 @@ class AddProducts(BaseModel):
 
 class EditProduct(AddProducts):
     variant_id: Optional[int] | None = None
+    stock_id: Optional[int] | None = None
 
     class Config:
         from_attributes = True
