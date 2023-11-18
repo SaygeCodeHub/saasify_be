@@ -22,7 +22,7 @@ models.Base.metadata.create_all(bind=engine)
 metadata = MetaData()
 
 app = FastAPI()
-origins = ["*"]
+origins = ["*","http://localhost:64240"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -467,8 +467,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                             "restock_reminder": variant.restock_reminder,
                                             "draft": variant.draft}
                                         product_data["variants"].append(variant_data)
-                                category_data["products"].append(product_data)
-                            response_data.append(category_data)
+                                        category_data["products"].append(product_data)
+                                        response_data.append(category_data)
 
                         return {"status": 200, "data": response_data, "message": "get all products"}
 
@@ -525,6 +525,7 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
                                 brand_id = db.execute(brand_added,
                                                       {"brand_name": createProduct.brand_name}).fetchone()[0]
                                 db.commit()
+                        else: brand_id= None
 
                         if createProduct.product_id:
                             product_check = db.query(products_table).filter(

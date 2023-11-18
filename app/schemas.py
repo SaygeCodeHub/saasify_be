@@ -80,13 +80,13 @@ class AddProducts(BaseModel):
     product_name: str
     barcode: int | None = None
     product_description: str | None = None
-    cost: float | None = None
-    quantity: int | None = None
+    cost: float | None = 0
+    quantity: int | None = 0
     unit: str | None = None
     images: Optional[List[str]] | None = []
-    draft: bool | None = None
-    restock_reminder: int | None = None
-    discount_percent: Optional[float] | None = None
+    draft: bool | None = True
+    restock_reminder: int | None = 0
+    discount_percent: Optional[float] | None = 0
 
     class Config:
         from_attributes = True
