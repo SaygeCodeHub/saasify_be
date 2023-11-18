@@ -22,7 +22,7 @@ models.Base.metadata.create_all(bind=engine)
 metadata = MetaData()
 
 app = FastAPI()
-origins = ["https://saasify-user.web.app"]
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
