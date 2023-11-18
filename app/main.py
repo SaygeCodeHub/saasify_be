@@ -297,9 +297,9 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "brand_name": brand_name,
                                 "brand_id": product.brand_id,
                                 "variant_id": variant.variant_id,
-                                "cost": variant.cost,
+                                "cost": variant.cost if variant.cost is not None else 0.0,
                                 "quantity": variant.quantity,
-                                "discount_percent": variant.discount_percent,
+                                "discount_percent": variant.discount_percent if variant.discount_percent is not None else 0.0,
                                 "stock": stock_count,
                                 "stock_id": variant.stock_id,
                                 "product_description": product.product_description,
@@ -511,28 +511,22 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             for product in products:
                                 brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
                                 if brand:
-                                    product_data = {
-                                        "product_id": product.product_id,
-                                        "product_name": product.product_name,
-                                        "brand_id": product.brand_id,
-                                        "brand_name": brand.brand_name,
-                                        "product_description": product.product_description,
-                                        "variants": []
-                                    }
+                                    brand_name = brand.brand_name
                                 else:
-                                    product_data = {
-                                        "product_id": product.product_id,
-                                        "product_name": product.product_name,
-                                        "brand_id": product.brand_id,
-                                        "brand_name": None,
-                                        "product_description": product.product_description,
-                                        "variants": []
-                                    }
+                                    brand_name = None
 
                                 variants = db.query(variants_table).filter(
                                     variants_table.c.product_id == product.product_id).filter(
                                     variants_table.c.draft == False).all()
                                 if variants:
+                                    product_data = {
+                                        "product_id": product.product_id,
+                                        "product_name": product.product_name,
+                                        "brand_id": product.brand_id,
+                                        "brand_name": brand_name,
+                                        "product_description": product.product_description,
+                                        "variants": []
+                                    }
 
                                     for variant in variants:
                                         if variant.stock_id is None:
