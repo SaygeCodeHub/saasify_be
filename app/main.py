@@ -37,8 +37,8 @@ UPLOAD_DIR = "app/images"
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
 cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred, {'storageBucket': 'onecart-6156a.appspot.com',
-                                     'databaseURL': 'https://onecart-6156a-default-rtdb.firebaseio.com/'})
+firebase_admin.initialize_app(cred, {'storageBucket': 'saasify-5ddd8.appspot.com',
+                                     'databaseURL': 'https://saasify-5ddd8.appspot.com-default-rtdb.firebaseio.com/'})
 
 
 @app.get('/')
