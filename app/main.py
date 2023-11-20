@@ -275,21 +275,23 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 category_table.c.category_id == product.category_id).first()
                             brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
                             variant = db.query(variants_table).filter(
-                                variants_table.c.variant_id == product.product_id).first()
+                                variants_table.c.product_id == product.product_id).first()
 
                             if brand:
                                 brand_name = brand.brand_name
                             else:
                                 brand_name = None
 
-                            if variant.stock_id:
-                                stock = db.query(inventory_table).filter(
-                                    inventory_table.c.stock_id == variant.stock_id).first()
-                                stock_count = stock.stock
-                            else:
-                                stock_count = 0
+                            stock_count = 0
+                            if variant:
+                                if variant.stock_id:
+                                    stock = db.query(inventory_table).filter(
+                                        inventory_table.c.stock_id == variant.stock_id).first()
+                                    stock_count = stock.stock
+                                else:
+                                    stock_count = 0
 
-                            products_data.append({
+                                products_data.append({
                                 "category_id": category.category_id,
                                 "category_name": category.category_name,
                                 "product_id": product.product_id,
@@ -308,92 +310,27 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 "barcode": variant.barcode, "draft": variant.draft,
                                 "restock_reminder": variant.restock_reminder
                             })
+                            else:
+                                products_data.append({
+                                    "category_id": category.category_id,
+                                    "category_name": category.category_name,
+                                    "product_id": product.product_id,
+                                    "product_name": product.product_name,
+                                    "brand_name": brand_name,
+                                    "brand_id": product.brand_id,
+                                    "variant_id": None,
+                                    "cost":  0.0,
+                                    "quantity": None,
+                                    "discount_percent":0.0,
+                                    "stock": stock_count,
+                                    "stock_id": None,
+                                    "product_description": None,
+                                    "images": [],
+                                    "unit": None,
+                                    "barcode": None, "draft": None,
+                                    "restock_reminder": None
+                                })
 
-                            # if brand:
-                            #     product_data = {
-                            #         "product_id": product.product_id,
-                            #         "product_name": product.product_name,
-                            #         "brand_id": product.brand_id,
-                            #         "brand_name": brand.brand_name,
-                            #         "product_description": product.product_description,
-                            #         "variants": []
-                            #     }
-                            # else:
-                            #     product_data = {
-                            #         "product_id": product.product_id,
-                            #         "product_name": product.product_name,
-                            #         "brand_id": product.brand_id,
-                            #         "brand_name": None,
-                            #         "product_description": product.product_description,
-                            #         "variants": []
-                            #     }
-
-                            # variants = db.query(variants_table).filter(
-                            #     variants_table.c.product_id == product.product_id).filter(
-                            #     variants_table.c.draft == False).all()
-                            # if variants:
-                            #
-                            #     for variant in variants:
-                            #         if variant.stock_id is None:
-                            #             stock_count = 0
-                            #         else:
-                            #             stock = db.query(inventory_table).filter(
-                            #                 inventory_table.c.stock_id == variant.stock_id).first()
-                            #             stock_count = stock.stock
-                            #
-                            #         variant_data = {
-                            #             "variant_id": variant.variant_id,
-                            #             "cost": variant.cost,
-                            #             "quantity": variant.quantity,
-                            #             "discount_percent": variant.discount_percent,
-                            #             "stock_id": variant.stock_id,
-                            #             "stock": stock_count,
-                            #             "images": variant.images,
-                            #             "unit": variant.unit,
-                            #             "barcode": variant.barcode,
-                            #             "restock_reminder": variant.restock_reminder,
-                            #             "draft": variant.draft}
-                            #         product_data["variants"].append(variant_data)
-                            #         category_data["products"].append(product_data)
-                            #         response_data.append(category_data)
-
-                        # variants = db.query(variants_table).all()
-                        # products = []
-                        # for variant in variants:
-                        #     product = db.query(product_table).filter(
-                        #         product_table.c.product_id == variant.product_id).first()
-                        #     category = db.query(category_table).filter(
-                        #         category_table.c.category_id == product.category_id).first()
-                        #     brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
-                        #     if brand:
-                        #         brand_name = brand.brand_name
-                        #     else:
-                        #         brand_name = None
-                        #
-                        #     if variant.stock_id is None:
-                        #         stock_count = 0
-                        #     else:
-                        #         stock = db.query(inventory_table).filter(
-                        #             inventory_table.c.stock_id == variant.stock_id).first()
-                        #         stock_count = stock.stock
-                        #     products.append({
-                        #         "category_id": category.category_id,
-                        #         "category_name": category.category_name,
-                        #         "product_id": variant.product_id,
-                        #         "product_name": product.product_name,
-                        #         "brand_name": brand_name,
-                        #         "brand_id": product.brand_id,
-                        #         "variant_id": variant.variant_id,
-                        #         "cost": variant.cost,
-                        #         "quantity": variant.quantity,
-                        #         "discount_percent": variant.discount_percent,
-                        #         "stock": stock_count,
-                        #         "stock_id": variant.stock_id,
-                        #         "product_description": product.product_description,
-                        #         "images": variant.images,
-                        #         "unit": variant.unit,
-                        #         "barcode": variant.barcode, "draft": variant.draft,
-                        #         "restock_reminder": variant.restock_reminder})
 
                         return {"status": 200, "data": products_data, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
