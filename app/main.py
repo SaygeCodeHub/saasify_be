@@ -107,7 +107,7 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                             db.commit()
 
                         brand_id = None
-                        if createProduct.brand_name != None:
+                        if createProduct.brand_name is not None:
 
                             brand = db.query(brand_table).filter(
                                 brand_table.c.brand_name == createProduct.brand_name).first()
@@ -118,7 +118,7 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                 brand_id = db.execute(brand_added,
                                                       {"brand_name": createProduct.brand_name}).fetchone()[0]
                                 db.commit()
-
+                        product_id = None
                         if createProduct.product_id:
                             product_check = db.query(products_table).filter(
                                 products_table.c.product_id == createProduct.product_id).first()
@@ -147,6 +147,7 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                 product_id = products
                                 db.commit()
                         if createProduct.barcode:
+
                             variant = db.query(variant_table).filter(
                                 variant_table.c.barcode == createProduct.barcode).first()
                             if variant:
@@ -170,9 +171,9 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                         0]
                                     stock_update = update(stock_table).values(stock=createProduct.stock,
                                                                               variant_id=variant_id)
-                                    update_stock = db.execute(stock_update.where(stock_table.c.stock_id == stock_id))
-
+                                    db.execute(stock_update.where(stock_table.c.stock_id == stock_id))
                                     db.commit()
+
                                     return {"status": 200, "data": {"category_name": createProduct.category_name,
                                                                     "brand_name": createProduct.brand_name,
                                                                     "product_name": createProduct.product_name,
@@ -182,18 +183,17 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                             "message": "Product Added successfully"}
                                 else:
                                     variant_added = insert(variant_table).returning(variant_table)
-                                    variant_id = db.execute(variant_added,
-                                                            {"product_id": product_id,
-                                                             "cost": createProduct.cost,
-                                                             "quantity": createProduct.quantity,
-                                                             "unit": createProduct.unit,
-                                                             "stock_id": None,
-                                                             "discount_percent": createProduct.discount_percent,
-                                                             "images": createProduct.images,
-                                                             "draft": createProduct.draft,
-                                                             "barcode": createProduct.barcode,
-                                                             "restock_reminder": createProduct.restock_reminder}).fetchone()[
-                                        0]
+                                    db.execute(variant_added,
+                                               {"product_id": product_id,
+                                                "cost": createProduct.cost,
+                                                "quantity": createProduct.quantity,
+                                                "unit": createProduct.unit,
+                                                "stock_id": None,
+                                                "discount_percent": createProduct.discount_percent,
+                                                "images": createProduct.images,
+                                                "draft": createProduct.draft,
+                                                "barcode": createProduct.barcode,
+                                                "restock_reminder": createProduct.restock_reminder})
                                     db.commit()
                                     return {"status": 200, "data": {"category_name": createProduct.category_name,
                                                                     "brand_name": createProduct.brand_name,
@@ -201,6 +201,13 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                                                     "product_id": product_id,
                                                                     "product_description": createProduct.product_description},
                                             "message": "Product Added successfully"}
+                        else:
+                            return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                            "brand_name": createProduct.brand_name,
+                                                            "product_name": createProduct.product_name,
+                                                            "product_id": product_id,
+                                                            "product_description": createProduct.product_description},
+                                    "message": "Product Added successfully"}
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong category table"}
@@ -274,8 +281,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             category = db.query(category_table).filter(
                                 category_table.c.category_id == product.category_id).first()
                             brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
-                            variant = db.query(variants_table).filter(
-                                variants_table.c.product_id == product.product_id).first()
+                            variants = db.query(variants_table).filter(
+                                variants_table.c.product_id == product.product_id).all()
 
                             if brand:
                                 brand_name = brand.brand_name
@@ -283,7 +290,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 brand_name = None
 
                             stock_count = 0
-                            if variant:
+                            for variant in variants:
                                 if variant.stock_id:
                                     stock = db.query(inventory_table).filter(
                                         inventory_table.c.stock_id == variant.stock_id).first()
@@ -292,45 +299,44 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                     stock_count = 0
 
                                 products_data.append({
-                                "category_id": category.category_id,
-                                "category_name": category.category_name,
-                                "product_id": product.product_id,
-                                "product_name": product.product_name,
-                                "brand_name": brand_name,
-                                "brand_id": product.brand_id,
-                                "variant_id": variant.variant_id,
-                                "cost": variant.cost if variant.cost is not None else 0.0,
-                                "quantity": variant.quantity,
-                                "discount_percent": variant.discount_percent if variant.discount_percent is not None else 0.0,
-                                "stock": stock_count,
-                                "stock_id": variant.stock_id,
-                                "product_description": product.product_description,
-                                "images": variant.images,
-                                "unit": variant.unit,
-                                "barcode": variant.barcode, "draft": variant.draft,
-                                "restock_reminder": variant.restock_reminder
-                            })
-                            else:
-                                products_data.append({
                                     "category_id": category.category_id,
                                     "category_name": category.category_name,
                                     "product_id": product.product_id,
                                     "product_name": product.product_name,
                                     "brand_name": brand_name,
                                     "brand_id": product.brand_id,
-                                    "variant_id": None,
-                                    "cost":  0.0,
-                                    "quantity": None,
-                                    "discount_percent":0.0,
+                                    "variant_id": variant.variant_id,
+                                    "cost": variant.cost if variant.cost is not None else 0.0,
+                                    "quantity": variant.quantity,
+                                    "discount_percent": variant.discount_percent if variant.discount_percent is not None else 0.0,
                                     "stock": stock_count,
-                                    "stock_id": None,
-                                    "product_description": None,
-                                    "images": [],
-                                    "unit": None,
-                                    "barcode": None, "draft": None,
-                                    "restock_reminder": None
+                                    "stock_id": variant.stock_id,
+                                    "product_description": product.product_description,
+                                    "images": variant.images,
+                                    "unit": variant.unit,
+                                    "barcode": variant.barcode, "draft": variant.draft,
+                                    "restock_reminder": variant.restock_reminder
                                 })
-
+                            # else:
+                            #     products_data.append({
+                            #         "category_id": category.category_id,
+                            #         "category_name": category.category_name,
+                            #         "product_id": product.product_id,
+                            #         "product_name": product.product_name,
+                            #         "brand_name": brand_name,
+                            #         "brand_id": product.brand_id,
+                            #         "variant_id": None,
+                            #         "cost":  0.0,
+                            #         "quantity": None,
+                            #         "discount_percent":0.0,
+                            #         "stock": stock_count,
+                            #         "stock_id": None,
+                            #         "product_description": None,
+                            #         "images": [],
+                            #         "unit": None,
+                            #         "barcode": None, "draft": None,
+                            #         "restock_reminder": None
+                            #     })
 
                         return {"status": 200, "data": products_data, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
@@ -486,7 +492,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                             "restock_reminder": variant.restock_reminder,
                                             "draft": variant.draft}
                                         product_data["variants"].append(variant_data)
-                                category_data["products"].append(product_data)
+                                    category_data["products"].append(product_data)
                             response_data.append(category_data)
 
                         return {"status": 200, "data": response_data, "message": "get all products"}

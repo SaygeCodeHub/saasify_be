@@ -78,7 +78,7 @@ class AddProducts(BaseModel):
     brand_name: str | None = None
     stock: int | None = 0
     product_name: str
-    barcode: int | None = None
+    barcode: int
     product_description: str | None = None
     cost: float | None = 0.0
     quantity: int | None = 0
