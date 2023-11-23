@@ -79,7 +79,6 @@ async def upload_images(upload_files: List[UploadFile] = File(...)):
         blob = bucket.blob(f"uploaded_images/{upload_file.filename}")
         blob.upload_from_filename(destination)
         image_url = blob.public_url
-        print(blob.public_url)
 
         image_urls.append(image_url)
     response_data = {
@@ -442,13 +441,10 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             products = db.query(product_table).filter(
                                 product_table.c.category_id == category.category_id).all()
                             for product in products:
-                                print("product in products")
                                 brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
                                 if brand:
-                                    print("if brand")
                                     brand_name = brand.brand_name
                                 else:
-                                    print("else brand")
                                     brand_name = None
 
                                 product_data = {
@@ -462,17 +458,15 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
                                 variants = db.query(variants_table).filter(
                                     variants_table.c.product_id == product.product_id).filter(
-                                    variants_table.c.draft is False).all()
+                                    variants_table.c.draft == False).all()
 
                                 for variant in variants:
-                                    print("for variants")
                                     if variant.stock_id is None:
                                         stock_count = 0
                                     else:
                                         stock = db.query(inventory_table).filter(
                                             inventory_table.c.stock_id == variant.stock_id).first()
                                         stock_count = stock.stock
-                                    print("stockcount" + stock_count)
 
                                     variant_data = {
                                         "variant_id": variant.variant_id,
