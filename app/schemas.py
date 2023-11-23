@@ -132,3 +132,19 @@ class UpdateStock(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ItemsOrdered(BaseModel):
+    variant_id: int
+    count: int
+
+
+class BookOrder(BaseModel):
+    items_ordered: List
+    customer_contact: int
+    payment_status: str
+    payment_type: str
+    customer_name: str | None = None
+    discount_total: float | None = None
+    total_amount: float
+    subtotal: float

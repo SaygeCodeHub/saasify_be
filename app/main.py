@@ -1,7 +1,6 @@
 import logging
 import os
 import shutil
-from datetime import timedelta
 from typing import List
 
 import firebase_admin
@@ -10,7 +9,7 @@ from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, insert, update, delete
+from sqlalchemy import MetaData, Table, insert, update, delete, desc
 from starlette.responses import JSONResponse
 
 from . import models, schemas
@@ -66,9 +65,22 @@ async def upload_images(upload_files: List[UploadFile] = File(...)):
         destination = os.path.join("app", "uploaded_images", upload_file.filename)
         save_upload_file(upload_file, destination)
         bucket = storage.bucket()
+        bucket.cors = [
+            {
+                "origin": ["*"],
+                "responseHeader": [
+                    "Content-Type",
+                    "x-goog-resumable"],
+                "method": ['PUT', 'POST', 'GET'],
+                "maxAgeSeconds": 3600
+            }
+        ]
+        bucket.patch()
         blob = bucket.blob(f"uploaded_images/{upload_file.filename}")
         blob.upload_from_filename(destination)
-        image_url = blob.generate_signed_url(method="GET", expiration=timedelta(days=120))
+        image_url = blob.public_url
+        print(blob.public_url)
+
         image_urls.append(image_url)
     response_data = {
         "status": 200,
@@ -289,7 +301,6 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             else:
                                 brand_name = None
 
-                            stock_count = 0
                             for variant in variants:
                                 if variant.stock_id:
                                     stock = db.query(inventory_table).filter(
@@ -317,26 +328,6 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                     "barcode": variant.barcode, "draft": variant.draft,
                                     "restock_reminder": variant.restock_reminder
                                 })
-                            # else:
-                            #     products_data.append({
-                            #         "category_id": category.category_id,
-                            #         "category_name": category.category_name,
-                            #         "product_id": product.product_id,
-                            #         "product_name": product.product_name,
-                            #         "brand_name": brand_name,
-                            #         "brand_id": product.brand_id,
-                            #         "variant_id": None,
-                            #         "cost":  0.0,
-                            #         "quantity": None,
-                            #         "discount_percent":0.0,
-                            #         "stock": stock_count,
-                            #         "stock_id": None,
-                            #         "product_description": None,
-                            #         "images": [],
-                            #         "unit": None,
-                            #         "barcode": None, "draft": None,
-                            #         "restock_reminder": None
-                            #     })
 
                         return {"status": 200, "data": products_data, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
@@ -460,7 +451,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
                                 variants = db.query(variants_table).filter(
                                     variants_table.c.product_id == product.product_id).filter(
-                                    variants_table.c.draft == False).all()
+                                    variants_table.c.draft is False).all()
                                 if variants:
                                     product_data = {
                                         "product_id": product.product_id,
@@ -499,9 +490,13 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": [], "message": "incorrect input"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
 
             except sqlalchemy.exc.NoSuchTableError:
                 return {"status": 204, "data": [], "message": "table not exist branch"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": [], "message": "Company does not exists"}
@@ -634,10 +629,14 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong category tabel"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
                 else:
                     return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
-                return {"status": 204, "data": {}, "message": "Branch table"}
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}
@@ -690,10 +689,14 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
                         return {"status": 200, "data": {}, "message": "variants deleted successfully"}
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
                 else:
                     return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
-                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}
@@ -738,11 +741,200 @@ def update_stock(updateStock: schemas.UpdateStock, companyId: str, userId: str, 
                                 return {"status": 200, "data": {}, "message": "Updated successfully"}
 
                     except sqlalchemy.exc.NoSuchTableError:
-                        return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
+                        return {"status": 204, "data": {}, "message": "Wrong stock tabel"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
                 else:
                     return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
-                return schemas.GetAllCategories(status=200, data=[], message="Wrong branch table")
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.post('/v1/{userId}/{companyId}/{branchId}/bookOrder')
+def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        orders_table = Table(table_name + "_orders", metadata, autoload_with=db.bind)
+                        variants_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
+                        order_items = []
+                        for items in bookOrder.items_ordered:
+                            variant_id = items.get("variant_id")
+                            count = items.get("count")
+
+                            variant_exists = db.query(variants_table).filter(
+                                variants_table.c.variant_id == variant_id).first()
+                            if variant_exists:
+                                stock_data = db.query(inventory_table).filter(
+                                    inventory_table.c.variant_id == variant_id).first()
+                                if stock_data.stock == 0:
+                                    return {"status": 204, "message": f"{variant_id} is out of stock", "data": {}}
+                                else:
+                                    if stock_data.stock < count:
+                                        return {"status": 204, "message": f"{variant_id} low stock", "data": {}}
+                                    else:
+                                        item = {"variant_id": variant_id, "count": count}
+                                        order_items.append(item)
+
+                                        stock_update = update(inventory_table).values(stock=stock_data.stock - count,
+                                                                                      variant_id=variant_id)
+                                        db.execute(
+                                            stock_update.where(inventory_table.c.stock_id == stock_data.stock_id))
+                                        db.commit()
+
+                            else:
+                                return {"status": 204, "message": f"Wrong variant id {variant_id}", "data": {}}
+
+                        add_order = insert(orders_table).returning(orders_table)
+                        order_id = db.execute(add_order,
+                                              {"items_ordered": order_items,
+                                               "customer_contact": bookOrder.customer_contact,
+                                               "payment_status": bookOrder.payment_status,
+                                               "payment_type": bookOrder.payment_type,
+                                               "customer_name": bookOrder.customer_name,
+                                               "discount_total": bookOrder.discount_total,
+                                               "total_amount": bookOrder.total_amount,
+                                               "subtotal": bookOrder.subtotal}).fetchone()[0]
+                        db.commit()
+
+                        return {"status": 200, "data": {"order_id": order_id}, "message": "success"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
+
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch id"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.get('/v1/{userId}/{companyId}/{branchId}/getAllOrders')
+def get_orders(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        variants_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
+                        product_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
+                        brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
+                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
+                        order_table = Table(table_name + "_orders", metadata, autoload_with=db.bind)
+
+                        orders = db.query(order_table).order_by(desc(order_table.c.order_id)).all()
+                        orders_list = []
+                        for order in orders:
+                            items = order.items_ordered
+                            ordr_data = {
+                                "order_id": order.order_id,
+                                "order_number": order.order_no,
+                                "order_date": order.order_date,
+                                "customer_contact": order.customer_contact,
+                                "payment_status": order.payment_status,
+                                "payment_type": order.payment_type,
+                                "customer_name": order.customer_name,
+                                "discount_total": order.discount_total,
+                                "total_amount": order.total_amount,
+                                "subtotal": order.subtotal,
+                                "items_ordered": []
+                            }
+                            for item in items:
+                                variant_id = item.get("variant_id")
+                                count = item.get("count")
+                                variant = db.query(variants_table).filter(
+                                    variants_table.c.variant_id == variant_id).first()
+                                if variant:
+                                    stock = db.query(inventory_table).filter(
+                                        inventory_table.c.stock_id == variant.stock_id).first()
+                                    product = db.query(product_table).filter(
+                                        product_table.c.product_id == variant.product_id).first()
+                                    category = db.query(category_table).filter(
+                                        category_table.c.category_id == product.category_id).first()
+                                    brand = db.query(brand_table).filter(
+                                        brand_table.c.brand_id == product.brand_id).first()
+                                    if stock:
+                                        stock_count = stock.stock
+                                    else:
+                                        stock_count = 0
+
+                                    if brand:
+                                        brand_name = brand.brand_name
+                                    else:
+                                        brand_name = None
+
+                                    item_data = {
+                                        "category_id": category.category_id,
+                                        "category_name": category.category_name,
+                                        "product_id": variant.product_id,
+                                        "product_name": product.product_name,
+                                        "brand_name": brand_name,
+                                        "brand_id": product.brand_id,
+                                        "variant_id": variant_id,
+                                        "cost": variant.cost,
+                                        "quantity": variant.quantity,
+                                        "discount_percent": variant.discount_percent,
+                                        "stock": stock_count,
+                                        "stock_id": variant.stock_id,
+                                        "product_description": product.product_description,
+                                        "images": variant.images,
+                                        "unit": variant.unit,
+                                        "barcode": variant.barcode,
+                                        "draft": variant.draft,
+                                        "restock_reminder": variant.restock_reminder,
+                                        "count": count}
+                                    ordr_data["items_ordered"].append(item_data)
+                                    orders_list.append(ordr_data)
+
+                        return {"status": 200, "data": orders_list, "message": "success"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Wrong order tabel"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
+
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch id"}
+
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}

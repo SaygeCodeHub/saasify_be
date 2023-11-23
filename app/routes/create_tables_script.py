@@ -1,5 +1,6 @@
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignKey, Double, JSON, Boolean
+from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignKey, Double, JSON, Boolean, text, \
+    TIMESTAMP, Float
 
 from app import models, schemas
 from app.database import engine
@@ -57,6 +58,21 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("stock", BIGINT, nullable=True),
         Column("variant_id", BIGINT, ForeignKey(table_name + "_variants.variant_id", ondelete="CASCADE"),
                nullable=True))
+    Table(
+        table_name + "_orders",
+        metadata,
+        Column("order_id", BIGINT, primary_key=True, autoincrement=True),
+        Column("order_no", String, nullable=False, primary_key=True, unique=True,
+               server_default=text("EXTRACT(EPOCH FROM NOW())::BIGINT")),
+        Column("order_date", TIMESTAMP(timezone=True), nullable=False, server_default=text('now()')),
+        Column("items_ordered", JSON, nullable=False),
+        Column("discount_total", Float, nullable=True),
+        Column("total_amount", Float, nullable=False),
+        Column("subtotal", Float, nullable=False),
+        Column("payment_status", String, nullable=False),
+        Column("payment_type", String, nullable=False),
+        Column("customer_contact", BIGINT, nullable=False),
+        Column("customer_name", String, nullable=True))
 
     metadata.create_all(engine)
 

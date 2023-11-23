@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import MetaData, Table, insert
 from sqlalchemy.orm import Session
-from app import schemas, models
 from app.database import get_db
 from app.routes.create_tables_script import create_company, create_branch
+from passlib.context import CryptContext
+from sqlalchemy import MetaData, Table, insert
+
+from app import models, schemas
+from app.database import engine
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+models.Base.metadata.create_all(bind=engine)
+metadata = MetaData()
 
 router = APIRouter()
-metadata = MetaData()
 
 
 @router.post('/v1/{userId}/addCompany')
@@ -49,7 +55,7 @@ def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Dep
             db.commit()
             if inserted_id:
                 create_branch(companyId, inserted_id, db)
-                return {"status": 200, "message": "branch added successfully", "data": {}} 
+                return {"status": 200, "message": "branch added successfully", "data": {}}
             else:
                 return {"status": 204, "message": "Please enter valid data", "data": {}}
         else:
