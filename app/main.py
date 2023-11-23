@@ -443,15 +443,18 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             products = db.query(product_table).filter(
                                 product_table.c.category_id == category.category_id).all()
                             for product in products:
+                                print("product in products")
                                 brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
                                 if brand:
+                                    print("if brand")
                                     brand_name = brand.brand_name
                                 else:
+                                    print("else brand")
                                     brand_name = None
 
                                 variants = db.query(variants_table).filter(
                                     variants_table.c.product_id == product.product_id).filter(
-                                    variants_table.c.draft is False).all()
+                                    variants_table.c.draft == False).all()
                                 if variants:
                                     product_data = {
                                         "product_id": product.product_id,
