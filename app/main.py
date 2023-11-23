@@ -379,27 +379,25 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 stock = db.query(inventory_table).filter(
                                     inventory_table.c.stock_id == variant.stock_id).first()
                                 stock_count = stock.stock
-                            if category.is_active:
-                                if not variant.draft:
-                                    if variant.is_active:
-                                        products.append({
-                                            "category_id": category.category_id,
-                                            "category_name": category.category_name,
-                                            "product_id": variant.product_id,
-                                            "product_name": product.product_name,
-                                            "brand_name": brand_name,
-                                            "brand_id": product.brand_id,
-                                            "variant_id": variant.variant_id,
-                                            "cost": variant.cost,
-                                            "quantity": variant.quantity,
-                                            "discount_percent": variant.discount_percent,
-                                            "stock": stock_count,
-                                            "stock_id": variant.stock_id,
-                                            "product_description": product.product_description,
-                                            "images": variant.images,
-                                            "unit": variant.unit,
-                                            "barcode": variant.barcode, "draft": variant.draft,
-                                            "restock_reminder": variant.restock_reminder})
+                            if variant.draft is False:
+                                products.append({
+                                    "category_id": category.category_id,
+                                    "category_name": category.category_name,
+                                    "product_id": variant.product_id,
+                                    "product_name": product.product_name,
+                                    "brand_name": brand_name,
+                                    "brand_id": product.brand_id,
+                                    "variant_id": variant.variant_id,
+                                    "cost": variant.cost,
+                                    "quantity": variant.quantity,
+                                    "discount_percent": variant.discount_percent,
+                                    "stock": stock_count,
+                                    "stock_id": variant.stock_id,
+                                    "product_description": product.product_description,
+                                    "images": variant.images,
+                                    "unit": variant.unit,
+                                    "barcode": variant.barcode, "draft": variant.draft,
+                                    "restock_reminder": variant.restock_reminder})
 
                         return {"status": 200, "data": products, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
@@ -434,7 +432,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                         inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
 
                         response_data = []
-                        categories = db.query(category_table).filter(category_table.c.is_active == True).all()
+                        categories = db.query(category_table).all()
                         for category in categories:
                             category_data = {
                                 "category_id": category.category_id,
@@ -444,47 +442,52 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             products = db.query(product_table).filter(
                                 product_table.c.category_id == category.category_id).all()
                             for product in products:
+                                print("product in products")
                                 brand = db.query(brand_table).filter(brand_table.c.brand_id == product.brand_id).first()
                                 if brand:
+                                    print("if brand")
                                     brand_name = brand.brand_name
                                 else:
+                                    print("else brand")
                                     brand_name = None
+
+                                product_data = {
+                                    "product_id": product.product_id,
+                                    "product_name": product.product_name,
+                                    "brand_id": product.brand_id,
+                                    "brand_name": brand_name,
+                                    "product_description": product.product_description,
+                                    "variants": []
+                                }
 
                                 variants = db.query(variants_table).filter(
                                     variants_table.c.product_id == product.product_id).filter(
-                                    variants_table.c.draft == False).filter(
-                                    variants_table.c.is_active == True).all()
-                                if variants:
-                                    product_data = {
-                                        "product_id": product.product_id,
-                                        "product_name": product.product_name,
-                                        "brand_id": product.brand_id,
-                                        "brand_name": brand_name,
-                                        "product_description": product.product_description,
-                                        "variants": []
-                                    }
-                                    for variant in variants:
-                                        if variant.stock_id is None:
-                                            stock_count = 0
-                                        else:
-                                            stock = db.query(inventory_table).filter(
-                                                inventory_table.c.stock_id == variant.stock_id).first()
-                                            stock_count = stock.stock
+                                    variants_table.c.draft is False).all()
 
-                                        variant_data = {
-                                            "variant_id": variant.variant_id,
-                                            "cost": variant.cost,
-                                            "quantity": variant.quantity,
-                                            "discount_percent": variant.discount_percent,
-                                            "stock_id": variant.stock_id,
-                                            "stock": stock_count,
-                                            "images": variant.images,
-                                            "unit": variant.unit,
-                                            "barcode": variant.barcode,
-                                            "restock_reminder": variant.restock_reminder,
-                                            "draft": variant.draft}
-                                        product_data["variants"].append(variant_data)
-                                    category_data["products"].append(product_data)
+                                for variant in variants:
+                                    print("for variants")
+                                    if variant.stock_id is None:
+                                        stock_count = 0
+                                    else:
+                                        stock = db.query(inventory_table).filter(
+                                            inventory_table.c.stock_id == variant.stock_id).first()
+                                        stock_count = stock.stock
+                                    print("stockcount" + stock_count)
+
+                                    variant_data = {
+                                        "variant_id": variant.variant_id,
+                                        "cost": variant.cost,
+                                        "quantity": variant.quantity,
+                                        "discount_percent": variant.discount_percent,
+                                        "stock_id": variant.stock_id,
+                                        "stock": stock_count,
+                                        "images": variant.images,
+                                        "unit": variant.unit,
+                                        "barcode": variant.barcode,
+                                        "restock_reminder": variant.restock_reminder,
+                                        "draft": variant.draft}
+                                    product_data["variants"].append(variant_data)
+                                category_data["products"].append(product_data)
                             response_data.append(category_data)
 
                         return {"status": 200, "data": response_data, "message": "get all products"}
