@@ -65,6 +65,7 @@ class AddVariants(BaseModel):
     unit: str
     images: List[str]
     draft: bool
+    is_active: Optional[bool] | None = None
     restock_reminder: int
     discount_percent: Optional[float] | None = None
 
@@ -85,6 +86,7 @@ class AddProducts(BaseModel):
     unit: str | None = None
     images: Optional[List[str]] | None = []
     draft: bool | None = True
+    is_active: Optional[bool] | None = None
     restock_reminder: int | None = 0
     discount_percent: float | None = 0.0
 
@@ -110,6 +112,7 @@ class DeleteVariants(BaseModel):
 class Categories(BaseModel):
     category_id: int
     category_name: str
+    is_active: bool
 
     class Config:
         from_attributes = True

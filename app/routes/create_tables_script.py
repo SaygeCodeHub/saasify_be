@@ -18,7 +18,8 @@ def create_branch(companyId: str, inserted_id: int, db):
         table_name + "_categories",
         metadata,
         Column("category_id", BIGINT, primary_key=True, autoincrement=True),
-        Column("category_name", String, nullable=False, unique=True))
+        Column("category_name", String, nullable=False, unique=True),
+        Column("is_active", Boolean, nullable=False, server_default='TRUE'))
     Table(
         table_name + "_brands",
         metadata,
@@ -49,8 +50,10 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("discount_percent", Double, nullable=True),
         Column("images", JSON, nullable=True),
         Column("draft", Boolean, nullable=True),
+        Column("is_active", Boolean, nullable=False, server_default='TRUE'),
         Column("barcode", BIGINT, nullable=True),
-        Column("restock_reminder", BIGINT, nullable=True))
+        Column("restock_reminder", BIGINT, nullable=True)
+    )
     Table(
         table_name + "_inventory",
         metadata,
