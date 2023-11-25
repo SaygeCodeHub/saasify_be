@@ -9,7 +9,7 @@ from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, insert, update, delete, desc
+from sqlalchemy import MetaData, Table, insert, update, delete, desc, asc, func
 from starlette.responses import JSONResponse
 
 from . import models, schemas
@@ -249,7 +249,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                     table_name = companyId + "_" + branchId
                     try:
                         category_table = Table(table_name + "_categories", metadata, autoload_with=db.bind)
-                        categories = db.query(category_table).all()
+                        categories = db.query(category_table).order_by(asc(category_table.c.category_id)).all()
                         return schemas.GetAllCategories(status=200, data=categories, message="get all categories")
                     except sqlalchemy.exc.NoSuchTableError:
                         return schemas.GetAllCategories(status=204, data=[], message="Incorrect company or branch")
@@ -436,7 +436,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                         inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
 
                         response_data = []
-                        categories = db.query(category_table).filter(category_table.c.is_active == True).all()
+                        categories = db.query(category_table).filter(category_table.c.is_active == True).order_by(
+                            asc(category_table.c.category_id)).all()
                         for category in categories:
                             category_data = {
                                 "category_id": category.category_id,
@@ -584,7 +585,8 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
                                                                                   images=createProduct.images,
                                                                                   draft=createProduct.draft,
                                                                                   barcode=createProduct.barcode,
-                                                                                  restock_reminder=createProduct.restock_reminder)
+                                                                                  restock_reminder=createProduct.restock_reminder,
+                                                                                  is_active=createProduct.variant_active)
                                     db.execute(variant_update.where(
                                         variant_table.c.variant_id == createProduct.variant_id))
                                     db.commit()
@@ -779,32 +781,66 @@ def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branch
                 if branch:
                     table_name = f"{companyId}_{branchId}"
                     try:
-                        orders_table = Table(table_name + "_orders", metadata, autoload_with=db.bind)
                         variants_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
+                        product_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
+                        brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
                         inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
+                        orders_table = Table(table_name + "_orders", metadata, autoload_with=db.bind)
+
                         order_items = []
                         for items in bookOrder.items_ordered:
                             variant_id = items.get("variant_id")
                             count = items.get("count")
 
-                            variant_exists = db.query(variants_table).filter(
+                            variant = db.query(variants_table).filter(
                                 variants_table.c.variant_id == variant_id).first()
-                            if variant_exists:
+                            if variant:
+                                product = db.query(product_table).filter(
+                                    product_table.c.product_id == variant.product_id).first()
+                                category = db.query(category_table).filter(
+                                    category_table.c.category_id == product.category_id).first()
+                                brand = db.query(brand_table).filter(
+                                    brand_table.c.brand_id == product.brand_id).first()
                                 stock_data = db.query(inventory_table).filter(
                                     inventory_table.c.variant_id == variant_id).first()
                                 if stock_data.stock == 0:
-                                    return {"status": 204, "message": f"{variant_id} is out of stock", "data": {}}
+                                    return {"status": 204, "message": f"{product.product_name} is out of stock",
+                                            "data": {}}
                                 else:
                                     if stock_data.stock < count:
-                                        return {"status": 204, "message": f"{variant_id} low stock", "data": {}}
+                                        return {"status": 204,
+                                                "message": f"Only {stock_data.stock} available for {product.product_name}.",
+                                                "data": {}}
                                     else:
-                                        item = {"variant_id": variant_id, "count": count}
+                                        if brand:
+                                            brand_name = brand.brand_name
+                                        else:
+                                            brand_name = None
+                                        item = {"category_id": category.category_id,
+                                                "category_name": category.category_name,
+                                                "product_name": product.product_name,
+                                                "brand_name": brand_name,
+                                                "brand_id": product.brand_id,
+                                                "variant_id": variant_id,
+                                                "cost": variant.cost,
+                                                "quantity": variant.quantity,
+                                                "stock": stock_data.stock,
+                                                "stock_id": stock_data.stock_id,
+                                                "discount_percent": variant.discount_percent,
+                                                "product_description": product.product_description,
+                                                "images": variant.images,
+                                                "unit": variant.unit,
+                                                "barcode": variant.barcode,
+                                                "draft": variant.draft,
+                                                "restock_reminder": variant.restock_reminder,
+                                                "count": count}
                                         order_items.append(item)
 
                                         stock_update = update(inventory_table).values(stock=stock_data.stock - count,
                                                                                       variant_id=variant_id)
                                         db.execute(
-                                            stock_update.where(inventory_table.c.stock_id == stock_data.stock_id))
+                                            stock_update.where(inventory_table.c.stock_id == variant.stock_id))
                                         db.commit()
 
                             else:
@@ -857,18 +893,33 @@ def get_orders(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
                 if branch:
                     table_name = f"{companyId}_{branchId}"
                     try:
-                        variants_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
-                        category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
-                        product_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
-                        brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
-                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
-                        order_table = Table(table_name + "_orders", metadata, autoload_with=db.bind)
+                        order_table = Table(f'{table_name}_orders', metadata, autoload_with=db.bind)
 
                         orders = db.query(order_table).order_by(desc(order_table.c.order_id)).all()
-                        orders_list = []
+                        total_earning = db.query(func.sum(order_table.c.total_amount)).scalar()
+                        total_order_count = len(orders)
+                        unpaid_orders = len(db.query(order_table).filter(order_table.c.payment_status == 'paid').all())
+                        payment_method_counts = db.query(order_table.c.payment_type,
+                                                         func.count().label('count')).group_by(
+                            order_table.c.payment_type).all()
+
+                        payment_method_map = {
+                            method: {'count': count, 'percent': round(
+                                (count / total_order_count) * 100, 1)} for
+                            method, count in payment_method_counts}
+                        get_all_orders = {
+                            "total_earning": total_earning if total_earning is not None else 0,
+                            "total_orders": total_order_count,
+                            "unpaid_order": {"count": unpaid_orders,
+                                             "percent": round((
+                                                                      unpaid_orders / total_order_count) * 100,
+                                                              1) if total_order_count != 0 else 0
+                                             },
+                            "payment_methods": payment_method_map,
+                            "orders": []
+                        }
                         for order in orders:
-                            items = order.items_ordered
-                            ordr_data = {
+                            get_all_orders["orders"].append({
                                 "order_id": order.order_id,
                                 "order_number": order.order_no,
                                 "order_date": order.order_date,
@@ -876,64 +927,16 @@ def get_orders(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
                                 "payment_status": order.payment_status,
                                 "payment_type": order.payment_type,
                                 "customer_name": order.customer_name,
-                                "discount_total": order.discount_total,
+                                "discount_total": order.discount_total if order.discount_total is not None else 0.0,
                                 "total_amount": order.total_amount,
                                 "subtotal": order.subtotal,
-                                "items_ordered": []
-                            }
-                            for item in items:
-                                variant_id = item.get("variant_id")
-                                count = item.get("count")
-                                variant = db.query(variants_table).filter(
-                                    variants_table.c.variant_id == variant_id).first()
-                                if variant:
-                                    stock = db.query(inventory_table).filter(
-                                        inventory_table.c.stock_id == variant.stock_id).first()
-                                    product = db.query(product_table).filter(
-                                        product_table.c.product_id == variant.product_id).first()
-                                    category = db.query(category_table).filter(
-                                        category_table.c.category_id == product.category_id).first()
-                                    brand = db.query(brand_table).filter(
-                                        brand_table.c.brand_id == product.brand_id).first()
-                                    if stock:
-                                        stock_count = stock.stock
-                                    else:
-                                        stock_count = 0
+                                "items_ordered": order.items_ordered
+                            })
 
-                                    if brand:
-                                        brand_name = brand.brand_name
-                                    else:
-                                        brand_name = None
-
-                                    item_data = {
-                                        "category_id": category.category_id,
-                                        "category_name": category.category_name,
-                                        "product_id": variant.product_id,
-                                        "product_name": product.product_name,
-                                        "brand_name": brand_name,
-                                        "brand_id": product.brand_id,
-                                        "variant_id": variant_id,
-                                        "cost": variant.cost,
-                                        "quantity": variant.quantity,
-                                        "discount_percent": variant.discount_percent,
-                                        "stock": stock_count,
-                                        "stock_id": variant.stock_id,
-                                        "product_description": product.product_description,
-                                        "images": variant.images,
-                                        "unit": variant.unit,
-                                        "barcode": variant.barcode,
-                                        "draft": variant.draft,
-                                        "restock_reminder": variant.restock_reminder,
-                                        "count": count}
-                                    ordr_data["items_ordered"].append(item_data)
-                            orders_list.append(ordr_data)
-
-                        return {"status": 200, "data": orders_list, "message": "success"}
+                        return {"status": 200, "data": get_all_orders, "message": "success"}
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong order tabel"}
-                    except Exception as e:
-                        return {"status": 204, "data": {}, "message": f"{e}"}
 
                 else:
                     return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
@@ -987,6 +990,66 @@ def edit_category(editCategory: schemas.Categories, companyId: str, userId: str,
                                 db.commit()
                                 return {"status": 200, "data": {}, "message": "Successfully"}
 
+                        else:
+                            return {"status": 204, "data": {}, "message": "Incorrect category id"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Table doesn't exist"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.delete('/v1/{userId}/{companyId}/{branchId}/deleteCategory')
+def edit_category(deleteCategory: schemas.DeleteCategory, companyId: str, userId: str, branchId: str,
+                  db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        category_table = Table(f"{table_name}_categories", metadata, autoload_with=db.bind)
+                        products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
+                        category = db.query(category_table).filter(
+                            category_table.c.category_id == deleteCategory.category_id).first()
+                        if category:
+                            products = db.query(products_table).filter(
+                                products_table.c.product_id == deleteCategory.category_id).all()
+                            resign_category_name = 'uncategorized'
+                            resign_category = db.query(category_table).filter(
+                                category_table.c.category_name == resign_category_name).first()
+                            if resign_category:
+                                new_category_id = resign_category.category_id
+                            else:
+                                category_added = insert(category_table).returning(category_table)
+                                new_category_id = db.execute(category_added,
+                                                             {"category_name": resign_category_name}).fetchone()[0]
+                                db.commit()
+
+                            for product in products:
+                                product.category_id = new_category_id
+
+                            delete_category = delete(category_table).where(
+                                category_table.c.category_id.in_([deleteCategory.category_id]))
+
+                            db.execute(delete_category)
+                            db.commit()
                         else:
                             return {"status": 204, "data": {}, "message": "Incorrect category id"}
 
