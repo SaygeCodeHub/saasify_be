@@ -664,6 +664,7 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
                     table_name = f"{companyId}_{branchId}"
                     try:
                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
+                        inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
                         for variant in deleteVariants.variant_ids:
                             variant_exists = db.query(variant_table).filter(
                                 variant_table.c.variant_id == variant).first()
@@ -672,8 +673,11 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
 
                         delete_variants = delete(variant_table).where(
                             variant_table.c.variant_id.in_(deleteVariants.variant_ids))
+                        delete_stock = delete(inventory_table).where(
+                            inventory_table.c.variant_id.in_(deleteVariants.variant_ids))
 
                         db.execute(delete_variants)
+                        db.execute(delete_stock)
                         db.commit()
                         products_table = Table(table_name + "_products", metadata, autoload_with=db.bind)
                         variant_table = Table(table_name + "_variants", metadata, autoload_with=db.bind)
@@ -965,7 +969,8 @@ def edit_category(editCategory: schemas.Categories, companyId: str, userId: str,
                         category = db.query(category_table).filter(
                             category_table.c.category_id == editCategory.category_id).first()
                         category_name_exists = db.query(category_table).filter(
-                            category_table.c.category_name == editCategory.category_name).first()
+                            category_table.c.category_name == editCategory.category_name).filter(
+                            category_table.c.category_id != editCategory.category_id).first()
                         if category:
                             if category_name_exists:
                                 return {"status": 204, "data": {},
