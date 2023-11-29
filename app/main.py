@@ -15,6 +15,7 @@ from starlette.responses import JSONResponse
 from . import models, schemas
 from .database import engine, get_db
 from .routes import authentication, on_boarding
+from .routes.authentication import get_all_branches
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
@@ -1126,6 +1127,29 @@ def get_profile(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
                     }}
                 else:
                     return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.get('/v1/{userId}/{companyId}/getAllBranches')
+def get_branches(companyId: str, userId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branches = get_all_branches(companyId, db)
+                return {'status': 200, "message": "success", "data": branches}
+
             except sqlalchemy.exc.NoSuchTableError:
                 return {"status": 204, "data": {}, "message": "Wrong branch table"}
             except Exception as e:

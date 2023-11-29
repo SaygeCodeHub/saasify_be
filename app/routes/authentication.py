@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, MetaData, Table, insert
+from sqlalchemy import and_, MetaData, Table, insert, asc
 from sqlalchemy.orm import Session
 from app import schemas, models
 from app.database import get_db
@@ -71,7 +71,7 @@ def get_all_branches(companyId: str, db=Depends(get_db)):
     metadata.reflect(bind=db.bind)
 
     branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
-    branches = db.query(branch_table).all()
+    branches = db.query(branch_table).order_by(asc(branch_table.c.branch_id)).all()
     branch_dicts = []
     for branch in branches:
         branch_dicts.append({
