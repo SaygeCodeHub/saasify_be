@@ -30,6 +30,8 @@ class Branch(BaseModel):
     branch_name: str
     branch_contact: int | None = None
     branch_address: str | None = None
+    branch_currency: str | None = None
+    branch_active: bool | None = None
 
     class Config:
         from_attributes = True
@@ -56,23 +58,6 @@ class GetBranch(BaseModel):
         from_attributes = True
 
 
-class AddVariants(BaseModel):
-    product_id: int
-    stock: int
-    barcode: int
-    cost: float
-    quantity: int
-    unit: str
-    images: List[str]
-    draft: bool
-    is_active: Optional[bool] | None = None
-    restock_reminder: int
-    discount_percent: Optional[float] | None = None
-
-    class Config:
-        from_attributes = True
-
-
 class AddProducts(BaseModel):
     product_id: Optional[int] | None = None
     category_name: str
@@ -89,6 +74,8 @@ class AddProducts(BaseModel):
     variant_active: Optional[bool] | None = None
     restock_reminder: int | None = 0
     discount_percent: float | None = 0.0
+    CGST: float | None = None
+    SGST: float | None = None
 
     class Config:
         from_attributes = True
