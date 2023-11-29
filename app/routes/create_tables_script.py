@@ -33,7 +33,7 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("category_id", BIGINT,
                ForeignKey(f"{table_name}_categories.category_id", ondelete="CASCADE"), nullable=False),
         Column("product_description", String, nullable=True),
-        Column("brand_id", BIGINT, ForeignKey(table_name + "_brands.brand_id", ondelete="CASCADE"),
+        Column("brand_id", BIGINT, ForeignKey(table_name + "_brands.brand_id"),
                nullable=True))
     Table(
         table_name + "_variants",
@@ -52,8 +52,9 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("draft", Boolean, nullable=True),
         Column("is_active", Boolean, nullable=False, server_default='TRUE'),
         Column("barcode", BIGINT, nullable=True),
-        Column("restock_reminder", BIGINT, nullable=True)
-    )
+        Column("restock_reminder", BIGINT, nullable=True),
+        Column("SGST", Float, nullable=True),
+        Column("CGST", Float, nullable=True))
     Table(
         table_name + "_inventory",
         metadata,
@@ -89,6 +90,8 @@ def create_company(companyId: str, company: schemas.CreateCompany, db):
         Column("branch_id", BIGINT, primary_key=True, autoincrement=True),
         Column("branch_name", String, nullable=False),
         Column("branch_address", String, nullable=False),
+        Column("branch_currency", String, nullable=False),
+        Column("branch_active", Boolean, nullable=False, server_default='TRUE'),
         Column("branch_contact", BIGINT, nullable=True))
     Table(
         companyId + "_employee",
@@ -105,6 +108,8 @@ def create_company(companyId: str, company: schemas.CreateCompany, db):
     inserted_id = db.execute(stmt,
                              {"branch_name": company.branch_name,
                               "branch_contact": company.branch_contact,
+                              "branch_currency": company.branch_currency,
+                              "branch_active": company.branch_active,
                               "branch_address": company.branch_address}).fetchone()[0]
     db.commit()
     if inserted_id:

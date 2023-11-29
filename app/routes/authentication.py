@@ -78,6 +78,8 @@ def get_all_branches(companyId: str, db=Depends(get_db)):
             "branch_id": branch.branch_id,
             "branch_name": branch.branch_name,
             "branch_contact": branch.branch_contact,
+            "branch_currency": branch.branch_currency,
+            "branch_active": branch.branch_active,
             "branch_address": branch.branch_address})
 
     return branch_dicts

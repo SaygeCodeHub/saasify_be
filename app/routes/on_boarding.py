@@ -18,20 +18,25 @@ router = APIRouter()
 @router.post('/v1/{userId}/addCompany')
 def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depends(get_db)):
     try:
-        user_exists = db.query(models.Users).get(
-            userId)
+        user_exists = db.query(models.Users).filter(models.Users.user_id == userId).first()
+
         if user_exists:
-            company.owner = userId
-            new_company = models.Companies(company_name=company.company_name,
-                                           company_domain=company.company_domain, owner=company.owner)
-            db.add(new_company)
-            db.commit()
-            db.refresh(new_company)
-            user_company = models.UserCompany(user_id=userId, company_id=new_company.company_id)
-            db.add(user_company)
-            db.commit()
-            company_id = new_company.company_id
-            create_company(company_id, company, db)
+            try:
+                company.owner = userId
+                new_company = models.Companies(company_name=company.company_name,
+                                               company_domain=company.company_domain, owner=company.owner)
+                db.add(new_company)
+                db.commit()
+                db.refresh(new_company)
+                user_company = models.UserCompany(user_id=userId, company_id=new_company.company_id)
+                db.add(user_company)
+                db.commit()
+                company_id = new_company.company_id
+                create_company(company_id, company, db)
+                return {"status": 200, "message": "Company added successfully", "data": {}}
+
+            except:
+                return {"status": 200, "message": "Something when wrong", "data": {}}
 
         return {"status": 204, "message": "User doesn't exist", "data": user_exists}
 
@@ -51,6 +56,8 @@ def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Dep
             inserted_id = db.execute(stmt,
                                      {"branch_name": createBranch.branch_name,
                                       "branch_contact": createBranch.branch_contact,
+                                      "branch_currency": createBranch.branch_currency,
+                                      "branch_active": createBranch.branch_active,
                                       "branch_address": createBranch.branch_address}).fetchone()[0]
             db.commit()
             if inserted_id:

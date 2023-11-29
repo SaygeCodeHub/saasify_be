@@ -178,6 +178,8 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                                              "images": createProduct.images,
                                                              "draft": createProduct.draft,
                                                              "barcode": createProduct.barcode,
+                                                             "SGST": createProduct.SGST,
+                                                             "CGST": createProduct.CGST,
                                                              "restock_reminder": createProduct.restock_reminder}).fetchone()[
                                         0]
                                     stock_update = update(stock_table).values(stock=createProduct.stock,
@@ -204,6 +206,8 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                                 "draft": createProduct.draft,
                                                 "is_active": createProduct.is_active,
                                                 "barcode": createProduct.barcode,
+                                                "SGST": createProduct.SGST,
+                                                "CGST": createProduct.CGST,
                                                 "restock_reminder": createProduct.restock_reminder})
                                     db.commit()
                                     return {"status": 200, "data": {"category_name": createProduct.category_name,
@@ -244,7 +248,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             try:
                 branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
 
-                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId)
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
                 if branch:
                     table_name = companyId + "_" + branchId
                     try:
@@ -276,7 +280,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             try:
                 branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
 
-                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId)
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
                 if branch:
                     table_name = companyId + "_" + branchId
                     try:
@@ -327,8 +331,10 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                     "unit": variant.unit,
                                     "variant_active": variant.is_active,
                                     "barcode": variant.barcode, "draft": variant.draft,
-                                    "restock_reminder": variant.restock_reminder
-                                })
+                                    "restock_reminder": variant.restock_reminder,
+                                    "SGST": variant.SGST if variant.SGST else 0.0,
+                                    "CGST": variant.CGST if variant.CGST else 0.0,
+                                    "currency": branch.branch_currency})
 
                         return {"status": 200, "data": products_data, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
@@ -352,7 +358,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             try:
                 branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
 
-                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId)
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
                 if branch:
                     table_name = companyId + "_" + branchId
                     try:
@@ -401,6 +407,9 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                             "images": variant.images,
                                             "unit": variant.unit,
                                             "barcode": variant.barcode, "draft": variant.draft,
+                                            "currency": branch.branch_currency,
+                                            "SGST": variant.SGST if variant.SGST else 0.0,
+                                            "CGST": variant.CGST if variant.CGST else 0.0,
                                             "restock_reminder": variant.restock_reminder})
 
                         return {"status": 200, "data": products, "message": "get all products"}
@@ -425,7 +434,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             try:
                 branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
 
-                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId)
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
                 if branch:
                     table_name = companyId + "_" + branchId
                     try:
@@ -485,7 +494,10 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                             "unit": variant.unit,
                                             "barcode": variant.barcode,
                                             "restock_reminder": variant.restock_reminder,
-                                            "draft": variant.draft}
+                                            "draft": variant.draft,
+                                            "SGST": variant.SGST if variant.SGST else 0.0,
+                                            "CGST": variant.CGST if variant.CGST else 0.0,
+                                            "currency": branch.branch_currency}
                                         product_data["variants"].append(variant_data)
                                     category_data["products"].append(product_data)
                             response_data.append(category_data)
@@ -586,6 +598,8 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
                                                                                   draft=createProduct.draft,
                                                                                   barcode=createProduct.barcode,
                                                                                   restock_reminder=createProduct.restock_reminder,
+                                                                                  SGST=createProduct.SGST,
+                                                                                  CGST=createProduct.CGST,
                                                                                   is_active=createProduct.variant_active)
                                     db.execute(variant_update.where(
                                         variant_table.c.variant_id == createProduct.variant_id))
@@ -617,6 +631,8 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
                                                              "images": createProduct.images,
                                                              "draft": createProduct.draft,
                                                              "barcode": createProduct.barcode,
+                                                             "SGST": createProduct.SGST,
+                                                             "CGST": createProduct.CGST,
                                                              "restock_reminder": createProduct.restock_reminder}).fetchone()[
                                         0]
                                     stock_update = update(inventory_table).values(stock=createProduct.stock,
@@ -834,6 +850,8 @@ def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branch
                                                 "barcode": variant.barcode,
                                                 "draft": variant.draft,
                                                 "restock_reminder": variant.restock_reminder,
+                                                "SGST": variant.SGST if variant.SGST else 0.0,
+                                                "CGST": variant.CGST if variant.CGST else 0.0,
                                                 "count": count}
                                         order_items.append(item)
 
@@ -930,7 +948,8 @@ def get_orders(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
                                 "discount_total": order.discount_total if order.discount_total is not None else 0.0,
                                 "total_amount": order.total_amount,
                                 "subtotal": order.subtotal,
-                                "items_ordered": order.items_ordered
+                                "items_ordered": order.items_ordered,
+                                "currency": branch.branch_currency
                             })
 
                         return {"status": 200, "data": get_all_orders, "message": "success"}
@@ -1030,7 +1049,7 @@ def edit_category(deleteCategory: schemas.DeleteCategory, companyId: str, userId
                             category_table.c.category_id == deleteCategory.category_id).first()
                         if category:
                             products = db.query(products_table).filter(
-                                products_table.c.product_id == deleteCategory.category_id).all()
+                                products_table.c.category_id == deleteCategory.category_id).all()
                             resign_category_name = 'uncategorized'
                             resign_category = db.query(category_table).filter(
                                 category_table.c.category_name == resign_category_name).first()
@@ -1043,18 +1062,68 @@ def edit_category(deleteCategory: schemas.DeleteCategory, companyId: str, userId
                                 db.commit()
 
                             for product in products:
-                                product.category_id = new_category_id
+                                product_id = product.product_id
+                                update_product = update(products_table).values(category_id=new_category_id,
+                                                                               brand_id=product.brand_id,
+                                                                               product_name=product.product_name,
+                                                                               product_description=product.product_description)
+                                db.execute(update_product.where(products_table.c.product_id == product_id))
+                                db.commit()
 
-                            delete_category = delete(category_table).where(
-                                category_table.c.category_id.in_([deleteCategory.category_id]))
-
-                            db.execute(delete_category)
-                            db.commit()
+                            # delete_category = delete(category_table).where(
+                            #     category_table.c.category_id.in_([deleteCategory.category_id]))
+                            #
+                            # db.execute(delete_category)
+                            # db.commit()
                         else:
                             return {"status": 204, "data": {}, "message": "Incorrect category id"}
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Table doesn't exist"}
+                    # except Exception as e:
+                    #     return {"status": 204, "data": {}, "message": f"{e}"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            # except Exception as e:
+            #     return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.get('/v1/{userId}/{companyId}/{branchId}/getProfile')
+def get_profile(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    if company.owner == user.user_id:
+                        owner_name = user.user_name
+                        owner_contact = user.user_contact
+                    else:
+                        owner = db.query(models.Users).filter(models.Users.user_id == company.owner).first()
+                        owner_name = owner.user_name
+                        owner_contact = owner.user_contact
+
+                    return {"status": 200, "message": "Success", "data": {
+                        "store_logo": company.company_logo if company.company_logo else "",
+                        "store_name": company.company_name,
+                        "owner_name": owner_name,
+                        "owner_contact": owner_contact,
+                        "email": "",
+                        "address": branch.branch_address
+                    }}
                 else:
                     return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
             except sqlalchemy.exc.NoSuchTableError:
