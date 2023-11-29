@@ -290,7 +290,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
                         inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
 
-                        products_list = db.query(product_table).all()
+                        products_list = db.query(product_table).order_by(asc(product_table.c.product_id)).all()
                         products_data = []
                         for product in products_list:
                             category = db.query(category_table).filter(
@@ -368,7 +368,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                         brand_table = Table(table_name + "_brands", metadata, autoload_with=db.bind)
                         inventory_table = Table(table_name + "_inventory", metadata, autoload_with=db.bind)
 
-                        variants = db.query(variants_table).all()
+                        variants = db.query(variants_table).order_by(asc(variants_table.c.variant_id)).all()
                         products = []
                         for variant in variants:
                             product = db.query(product_table).filter(
