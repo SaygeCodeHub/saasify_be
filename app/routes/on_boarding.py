@@ -36,7 +36,7 @@ def add_company(company: schemas.CreateCompany, userId: str, db: Session = Depen
                 return {"status": 200, "message": "Company added successfully", "data": {}}
 
             except:
-                return {"status": 200, "message": "Something when wrong", "data": {}}
+                return {"status": 204, "message": "Something when wrong", "data": {}}
 
         return {"status": 204, "message": "User doesn't exist", "data": user_exists}
 

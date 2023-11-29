@@ -31,7 +31,7 @@ class Branch(BaseModel):
     branch_contact: int | None = None
     branch_address: str | None = None
     branch_currency: str | None = None
-    branch_active: bool | None = None
+    branch_active: bool | None = True
 
     class Config:
         from_attributes = True
