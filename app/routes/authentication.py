@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, MetaData, Table, insert, asc
+from sqlalchemy import and_, MetaData, Table, asc
 from sqlalchemy.orm import Session
 from app import schemas, models
 from app.database import get_db
@@ -36,6 +36,7 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
             company_data = db.query(models.Companies).filter(
                 and_(models.Companies.company_id == models.Companies.company_id,
                      models.Companies.company_id == company.company_id)).first()
+            owner = True if company_data.owner == authentication.user_id else False
 
             companies.append({
                 "company_id": company_data.company_id,
@@ -45,8 +46,9 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
                 "services": company_data.services if company_data.services is not None else "",
                 "company_logo": company_data.company_logo if company_data.company_logo is not None else "",
                 "onboarding_date": company_data.onboarding_date,
-                "is_owner": True if company_data.owner == authentication.user_id else False,
-                "branches": get_all_branches(company_data.company_id, db)})
+                "is_owner": owner,
+                "role": [0] if company_data.owner == authentication.user_id else [1],
+                "branches": get_all_branches(owner, company_data.company_id, db)})
         if authentication.user_name == "":
             return {"status": 200, "message": "User successfully Authenticated",
                     "data": {"user": {"user_name": user_exists.user_name, "user_id": user_exists.user_id,
@@ -67,7 +69,7 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
         return {"status": 500, "message": "Database connection failed", "data": {"user": {}, "companies": []}}
 
 
-def get_all_branches(companyId: str, db=Depends(get_db)):
+def get_all_branches(owner: bool, companyId: str, db=Depends(get_db)):
     metadata.reflect(bind=db.bind)
 
     branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
@@ -80,6 +82,8 @@ def get_all_branches(companyId: str, db=Depends(get_db)):
             "branch_contact": branch.branch_contact,
             "branch_currency": branch.branch_currency,
             "branch_active": branch.branch_active,
-            "branch_address": branch.branch_address})
+            "branch_address": branch.branch_address,
+            "role": [0] if owner else [1]
+        })
 
     return branch_dicts

@@ -76,7 +76,8 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("payment_status", String, nullable=False),
         Column("payment_type", String, nullable=False),
         Column("customer_contact", BIGINT, nullable=False),
-        Column("customer_name", String, nullable=True))
+        Column("customer_name", String, nullable=True),
+        Column("gst", String, nullable=True))
 
     metadata.create_all(engine)
 
@@ -102,6 +103,7 @@ def create_company(companyId: str, company: schemas.CreateCompany, db):
         Column("employee_password", String, nullable=False),
         Column("employee_gender", String, nullable=True),
         Column("employee_branch_id", BIGINT, nullable=True))
+
     metadata.create_all(engine)
     branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
     stmt = insert(branch_table).returning(branch_table.c.branch_id)

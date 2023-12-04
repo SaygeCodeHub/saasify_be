@@ -918,7 +918,7 @@ def get_orders(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
                         orders = db.query(order_table).order_by(desc(order_table.c.order_id)).all()
                         total_earning = db.query(func.sum(order_table.c.total_amount)).scalar()
                         total_order_count = len(orders)
-                        unpaid_orders = len(db.query(order_table).filter(order_table.c.payment_status == 'paid').all())
+                        unpaid_orders = len(db.query(order_table).filter(order_table.c.payment_status != 'paid').all())
                         payment_method_counts = db.query(order_table.c.payment_type,
                                                          func.count().label('count')).group_by(
                             order_table.c.payment_type).all()
@@ -1194,7 +1194,7 @@ def get_branches(companyId: str, userId: str, db=Depends(get_db)):
         if company:
             metadata.reflect(bind=db.bind)
             try:
-                branches = get_all_branches(companyId, db)
+                branches = get_all_branches(True, companyId, db)
                 return {'status': 200, "message": "success", "data": branches}
 
             except sqlalchemy.exc.NoSuchTableError:
