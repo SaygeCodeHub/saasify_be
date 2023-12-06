@@ -37,6 +37,17 @@ class Branch(BaseModel):
         from_attributes = True
 
 
+class EditBranch(BaseModel):
+    branch_name: str
+    branch_contact: int | None = None
+    branch_address: str | None = None
+    branch_currency: str | None = None
+    branch_active: bool | None = True
+
+    class Config:
+        from_attributes = True
+
+
 class CreateCompany(Companies, Branch):
     pass
 
@@ -145,3 +156,19 @@ class BookOrder(BaseModel):
     discount_total: float | None = None
     total_amount: float
     subtotal: float
+
+
+class AddEmployee(BaseModel):
+    employee_id: Optional[int] | None = None
+    company_id: int
+    branch_id: int
+    employee_name: str
+    employee_contact: int
+    email: str
+    employee_gender: str
+    DOJ: date
+    DOB: date
+    type: str
+    role: List[int]
+
+

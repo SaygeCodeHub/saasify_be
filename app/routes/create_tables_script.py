@@ -118,3 +118,5 @@ def create_company(companyId: str, company: schemas.CreateCompany, db):
         create_branch(companyId, inserted_id, db)
     else:
         return {"status": 204, "message": "Please enter valid data", "data": {}}
+
+

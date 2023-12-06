@@ -9,7 +9,9 @@ from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, insert, update, delete, desc, asc, func
+from sqlalchemy import MetaData, Table, insert, update, delete, desc, asc, func, Column, BIGINT, String, insert, \
+    ForeignKey, Double, JSON, Boolean, text, \
+    TIMESTAMP, Float
 from starlette.responses import JSONResponse
 
 from . import models, schemas
@@ -878,7 +880,7 @@ def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branch
                                                "subtotal": bookOrder.subtotal}).fetchone()[0]
                         db.commit()
 
-                        return {"status": 200, "data": {"order_id": order_id}, "message": "success"}
+                        return {"status": 200, "data": {}, "message": "success"}
 
                     except sqlalchemy.exc.NoSuchTableError:
                         return {"status": 204, "data": {}, "message": "Wrong variant tabel"}
@@ -974,7 +976,7 @@ def get_orders(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-@app.put('/v1/{userId}/{companyId}/{branchId}/addCategory')
+@app.post('/v1/{userId}/{companyId}/{branchId}/addCategory')
 def add_category(addCategory: schemas.Categories, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
@@ -1077,8 +1079,8 @@ def edit_category(editCategory: schemas.Categories, companyId: str, userId: str,
 
 
 @app.delete('/v1/{userId}/{companyId}/{branchId}/deleteCategory')
-def edit_category(deleteCategory: schemas.DeleteCategory, companyId: str, userId: str, branchId: str,
-                  db=Depends(get_db)):
+def delete_category(deleteCategory: schemas.DeleteCategory, companyId: str, userId: str, branchId: str,
+                    db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
         company = db.query(models.Companies).get(companyId)
@@ -1096,33 +1098,37 @@ def edit_category(deleteCategory: schemas.DeleteCategory, companyId: str, userId
                         category = db.query(category_table).filter(
                             category_table.c.category_id == deleteCategory.category_id).first()
                         if category:
-                            products = db.query(products_table).filter(
-                                products_table.c.category_id == deleteCategory.category_id).all()
-                            resign_category_name = 'uncategorized'
-                            resign_category = db.query(category_table).filter(
-                                category_table.c.category_name == resign_category_name).first()
-                            if resign_category:
-                                new_category_id = resign_category.category_id
+                            if category.category_name == 'uncategorized':
+                                return {"status": 204, "data": {}, "message": "Cannot delete this category"}
                             else:
-                                category_added = insert(category_table).returning(category_table)
-                                new_category_id = db.execute(category_added,
-                                                             {"category_name": resign_category_name}).fetchone()[0]
+                                products = db.query(products_table).filter(
+                                    products_table.c.category_id == deleteCategory.category_id).all()
+                                resign_category_name = 'uncategorized'
+                                resign_category = db.query(category_table).filter(
+                                    category_table.c.category_name == resign_category_name).first()
+                                if resign_category:
+                                    new_category_id = resign_category.category_id
+                                else:
+                                    category_added = insert(category_table).returning(category_table)
+                                    new_category_id = db.execute(category_added,
+                                                                 {"category_name": resign_category_name}).fetchone()[0]
+                                    db.commit()
+
+                                for product in products:
+                                    product_id = product.product_id
+                                    update_product = update(products_table).values(category_id=new_category_id,
+                                                                                   brand_id=product.brand_id,
+                                                                                   product_name=product.product_name,
+                                                                                   product_description=product.product_description)
+                                    db.execute(update_product.where(products_table.c.product_id == product_id))
+                                    db.commit()
+
+                                delete_category = delete(category_table).where(
+                                    category_table.c.category_id.in_([deleteCategory.category_id]))
+
+                                db.execute(delete_category)
                                 db.commit()
-
-                            for product in products:
-                                product_id = product.product_id
-                                update_product = update(products_table).values(category_id=new_category_id,
-                                                                               brand_id=product.brand_id,
-                                                                               product_name=product.product_name,
-                                                                               product_description=product.product_description)
-                                db.execute(update_product.where(products_table.c.product_id == product_id))
-                                db.commit()
-
-                            delete_category = delete(category_table).where(
-                                category_table.c.category_id.in_([deleteCategory.category_id]))
-
-                            db.execute(delete_category)
-                            db.commit()
+                                return {"status": 200, "data": {}, "message": "Category deleted successfully"}
                         else:
                             return {"status": 204, "data": {}, "message": "Incorrect category id"}
 
@@ -1201,6 +1207,43 @@ def get_branches(companyId: str, userId: str, db=Depends(get_db)):
                 return {"status": 204, "data": {}, "message": "Wrong branch table"}
             except Exception as e:
                 return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.put('/v1/{userId}/{companyId}/editBranch')
+def edit_branch(companyId: str, userId: str, editBranch: schemas.Branch, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+                branch = db.query(branch_table).filter(
+                    branch_table.c.branch_id == editBranch.branch_id).first()
+                if branch:
+                    update_branch = update(branch_table).values(
+                        branch_name=editBranch.branch_name,
+                        branch_contact=editBranch.branch_contact,
+                        branch_address=editBranch.branch_address,
+                        branch_currency=editBranch.branch_currency,
+                        branch_active=editBranch.branch_active)
+                    db.execute(update_branch.where(branch_table.c.branch_id == editBranch.branch_id))
+                    db.commit()
+                    return {"status": 200, "data": {}, "message": "Successfully"}
+
+                else:
+                    return {"status": 204, "data": {}, "message": "Incorrect category id"}
+
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            # except Exception as e:
+            #     return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}
