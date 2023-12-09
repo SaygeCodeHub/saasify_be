@@ -1001,7 +1001,8 @@ def add_category(addCategory: schemas.Categories, companyId: str, userId: str, b
 
                         else:
                             category_added = insert(category_table).returning(category_table.c.category_id)
-                            db.execute(category_added, {"category_name": addCategory.category_name})
+                            db.execute(category_added,
+                                       {"category_name": addCategory.category_name, "is_active": addCategory.is_active})
                             db.commit()
 
                             return {"status": 200, "data": {}, "message": "Successfully"}
@@ -1052,7 +1053,6 @@ def edit_category(editCategory: schemas.Categories, companyId: str, userId: str,
                                 category_id = editCategory.category_id
                                 update_category = update(category_table).values(
                                     category_name=editCategory.category_name,
-                                    category_id=category_id,
                                     is_active=editCategory.is_active)
                                 db.execute(update_category.where(
                                     category_table.c.category_id == category_id))
@@ -1123,10 +1123,10 @@ def delete_category(deleteCategory: schemas.DeleteCategory, companyId: str, user
                                     db.execute(update_product.where(products_table.c.product_id == product_id))
                                     db.commit()
 
-                                delete_category = delete(category_table).where(
+                                deleting_category = delete(category_table).where(
                                     category_table.c.category_id.in_([deleteCategory.category_id]))
 
-                                db.execute(delete_category)
+                                db.execute(deleting_category)
                                 db.commit()
                                 return {"status": 200, "data": {}, "message": "Category deleted successfully"}
                         else:
@@ -1242,8 +1242,194 @@ def edit_branch(companyId: str, userId: str, editBranch: schemas.Branch, db=Depe
 
             except sqlalchemy.exc.NoSuchTableError:
                 return {"status": 204, "data": {}, "message": "Wrong branch table"}
-            # except Exception as e:
-            #     return {"status": 204, "data": {}, "message": f"{e}"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.post('/v1/{userId}/{companyId}/{branchId}/addPaymentMethod')
+def add_category(addPaymentType: schemas.Payment, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        payment_table = Table(f"{table_name}_payments", metadata, autoload_with=db.bind)
+
+                        payment_name_exists = db.query(payment_table).filter(
+                            payment_table.c.payment_name == addPaymentType.payment_name).first()
+
+                        if payment_name_exists:
+                            return {"status": 204, "data": {},
+                                    "message": f"Payment Method with {addPaymentType.category_name} already exists"}
+
+                        else:
+                            payment_added = insert(payment_table).returning(payment_table.c.payment_id)
+                            db.execute(payment_added, {"payment_name": addPaymentType.payment_name,
+                                                       "is_active": addPaymentType.is_active})
+                            db.commit()
+
+                            return {"status": 200, "data": {}, "message": "Successfully"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Table doesn't exist"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.put('/v1/{userId}/{companyId}/{branchId}/editPaymentMethod')
+def edit_category(editPayment: schemas.Payment, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        payment_table = Table(f"{table_name}_payments", metadata, autoload_with=db.bind)
+
+                        payment = db.query(payment_table).filter(
+                            payment_table.c.payment_id == editPayment.payment_id).first()
+                        payment_method_exists = db.query(payment_table).filter(
+                            payment_table.c.payment_name == editPayment.payment_name).filter(
+                            payment_table.c.payment_id != editPayment.payment_id).first()
+                        if payment:
+                            if payment_method_exists:
+                                return {"status": 204, "data": {},
+                                        "message": f"Payment with {editPayment.payment_name} already exists"}
+
+                            else:
+                                payment_id = editPayment.payment_id
+                                update_payment = update(payment_table).values(
+                                    payment_name=editPayment.payment_name,
+                                    is_active=editPayment.is_active)
+                                db.execute(update_payment.where(
+                                    payment_table.c.payment_id == payment_id))
+                                db.commit()
+                                return {"status": 200, "data": {}, "message": "Successfully"}
+
+                        else:
+                            return {"status": 204, "data": {}, "message": "Incorrect category id"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Table doesn't exist"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.delete('/v1/{userId}/{companyId}/{branchId}/deletePaymentMethod')
+def delete_payment(deletePayment: schemas.DeletePayment, companyId: str, userId: str, branchId: str,
+                   db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        payment_table = Table(f"{table_name}_payments", metadata, autoload_with=db.bind)
+                        payment = db.query(payment_table).filter(
+                            payment_table.c.payment_id == deletePayment.payment_id).first()
+                        if payment:
+                            deleting_payment = delete(payment_table).where(
+                                payment_table.c.payment_id.in_([deletePayment.payment_id]))
+
+                            db.execute(deleting_payment)
+                            db.commit()
+                            return {"status": 200, "data": {}, "message": "Payment Method deleted successfully"}
+                        else:
+                            return {"status": 204, "data": {}, "message": "Incorrect payment id"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Table doesn't exist"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
+
+        else:
+            return {"status": 204, "data": {}, "message": "Wrong Company"}
+
+    else:
+        return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@app.get('/v1/{userId}/{companyId}/{branchId}/getAllPaymentMethods')
+def get_all_payment_methods(companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+    user = db.query(models.Users).get(userId)
+    if user:
+        company = db.query(models.Companies).get(companyId)
+        if company:
+            metadata.reflect(bind=db.bind)
+            try:
+                branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
+
+                branch = db.query(branch_table).filter(branch_table.c.branch_id == branchId).first()
+                if branch:
+                    table_name = f"{companyId}_{branchId}"
+                    try:
+                        payment_table = Table(f"{table_name}_payments", metadata, autoload_with=db.bind)
+                        payments = db.query(payment_table).order_by(asc(payment_table.c.payment_id)).all()
+                        return schemas.GetAllPaymentMethods(status=200, data=payments, message="Success")
+
+                        # {"status": 200, "data": payments, "message": "Success"}
+
+                    except sqlalchemy.exc.NoSuchTableError:
+                        return {"status": 204, "data": {}, "message": "Table doesn't exist"}
+                    except Exception as e:
+                        return {"status": 204, "data": {}, "message": f"{e}"}
+                else:
+                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+            except sqlalchemy.exc.NoSuchTableError:
+                return {"status": 204, "data": {}, "message": "Wrong branch table"}
+            except Exception as e:
+                return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.routes.create_tables_script import create_company, create_branch
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, insert
+from sqlalchemy import MetaData, Table, insert, Column, BIGINT, String, Boolean
 
 from app import models, schemas
 from app.database import engine
@@ -70,3 +70,18 @@ def add_branch(createBranch: schemas.Branch, companyId: str, userId: str, db=Dep
 
     else:
         return {"status": 204, "message": "Un Authorized", "data": {}}
+
+
+@router.post('/v1/createTable')
+def add_branch(tableName: str, db=Depends(get_db)):
+    meta_data = MetaData()
+    meta_data.reflect(bind=db.bind)
+    Table(
+        tableName + "_payments",
+        meta_data,
+        Column("payment_id", BIGINT, primary_key=True, autoincrement=True),
+        Column("payment_name", String, nullable=False, unique=True),
+        Column("is_active", Boolean, nullable=False, server_default='TRUE'))
+
+    meta_data.create_all(engine)
+

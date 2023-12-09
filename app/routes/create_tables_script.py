@@ -21,6 +21,12 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("category_name", String, nullable=False, unique=True),
         Column("is_active", Boolean, nullable=False, server_default='TRUE'))
     Table(
+        table_name + "_payments",
+        metadata,
+        Column("payment_id", BIGINT, primary_key=True, autoincrement=True),
+        Column("payment_name", String, nullable=False, unique=True),
+        Column("is_active", Boolean, nullable=False, server_default='TRUE'))
+    Table(
         table_name + "_brands",
         metadata,
         Column("brand_id", BIGINT, primary_key=True, autoincrement=True),

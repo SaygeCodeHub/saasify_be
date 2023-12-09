@@ -108,8 +108,17 @@ class DeleteVariants(BaseModel):
 
 
 class Categories(BaseModel):
-    category_id: int
+    category_id: Optional[int] | None = None
     category_name: str
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class Payment(BaseModel):
+    payment_id: Optional[int] | None = None
+    payment_name: str
     is_active: bool
 
     class Config:
@@ -123,9 +132,25 @@ class DeleteCategory(BaseModel):
         from_attributes = True
 
 
+class DeletePayment(BaseModel):
+    payment_id: int
+
+    class Config:
+        from_attributes = True
+
+
 class GetAllCategories(BaseModel):
     status: int
     data: List[Categories]
+    message: str
+
+    class Config:
+        from_attributes = True
+
+
+class GetAllPaymentMethods(BaseModel):
+    status: int
+    data: List[Payment]
     message: str
 
     class Config:
@@ -170,5 +195,3 @@ class AddEmployee(BaseModel):
     DOB: date
     type: str
     role: List[int]
-
-
