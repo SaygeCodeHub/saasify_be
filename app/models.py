@@ -50,17 +50,3 @@ class UserCompany(Base):
     id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
     user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
     company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
-
-
-class Branches(Base):
-    __tablename__ = 'branches'
-
-    branch_id = Column(BIGINT, primary_key=True, autoincrement=True)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
-    branch_name = Column(String, nullable=False)
-    branch_address = Column(String, nullable=False)
-    branch_currency = Column(String, nullable=False)
-    branch_active = Column(Boolean, nullable=False, server_default='TRUE')
-    branch_contact = Column(BIGINT, nullable=True)
-
-    company = relationship("Companies")

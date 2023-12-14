@@ -10,8 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
 from sqlalchemy import MetaData, Table, insert, update, delete, desc, asc, func, Column, BIGINT, String, insert, \
-    ForeignKey, Double, JSON, Boolean, text, \
-    TIMESTAMP, Float
+    ForeignKey, Double, JSON, Boolean, text, TIMESTAMP, Float
 from starlette.responses import JSONResponse
 
 from . import models, schemas
@@ -390,30 +389,28 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                                 stock = db.query(inventory_table).filter(
                                     inventory_table.c.stock_id == variant.stock_id).first()
                                 stock_count = stock.stock
-                            if category.is_active:
-                                if not variant.draft:
-                                    if variant.is_active:
-                                        products.append({
-                                            "category_id": category.category_id,
-                                            "category_name": category.category_name,
-                                            "product_id": variant.product_id,
-                                            "product_name": product.product_name,
-                                            "brand_name": brand_name,
-                                            "brand_id": product.brand_id,
-                                            "variant_id": variant.variant_id,
-                                            "cost": variant.cost,
-                                            "quantity": variant.quantity,
-                                            "discount_percent": variant.discount_percent,
-                                            "stock": stock_count,
-                                            "stock_id": variant.stock_id,
-                                            "product_description": product.product_description,
-                                            "images": variant.images,
-                                            "unit": variant.unit,
-                                            "barcode": variant.barcode, "draft": variant.draft,
-                                            "currency": branch.branch_currency,
-                                            "SGST": variant.SGST if variant.SGST else 0.0,
-                                            "CGST": variant.CGST if variant.CGST else 0.0,
-                                            "restock_reminder": variant.restock_reminder})
+                            if not variant.draft:
+                                products.append({
+                                    "category_id": category.category_id,
+                                    "category_name": category.category_name,
+                                    "product_id": variant.product_id,
+                                    "product_name": product.product_name,
+                                    "brand_name": brand_name,
+                                    "brand_id": product.brand_id,
+                                    "variant_id": variant.variant_id,
+                                    "cost": variant.cost,
+                                    "quantity": variant.quantity,
+                                    "discount_percent": variant.discount_percent,
+                                    "stock": stock_count,
+                                    "stock_id": variant.stock_id,
+                                    "product_description": product.product_description,
+                                    "images": variant.images,
+                                    "unit": variant.unit,
+                                    "barcode": variant.barcode, "draft": variant.draft,
+                                    "currency": branch.branch_currency,
+                                    "SGST": variant.SGST if variant.SGST else 0.0,
+                                    "CGST": variant.CGST if variant.CGST else 0.0,
+                                    "restock_reminder": variant.restock_reminder})
 
                         return {"status": 200, "data": products, "message": "get all products"}
                     except sqlalchemy.exc.NoSuchTableError:
