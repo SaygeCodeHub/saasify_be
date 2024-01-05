@@ -7,6 +7,7 @@ from .database import Base
 
 class Companies(Base):
     __tablename__ = "companies"
+    __table_args__ = {'extend_existing': True}
 
     company_id = Column(String, nullable=False, primary_key=True, unique=True,
                         server_default=text("EXTRACT(EPOCH FROM NOW())::BIGINT"))
@@ -28,6 +29,7 @@ class Companies(Base):
 
 class Users(Base):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     user_id = Column(String, primary_key=True, nullable=False, unique=True)
     user_name = Column(String, nullable=False)
@@ -46,6 +48,7 @@ class Users(Base):
 
 class UserCompany(Base):
     __tablename__ = 'user_company'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
     user_id = Column(String, ForeignKey('users.user_id'), nullable=False)

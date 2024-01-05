@@ -9,14 +9,14 @@ from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 from passlib.context import CryptContext
-from sqlalchemy import MetaData, Table, insert, update, delete, desc, asc, func, Column, BIGINT, String, insert, \
-    ForeignKey, Double, JSON, Boolean, text, TIMESTAMP, Float
+from sqlalchemy import MetaData, Table, update, delete, desc, asc, func, insert
 from starlette.responses import JSONResponse
 
 from . import models, schemas
 from .database import engine, get_db
 from .routes import authentication, on_boarding
 from .routes.authentication import get_all_branches
+from app.v1_1 import v1_1
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
@@ -33,6 +33,7 @@ app.add_middleware(
 
 app.include_router(authentication.router)
 app.include_router(on_boarding.router)
+app.include_router(v1_1.router)
 
 UPLOAD_DIR = "app/images"
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
@@ -90,7 +91,7 @@ async def upload_images(upload_files: List[UploadFile] = File(...)):
     return JSONResponse(content=response_data)
 
 
-@app.post('/v1/{userId}/{companyId}/{branchId}/addProduct')
+@app.post('/v1{userId}/{companyId}/{branchId}/addProduct')
 def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.Users).get(userId)
     if user:
