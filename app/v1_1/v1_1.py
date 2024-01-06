@@ -1,9 +1,12 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, asc, desc, func
 from sqlalchemy.orm import Session
 from app import schemas
 from app.database import get_db, engine
 from app.v1_1 import models
+from app.v1_1.schema import AddCustomer
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
@@ -19,7 +22,7 @@ def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depen
             try:
                 add_new_user_v1_1(authentication, db)
             except Exception:
-                return {"status": 204, "message": "User is NOT registered, please sing up",
+                return {"status": 204, "message": "User is NOT registered, please sign up",
                         "data": {"user": {}, "companies": []}}
 
         company_user_data = db.query(models.UserCompanyV).filter(
@@ -1226,3 +1229,48 @@ def get_all_payment_methods(companyId: str, userId: str, branchId: str, db=Depen
 
     else:
         return {"status": 204, "data": {}, "message": "un authorized"}
+
+
+@router.post('/v1.1/addCustomer')
+def create_customer(customer: AddCustomer, db=Depends(get_db)):
+    """Adds a new customer"""
+    new_customer = models.Customer(**customer.model_dump())
+    db.add(new_customer)
+    db.commit()
+    db.refresh(new_customer)
+
+    return {"status": 200, "data": {new_customer}, "message": "Customer created successfully"}
+
+
+@router.get("/v1.1/getCustomers", response_model=List[AddCustomer])
+def get_customers(db=Depends(get_db)):
+    """Gets all the customers"""
+    customers = db.query(models.Customer).all()
+
+    return {"status": 200, "data": {customers}, "message": "Existing customers"}
+
+
+@router.get("/v1.1/getCustomer/{customer_id}", response_model=AddCustomer)
+def get_by_id(customer_id: int, db=Depends(get_db)):
+    """Gets a customer by id"""
+    customer_by_id = db.query(models.Customer).filter(models.Customer.customer_id == customer_id).first()
+
+    if customer_by_id is None:
+        return {"status": 204, "data": {}, "message": f"Customer with id {customer_id} doesnt exist"}
+
+    return {"status": 200, "data": {customer_by_id}, "message": f"Customer by id {customer_id}"}
+
+
+@router.put("/v1.1/updateCustomer/{customer_id}")
+def update_customer(customer_id: int, incoming_customer_data: AddCustomer, db=Depends(get_db)):
+    """Changes the customer activity status"""
+    customer_query = db.db.query(models.Customer).filter(models.Customer.customer_id == customer_id)
+    to_be_updated_customer = customer_query.first()
+
+    if to_be_updated_customer is None:
+        return {"status": 204, "data": {}, "message": f"Customer with id {customer_id} doesnt exist"}
+
+    updated_customer = customer_query.update(**incoming_customer_data.model_dump())
+    db.commit()
+
+    return {"status": 200, "data": {updated_customer}, "message": "Customer updated successfully."}

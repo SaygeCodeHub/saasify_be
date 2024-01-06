@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, BIGINT, Date, ForeignKey
+from sqlalchemy import Column, String, Integer, BIGINT, Date, ForeignKey
 from sqlalchemy.orm import validates, relationship
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP, Boolean
