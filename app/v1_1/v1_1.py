@@ -356,7 +356,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                             "variant_id": variant.variant_id,
                             "cost": variant.cost if variant.cost is not None else 0.0,
                             "quantity": variant.quantity,
-                            "discount_percent": variant.discount_percent if variant.discount_percent is not None else 0.0,
+                            "discount_percent": variant.discount_percent
+                            if variant.discount_percent is not None else 0.0,
                             "stock": stock_count,
                             "stock_id": variant.stock_id,
                             "product_description": product.product_description,
@@ -1263,7 +1264,7 @@ def get_by_id(customer_id: int, db=Depends(get_db)):
 
 @router.put("/v1.1/updateCustomer/{customer_id}")
 def update_customer(customer_id: int, incoming_customer_data: AddCustomer, db=Depends(get_db)):
-    """Changes the customer activity status"""
+    """Updates the customer"""
     customer_query = db.db.query(models.Customer).filter(models.Customer.customer_id == customer_id)
     to_be_updated_customer = customer_query.first()
 
