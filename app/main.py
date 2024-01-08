@@ -8,7 +8,6 @@ import sqlalchemy
 from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
-from passlib.context import CryptContext
 from sqlalchemy import MetaData, Table, update, delete, desc, asc, func, insert
 from starlette.responses import JSONResponse
 
@@ -18,7 +17,6 @@ from .routes import authentication, on_boarding
 from .routes.authentication import get_all_branches
 from app.v1_1 import v1_1
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
 metadata = MetaData()
 
