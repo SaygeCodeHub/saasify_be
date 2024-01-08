@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, BIGINT, ForeignKey, Date
+from sqlalchemy import Column, String, Integer, BIGINT, ForeignKey, Date, Enum
 from sqlalchemy.orm import validates, relationship
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP, Boolean, Float, JSON, Double
+from enum import Enum as PyEnum
 
 from app.database import Base
 
@@ -231,3 +232,22 @@ class Orders(Base):
 
     company = relationship("Companies")
     branch = relationship("Branches")
+
+
+class CustomerStatus(PyEnum):
+    ACTIVE = 1
+    INACTIVE = 0
+
+
+class Customer(Base):
+    __tablename__ = "customers"
+    __table_args__ = {'extend_existing': True}
+
+    customer_id = Column(BIGINT, primary_key=True, nullable=False, unique=True, autoincrement=True)
+    customer_name = Column(String, nullable=False)
+    customer_number = Column(String, nullable=False)
+    customer_address = Column(String, nullable=True)
+    customer_birthdate = Column(Date, nullable=True)
+    onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    customer_points = Column(Integer, nullable=True)
+    customer_status = Column(Enum(CustomerStatus), nullable=False, server_default='ACTIVE')

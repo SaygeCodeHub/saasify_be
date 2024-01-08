@@ -8,7 +8,7 @@ router = APIRouter()
 metadata = MetaData()
 
 
-@router.post('/v1/authenticateUser')
+@router.post('/v1_1/authenticateUser')
 def create_user(authentication: schemas.Authentication, db: Session = Depends(get_db)):
     try:
         user_exists = db.query(models.Users).get(
