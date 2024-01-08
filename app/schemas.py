@@ -1,5 +1,5 @@
-from typing import Optional, List
-from pydantic import BaseModel
+from typing import Optional, List, Any
+from pydantic import BaseModel, field_validator
 from datetime import date
 
 
@@ -18,7 +18,8 @@ class Companies(BaseModel):
 class Authentication(BaseModel):
     user_id: str
     user_name: Optional[str] | None = None
-    user_contact: int
+    user_contact: Optional[Any] = None
+    user_email: Optional[str] | None = None
     user_birthdate: date | None = None
 
     class Config:
@@ -27,6 +28,7 @@ class Authentication(BaseModel):
 
 class Branch(BaseModel):
     branch_id: Optional[int] | None = None
+    company_id: Optional[str] | None = None
     branch_name: str
     branch_contact: int | None = None
     branch_address: str | None = None
@@ -70,6 +72,8 @@ class GetBranch(BaseModel):
 
 
 class AddProducts(BaseModel):
+    company_id: Optional[str] | None = None
+    branch_id: Optional[int] | None = None
     product_id: Optional[int] | None = None
     category_name: str
     brand_name: str | None = None

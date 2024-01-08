@@ -24,7 +24,8 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
 
                 return {"status": 200, "message": "User successfully Authenticated",
                         "data": {"user": {"user_name": new_user_data.user_name, "user_id": new_user_data.user_id,
-                                          "user_contact": new_user_data.user_contact}, "companies": []}}
+                                          "user_contact": new_user_data.user_contact,
+                                          "user_email": new_user_data.user_email}, "companies": []}}
             except Exception:
                 return {"status": 204, "message": "User is NOT registered, please sing up",
                         "data": {"user": {}, "companies": []}}
@@ -52,7 +53,8 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
         if authentication.user_name == "":
             return {"status": 200, "message": "User successfully Authenticated",
                     "data": {"user": {"user_name": user_exists.user_name, "user_id": user_exists.user_id,
-                                      "user_contact": user_exists.user_contact}, "companies": companies}}
+                                      "user_contact": user_exists.user_contact, "user_email": user_exists.user_email},
+                             "companies": companies}}
 
         else:
             update = db.query(models.Users).filter(models.Users.user_id == authentication.user_id).update({
@@ -63,7 +65,8 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
             user_update = db.query(models.Users).get(authentication.user_id)
             return {"status": 200, "message": "User successfully Authenticated",
                     "data": {"user": {"user_name": user_update.user_name, "user_id": user_update.user_id,
-                                      "user_contact": user_update.user_contact}, "companies": companies}}
+                                      "user_contact": user_update.user_contact, "user_email": user_update.user_email},
+                             "companies": companies}}
     except Exception as e:
         print(e)
         return {"status": 500, "message": "Database connection failed", "data": {"user": {}, "companies": []}}
