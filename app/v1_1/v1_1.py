@@ -1,10 +1,12 @@
 from typing import List
 
 from fastapi import APIRouter, Depends
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import and_, asc, desc, func
 from sqlalchemy.orm import Session
 from app import schemas
 from app.database import get_db, engine
+from app.firebase_scripts import add_firebase_client
 from app.v1_1 import models
 from app.v1_1.schema import AddCustomer
 
@@ -21,8 +23,9 @@ def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depen
         if not user_exists:
             try:
                 add_new_user_v1_1(authentication, db)
-            except Exception:
-                return {"status": 204, "message": "User is NOT registered, please sing up",
+                add_firebase_client(authentication.user_id, False)
+            except Exception as e:
+                return {"status": 204, "message": str(e),
                         "data": {"user": {}, "companies": []}}
 
         company_user_data = db.query(models.UserCompanyV).filter(
@@ -89,8 +92,7 @@ def branch_list(owner: bool, companyId=str, db=Depends(get_db)):
 
 
 def add_new_user_v1_1(authentication, db):
-    new_user_data = models.UsersV(
-        **authentication.model_dump())
+    new_user_data = models.UsersV(**jsonable_encoder(authentication))
     db.add(new_user_data)
     db.commit()
     db.refresh(new_user_data)

@@ -23,6 +23,8 @@ class Authentication(BaseModel):
     user_contact: Optional[Any] = None
     user_email: Optional[str] | None = None
     user_birthdate: date | None = None
+    modules: Optional[List[str]] | None = None
+    activate_backend: Optional[bool] | None = None
 
     class Config:
         from_attributes = True

@@ -3,6 +3,7 @@ from sqlalchemy import and_, MetaData, Table, asc
 from sqlalchemy.orm import Session
 from app import schemas, models
 from app.database import get_db
+from app.firebase_scripts import add_firebase_client
 
 router = APIRouter()
 metadata = MetaData()
@@ -21,7 +22,7 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
                 db.add(new_user_data)
                 db.commit()
                 db.refresh(new_user_data)
-
+                add_firebase_client(authentication.user_id)
                 return {"status": 200, "message": "User successfully Authenticated",
                         "data": {"user": {"user_name": new_user_data.user_name, "user_id": new_user_data.user_id,
                                           "user_contact": new_user_data.user_contact,
