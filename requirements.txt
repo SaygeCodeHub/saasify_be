@@ -51,6 +51,7 @@ openpyxl==3.1.2
 orjson==3.9.10
 packaging==23.2
 pandas==2.1.4
+passlib==1.7.4
 Pillow==10.1.0
 plotly==5.17.0
 proto-plus==1.23.0
