@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from typing import Optional, List, Any
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 
 
-class Companies(BaseModel):
+class Modifier(BaseModel):
+    modified_by: str = ""
+    modified_on: date = datetime.now()
+
+
+class Companies(Modifier):
     company_id: Optional[int] | None = None
     company_name: str
     company_domain: str
@@ -30,7 +35,7 @@ class Authentication(BaseModel):
         from_attributes = True
 
 
-class Branch(BaseModel):
+class Branch(Modifier):
     branch_id: Optional[int] | None = None
     company_id: Optional[str] | None = None
     branch_name: str
@@ -115,7 +120,7 @@ class DeleteVariants(BaseModel):
         from_attributes = True
 
 
-class Categories(BaseModel):
+class Categories(Modifier):
     category_id: Optional[int] | None = None
     category_name: str
     is_active: bool
@@ -124,7 +129,9 @@ class Categories(BaseModel):
         from_attributes = True
 
 
-class Payment(BaseModel):
+class Payment(Modifier):
+    branch_id: int = None
+    company_id: str = None
     payment_id: Optional[int] | None = None
     payment_name: str
     is_active: bool
@@ -180,7 +187,7 @@ class ItemsOrdered(BaseModel):
     count: int
 
 
-class BookOrder(BaseModel):
+class BookOrder(Modifier):
     items_ordered: List
     customer_contact: int
     payment_status: str

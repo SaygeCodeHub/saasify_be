@@ -18,6 +18,8 @@ class Companies(Base):
     services = Column(String, nullable=True)
     owner = Column(String, ForeignKey('users.user_id'), nullable=False)
     onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
 
     @validates('company_name', 'company_email', 'company_contact')
     def empty_string_to_null(self, key, value):

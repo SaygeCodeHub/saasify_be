@@ -1,14 +1,12 @@
 from typing import List
 
 from fastapi import APIRouter, Depends
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy import and_, asc, desc, func
 from sqlalchemy.orm import Session
 from app import schemas
 from app.database import get_db, engine
-from app.firebase_scripts import add_firebase_client
 from app.v1_1 import models
-from app.v1_1.schema import AddCustomer
+from app.v1_1.schema import UpdateCustomer, AddCustomer
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
@@ -16,6 +14,7 @@ models.Base.metadata.create_all(bind=engine)
 
 @router.post('/v1.1/authenticateUser')
 def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depends(get_db)):
+    """Add Comment here"""
     try:
         user_exists = db.query(models.UsersV).get(
             authentication.user_id)
@@ -23,9 +22,8 @@ def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depen
         if not user_exists:
             try:
                 add_new_user_v1_1(authentication, db)
-                add_firebase_client(authentication.user_id, False)
-            except Exception as e:
-                return {"status": 204, "message": str(e),
+            except Exception:
+                return {"status": 204, "message": "User is NOT registered, please sign up",
                         "data": {"user": {}, "companies": []}}
 
         company_user_data = db.query(models.UserCompanyV).filter(
@@ -92,17 +90,34 @@ def branch_list(owner: bool, companyId=str, db=Depends(get_db)):
 
 
 def add_new_user_v1_1(authentication, db):
-    new_user_data = models.UsersV(**jsonable_encoder(authentication))
+    new_user_data = models.UsersV(
+        **authentication.model_dump())
     db.add(new_user_data)
     db.commit()
     db.refresh(new_user_data)
 
-    return {"status": 200, "message": "User successfully Authenticated",
+    return {"status": 200, "message": "User created successfully",
             "data": {"user": new_user_data, "companies": []}}
+
+
+def add_init_branch(company, db):
+    """After creation of any company, this method will add a branch to it. """
+    new_branch = models.Branches(company_id=company.company_id,
+                                 branch_name=company.branch_name,
+                                 branch_contact=company.branch_contact,
+                                 branch_currency=company.branch_currency,
+                                 branch_active=company.branch_active,
+                                 branch_address=company.branch_address,
+                                 modified_by=company.owner,
+                                 modified_on=datetime.now())
+    db.add(new_branch)
+    db.commit()
+    db.refresh(new_branch)
 
 
 @router.post('/v1.1/{userId}/addCompany')
 def create_company_v1_1(company: schemas.CreateCompany, userId: str, db: Session = Depends(get_db)):
+    """Creates a company and then adds a branch to it"""
     try:
         user_exists = db.query(models.UsersV).filter(models.UsersV.user_id == userId).first()
 
@@ -110,22 +125,22 @@ def create_company_v1_1(company: schemas.CreateCompany, userId: str, db: Session
             try:
                 company.owner = userId
                 new_company = models.CompaniesV(company_name=company.company_name,
-                                                company_domain=company.company_domain, owner=company.owner)
+                                                company_domain=company.company_domain, modified_by=company.owner,
+                                                modified_on=datetime.now(),
+                                                owner=company.owner)
                 db.add(new_company)
                 db.commit()
                 db.refresh(new_company)
                 user_company = models.UserCompanyV(user_id=userId, company_id=new_company.company_id)
                 db.add(user_company)
                 db.commit()
-                new_branch = models.Branches(branch_name=company.branch_name,
-                                             branch_contact=company.branch_contact,
-                                             branch_currency=company.branch_currency,
-                                             branch_active=company.branch_active,
-                                             branch_address=company.branch_address)
-                db.add(new_branch)
+                company.company_id = new_company.company_id
+
+                add_init_branch(company, db)
+
                 return {"status": 200, "message": "Company added successfully", "data": {}}
 
-            except Exception:
+            except Exception as exc:
                 return {"status": 204, "message": "Something when wrong", "data": {}}
 
         return {"status": 204, "message": "User doesn't exist", "data": user_exists}
@@ -142,6 +157,8 @@ def create_branch_v1_1(createBranch: schemas.Branch, companyId: str, userId: str
             company = db.query(models.CompaniesV).get(companyId)
             if company:
                 createBranch.company_id = companyId
+                createBranch.modified_by = userId
+                createBranch.modified_on = datetime.now()
                 new_branch = models.Branches(**createBranch.model_dump())
                 db.add(new_branch)
                 db.commit()
@@ -452,7 +469,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
             if branch:
                 response_data = []
-                categories = db.query(models.Category).filter(models.Category.is_active == True).order_by(
+                categories = db.query(models.Category).filter(models.Category.is_active is True).order_by(
                     asc(models.Category.category_id)).all()
                 for category in categories:
                     category_data = {
@@ -471,8 +488,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
                         variants = db.query(models.Variants).filter(
                             models.Variants.product_id == product.product_id).filter(
-                            models.Variants.draft == False).filter(
-                            models.Variants.is_active == True).all()
+                            models.Variants.draft is False).filter(
+                            models.Variants.is_active is True).all()
                         if variants:
                             print("if variants")
                             product_data = {
@@ -795,11 +812,12 @@ def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branch
                                         "CGST": variant.CGST if variant.CGST else 0.0,
                                         "count": count}
                                 order_items.append(item)
-                                stock_update = db.query(models.Inventory).filter(
-                                    models.Inventory.stock_id == variant.stock_id).first()
-                                stock_update.update(branch_id=branchId, company_id=companyId,
-                                                    stock=stock_data.stock - count,
-                                                    variant_id=variant_id)
+                                stock_update_query = db.query(models.Inventory).filter(
+                                    models.Inventory.stock_id == variant.stock_id)
+
+                                stock_update_query.update(branch_id=branchId, company_id=companyId,
+                                                          stock=stock_data.stock - count,
+                                                          variant_id=variant_id)
 
                                 db.commit()
 
@@ -909,7 +927,8 @@ def add_category(addCategory: schemas.Categories, companyId: str, userId: str, b
                 else:
                     category_added = models.Category(branch_id=branchId, company_id=companyId,
                                                      category_name=addCategory.category_name,
-                                                     is_active=addCategory.is_active)
+                                                     is_active=addCategory.is_active, modified_by=userId,
+                                                     modified_on=datetime.now())
                     db.add(category_added)
                     db.commit()
 
@@ -934,9 +953,9 @@ def edit_category(editCategory: schemas.Categories, companyId: str, userId: str,
 
                 branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
                 if branch:
-
-                    category = db.query(models.Category).filter(
-                        models.Category.category_id == editCategory.category_id).first()
+                    category_query = db.query(models.Category).filter(
+                        models.Category.category_id == editCategory.category_id)
+                    category = category_query.first()
                     category_name_exists = db.query(models.Category).filter(
                         models.Category.category_name == editCategory.category_name).filter(
                         models.Category.category_id != editCategory.category_id).first()
@@ -946,9 +965,9 @@ def edit_category(editCategory: schemas.Categories, companyId: str, userId: str,
                                     "message": f"Category with {editCategory.category_name} already exists"}
 
                         else:
-                            category.update(branch_id=branchId, company_id=companyId,
-                                            category_name=editCategory.category_name,
-                                            is_active=editCategory.is_active)
+                            editCategory.modified_by = userId
+                            editCategory.modified_on = datetime.now()
+                            category_query.update(editCategory.model_dump())
                             db.commit()
                             return {"status": 200, "data": {}, "message": "Successfully"}
 
@@ -1080,15 +1099,14 @@ def edit_branch(companyId: str, userId: str, editBranch: schemas.Branch, db=Depe
     if user:
         company = db.query(models.CompaniesV).get(companyId)
         if company:
-            branch = db.query(models.Branches).filter(
-                models.Branches.branch_id == editBranch.branch_id).first()
+            branch_query = db.query(models.Branches).filter(
+                models.Branches.branch_id == editBranch.branch_id)
+            branch = branch_query.first()
             if branch:
-                branch.update(
-                    branch_name=editBranch.branch_name,
-                    branch_contact=editBranch.branch_contact,
-                    branch_address=editBranch.branch_address,
-                    branch_currency=editBranch.branch_currency,
-                    branch_active=editBranch.branch_active)
+                editBranch.modified_by = userId
+                editBranch.modified_on = datetime.now()
+                editBranch.company_id = companyId
+                branch_query.update(editBranch.model_dump())
 
                 db.commit()
                 return {"status": 200, "data": {}, "message": "Successfully"}
@@ -1104,7 +1122,7 @@ def edit_branch(companyId: str, userId: str, editBranch: schemas.Branch, db=Depe
 
 
 @router.post('/v1.1/{userId}/{companyId}/{branchId}/addPaymentMethod')
-def add_category(addPaymentType: schemas.Payment, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+def add_payment_method(addPaymentType: schemas.Payment, companyId: str, userId: str, branchId: int, db=Depends(get_db)):
     user = db.query(models.UsersV).get(userId)
     if user:
         company = db.query(models.CompaniesV).get(companyId)
@@ -1120,6 +1138,9 @@ def add_category(addPaymentType: schemas.Payment, companyId: str, userId: str, b
                             "message": f"Payment Method with {addPaymentType.category_name} already exists"}
 
                 else:
+                    addPaymentType.branch_id = branchId
+                    addPaymentType.company_id = companyId
+                    addPaymentType.modified_by = userId
                     payment_added = models.PaymentMethod(**addPaymentType.model_dump())
                     db.add(payment_added)
                     db.commit()
@@ -1136,7 +1157,7 @@ def add_category(addPaymentType: schemas.Payment, companyId: str, userId: str, b
 
 
 @router.put('/v1.1/{userId}/{companyId}/{branchId}/editPaymentMethod')
-def edit_category(editPayment: schemas.Payment, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
+def edit_payment_method(editPayment: schemas.Payment, companyId: str, userId: str, branchId: str, db=Depends(get_db)):
     user = db.query(models.UsersV).get(userId)
     if user:
         company = db.query(models.CompaniesV).get(companyId)
@@ -1145,8 +1166,9 @@ def edit_category(editPayment: schemas.Payment, companyId: str, userId: str, bra
             branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
             if branch:
 
-                payment = db.query(models.PaymentMethod).filter(
-                    models.PaymentMethod.payment_id == editPayment.payment_id).first()
+                payment_query = db.query(models.PaymentMethod).filter(
+                    models.PaymentMethod.payment_id == editPayment.payment_id)
+                payment = payment_query.first()
                 payment_method_exists = db.query(models.PaymentMethod).filter(
                     models.PaymentMethod.payment_name == editPayment.payment_name).filter(
                     models.PaymentMethod.payment_id != editPayment.payment_id).first()
@@ -1156,9 +1178,11 @@ def edit_category(editPayment: schemas.Payment, companyId: str, userId: str, bra
                                 "message": f"Payment with {editPayment.payment_name} already exists"}
 
                     else:
-                        payment.update(branch_id=branchId, company_id=companyId,
-                                       payment_name=editPayment.payment_name,
-                                       is_active=editPayment.is_active)
+                        editPayment.branch_id = branchId
+                        editPayment.company_id = companyId
+                        editPayment.modified_by = userId
+                        editPayment.modified_on = datetime.now()
+                        payment_query.update(editPayment.model_dump())
 
                     db.commit()
                     return {"status": 200, "data": {}, "message": "Successfully"}
@@ -1233,9 +1257,17 @@ def get_all_payment_methods(companyId: str, userId: str, branchId: str, db=Depen
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-@router.post('/v1.1/addCustomer')
-def create_customer(customer: AddCustomer, db=Depends(get_db)):
+@router.post('/v1.1/{user_id}/addCustomer')
+def create_customer(user_id: str, customer: UpdateCustomer, db=Depends(get_db)):
     """Adds a new customer"""
+    customer_exists = db.query(models.Customer).filter(
+        models.Customer.customer_number == customer.customer_number).first()
+
+    if customer_exists:
+        return {"message": "Customer already exists"}
+
+    customer.modified_by = user_id
+
     new_customer = models.Customer(**customer.model_dump())
     db.add(new_customer)
     db.commit()
@@ -1244,35 +1276,37 @@ def create_customer(customer: AddCustomer, db=Depends(get_db)):
     return {"status": 200, "data": {new_customer}, "message": "Customer created successfully"}
 
 
-@router.get("/v1.1/getCustomers", response_model=List[AddCustomer])
+@router.get("/v1.1/{user_id}/getCustomers", response_model=List[AddCustomer])
 def get_customers(db=Depends(get_db)):
     """Gets all the customers"""
     customers = db.query(models.Customer).all()
 
-    return {"status": 200, "data": {customers}, "message": "Existing customers"}
+    return customers
 
 
-@router.get("/v1.1/getCustomer/{customer_id}", response_model=AddCustomer)
-def get_by_id(customer_id: int, db=Depends(get_db)):
-    """Gets a customer by id"""
-    customer_by_id = db.query(models.Customer).filter(models.Customer.customer_id == customer_id).first()
+@router.get("/v1.1/{user_id}/getCustomer/{customer_number}")
+def get_by_number(customer_number: str, db=Depends(get_db)):
+    """Gets a customer by number"""
+    customer_by_number = db.query(models.Customer).filter(models.Customer.customer_number == customer_number).first()
 
-    if customer_by_id is None:
-        return {"status": 204, "data": {}, "message": f"Customer with id {customer_id} doesnt exist"}
+    if customer_by_number is None:
+        return {"status": 204, "data": {}, "message": f"Customer with number {customer_number} doesnt exist"}
 
-    return {"status": 200, "data": {customer_by_id}, "message": f"Customer by id {customer_id}"}
+    return {"status": 200, "data": {customer_by_number}, "message": f"Customer by number {customer_number}"}
 
 
-@router.put("/v1.1/updateCustomer/{customer_id}")
-def update_customer(customer_id: int, incoming_customer_data: AddCustomer, db=Depends(get_db)):
+@router.put("/v1.1/{user_id}/updateCustomer/{customer_number}")
+def update_customer(user_id: str, customer_number: str, incoming_customer_data: UpdateCustomer, db=Depends(get_db)):
     """Updates the customer"""
-    customer_query = db.db.query(models.Customer).filter(models.Customer.customer_id == customer_id)
+    incoming_customer_data.modified_by = user_id
+    incoming_customer_data.modified_on = datetime.now()
+    customer_query = db.query(models.Customer).filter(models.Customer.customer_number == customer_number)
     to_be_updated_customer = customer_query.first()
 
     if to_be_updated_customer is None:
-        return {"status": 204, "data": {}, "message": f"Customer with id {customer_id} doesnt exist"}
+        return {"status": 204, "data": {}, "message": f"Customer with number {customer_number} doesnt exist"}
 
-    updated_customer = customer_query.update(**incoming_customer_data.model_dump())
+    updated_customer = customer_query.update(incoming_customer_data.model_dump())
     db.commit()
 
-    return {"status": 200, "data": {updated_customer}, "message": "Customer updated successfully."}
+    return {"status": 200, "message": "Customer updated successfully."}
