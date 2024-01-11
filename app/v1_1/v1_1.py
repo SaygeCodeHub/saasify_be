@@ -1257,17 +1257,17 @@ def get_all_payment_methods(companyId: str, userId: str, branchId: str, db=Depen
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-@router.post('/v1.1/{user_id}/addCustomer')
-def create_customer(user_id: str, customer: UpdateCustomer, db=Depends(get_db)):
+@router.post('/v1.1/{user_id}/{company_id}/addCustomer')
+def create_customer(user_id: str, company_id: str, customer: UpdateCustomer, db=Depends(get_db)):
     """Adds a new customer"""
     customer_exists = db.query(models.Customer).filter(
         models.Customer.customer_number == customer.customer_number).first()
 
     if customer_exists:
-        return {"message": "Customer already exists"}
+        return {"message": "Customer with this number already exists"}
 
     customer.modified_by = user_id
-
+    customer.company_id = company_id
     new_customer = models.Customer(**customer.model_dump())
     db.add(new_customer)
     db.commit()
@@ -1295,11 +1295,21 @@ def get_by_number(customer_number: str, db=Depends(get_db)):
     return {"status": 200, "data": {customer_by_number}, "message": f"Customer by number {customer_number}"}
 
 
-@router.put("/v1.1/{user_id}/updateCustomer/{customer_number}")
-def update_customer(user_id: str, customer_number: str, incoming_customer_data: UpdateCustomer, db=Depends(get_db)):
+@router.get("/v1.1/{user_id}/{company_id}/getCustomersByCompany", response_model=List[AddCustomer])
+def get_customer_by_company(company_id: str, db=Depends(get_db)):
+    """Gets all the customers belonging to a particular company"""
+    customer_by_company = db.query(models.Customer).filter(models.Customer.company_id == company_id).all()
+
+    return customer_by_company
+
+
+@router.put("/v1.1/{user_id}/{company_id}/updateCustomer/{customer_number}")
+def update_customer(user_id: str, company_id: str, customer_number: str, incoming_customer_data: UpdateCustomer,
+                    db=Depends(get_db)):
     """Updates the customer"""
     incoming_customer_data.modified_by = user_id
     incoming_customer_data.modified_on = datetime.now()
+    incoming_customer_data.company_id = company_id
     customer_query = db.query(models.Customer).filter(models.Customer.customer_number == customer_number)
     to_be_updated_customer = customer_query.first()
 
