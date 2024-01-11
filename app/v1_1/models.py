@@ -262,6 +262,7 @@ class Customer(Base):
     __table_args__ = {'extend_existing': True}
 
     customer_id = Column(BIGINT, primary_key=True, nullable=False, unique=True, autoincrement=True)
+    company_id = Column(String, ForeignKey("companies.company_id"), nullable=False)
     customer_name = Column(String, nullable=False)
     customer_number = Column(String, nullable=False,unique=True)
     customer_address = Column(String, nullable=True)
