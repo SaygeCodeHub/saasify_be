@@ -4,8 +4,9 @@ from sqlalchemy.orm import sessionmaker
 
 SQLALCHEMY_DATABASE_URL = "postgresql://db_saasify_bb5z_user:SeyzkwBSm2YpekFp4VhHpqMaCYjTpVBX@dpg-cl6nv7oicrhc73fp5750-a.singapore-postgres.render.com/db_saasify_bb5z"
 
-# "postgresql://postgres:Mun1chad$@localhost:5432/postgres"
-#
+# SQLALCHEMY_DATABASE_URL = "postgresql://postgres:root@localhost:5432/postgres"  # Jayraj's local instance
+# SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Mun1chad$@localhost:5432/postgres"  # Aditi local instance
+
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
