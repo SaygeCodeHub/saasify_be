@@ -7,18 +7,16 @@ import firebase_admin
 import sqlalchemy
 from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from firebase_admin import credentials, storage
 
 from sqlalchemy import MetaData, Table, update, delete, desc, asc, func, insert
 from starlette.responses import JSONResponse
 
 from . import models, schemas
 from .database import engine, get_db
-from app.firebase_config import initialize_firebase_app
-from firebase_admin import storage, credentials
 from .routes import authentication, on_boarding
 from .routes.authentication import get_all_branches
 from app.v1_1 import v1_1
-from . import firebase_scripts
 
 models.Base.metadata.create_all(bind=engine)
 metadata = MetaData()
@@ -35,7 +33,6 @@ app.add_middleware(
 app.include_router(authentication.router)
 app.include_router(on_boarding.router)
 app.include_router(v1_1.router)
-app.include_router(firebase_scripts.router)
 
 UPLOAD_DIR = "app/images"
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
@@ -44,6 +41,52 @@ logging.basicConfig(filename='app.log', level=logging.DEBUG)
 @app.get('/')
 def root():
     return {'message': 'Hello world'}
+
+
+cred = credentials.Certificate("saasify-de974-firebase-adminsdk-q7lul-e6555891c4.json")
+firebase_admin.initialize_app(cred)
+
+directory = "app/uploaded_images"
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+
+def save_upload_file(upload_file: UploadFile, destination: str):
+    try:
+        with open(destination, "wb") as buffer:
+            shutil.copyfileobj(upload_file.file, buffer)
+    finally:
+        upload_file.file.close()
+
+
+@app.post("/v1/uploadImages")
+async def upload_images(upload_files: List[UploadFile] = File(...)):
+    image_urls = []
+    for upload_file in upload_files:
+        destination = os.path.join("app", "uploaded_images", upload_file.filename)
+        save_upload_file(upload_file, destination)
+        bucket = storage.bucket()
+        bucket.cors = [
+            {
+                "origin": ["*"],
+                "responseHeader": [
+                    "Content-Type",
+                    "x-goog-resumable"],
+                "method": ['PUT', 'POST', 'GET'],
+                "maxAgeSeconds": 3600
+            }
+        ]
+        bucket.patch()
+        blob = bucket.blob(f"uploaded_images/{upload_file.filename}")
+        blob.upload_from_filename(destination)
+        image_url = blob.public_url
+
+        image_urls.append(image_url)
+    response_data = {
+        "status": 200,
+        "message": "Images uploaded successfully.",
+        "data": image_urls}
+    return JSONResponse(content=response_data)
 
 
 @app.post('/v1{userId}/{companyId}/{branchId}/addProduct')

@@ -1,15 +1,22 @@
-from typing import List
+from datetime import datetime
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, asc, desc, func
-from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc, func
+from sqlalchemy.orm import Session, class_mapper
 from app import schemas
 from app.database import get_db, engine
 from app.v1_1 import models
-from app.v1_1.schema import UpdateCustomer, AddCustomer
+from app.v1_1.schema import UpdateCustomer
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
+
+
+def create_instance(model, data):
+    instance = model()
+    filtered_data = {key: value for key, value in data if key in class_mapper(instance.__class__).columns}
+    instance.__dict__.update(filtered_data)
+    return instance
 
 
 @router.post('/v1.1/authenticateUser')
@@ -18,7 +25,7 @@ def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depen
     try:
         user_exists = db.query(models.UsersV).get(
             authentication.user_id)
-        companies = []
+
         if not user_exists:
             try:
                 add_new_user_v1_1(authentication, db)
@@ -26,9 +33,9 @@ def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depen
                 return {"status": 204, "message": "User is NOT registered, please sign up",
                         "data": {"user": {}, "companies": []}}
 
-        company_user_data = db.query(models.UserCompanyV).filter(
-            models.UserCompanyV.user_id == authentication.user_id).all()
-        company_list(company_user_data, db, authentication.user_id, companies)
+        company_user_data = db.query(models.UserAuthentication).filter(
+            models.UserAuthentication.user_id == authentication.user_id).all()
+        companies = company_list(company_user_data, db, authentication.user_id)
 
         if authentication.user_name == "":
             return {"status": 200, "message": "User successfully Authenticated",
@@ -49,11 +56,11 @@ def create_user_v1_1(authentication: schemas.Authentication, db: Session = Depen
         return {"status": 500, "message": e, "data": {"user": {}, "companies": []}}
 
 
-def company_list(company_user_data, db, user_id, companies):
+def company_list(company_user_data, db, user_id):
+    companies = []
     for company in company_user_data:
         company_data = db.query(models.CompaniesV).filter(
-            and_(models.CompaniesV.company_id == models.CompaniesV.company_id,
-                 models.CompaniesV.company_id == company.company_id)).first()
+            models.CompaniesV.company_id == company.company_id).first()
         owner = True if company_data.owner == user_id else False
 
         companies.append({
@@ -68,7 +75,7 @@ def company_list(company_user_data, db, user_id, companies):
             "role": [0] if company_data.owner == user_id else [1],
             "branches": branch_list(True if company_data.owner == user_id else False, company_data.company_id, db)})
 
-        return companies
+    return companies
 
 
 def branch_list(owner: bool, companyId=str, db=Depends(get_db)):
@@ -90,26 +97,18 @@ def branch_list(owner: bool, companyId=str, db=Depends(get_db)):
 
 
 def add_new_user_v1_1(authentication, db):
-    new_user_data = models.UsersV(
-        **authentication.model_dump())
-    db.add(new_user_data)
+    new_user_added = create_instance(models.UsersV, authentication)
+    db.add(new_user_added)
     db.commit()
-    db.refresh(new_user_data)
-
+    db.refresh(new_user_added)
     return {"status": 200, "message": "User created successfully",
-            "data": {"user": new_user_data, "companies": []}}
+            "data": {"user": new_user_added, "companies": []}}
 
 
 def add_init_branch(company, db):
     """After creation of any company, this method will add a branch to it. """
-    new_branch = models.Branches(company_id=company.company_id,
-                                 branch_name=company.branch_name,
-                                 branch_contact=company.branch_contact,
-                                 branch_currency=company.branch_currency,
-                                 branch_active=company.branch_active,
-                                 branch_address=company.branch_address,
-                                 modified_by=company.owner,
-                                 modified_on=datetime.now())
+
+    new_branch = create_instance(models.Branches, company)
     db.add(new_branch)
     db.commit()
     db.refresh(new_branch)
@@ -124,14 +123,16 @@ def create_company_v1_1(company: schemas.CreateCompany, userId: str, db: Session
         if user_exists:
             try:
                 company.owner = userId
+                company.modified_on = datetime.now()
+                company.modified_by = userId
                 new_company = models.CompaniesV(company_name=company.company_name,
-                                                company_domain=company.company_domain, modified_by=company.owner,
+                                                company_domain=company.company_domain, modified_by=userId,
                                                 modified_on=datetime.now(),
                                                 owner=company.owner)
                 db.add(new_company)
                 db.commit()
                 db.refresh(new_company)
-                user_company = models.UserCompanyV(user_id=userId, company_id=new_company.company_id)
+                user_company = models.UserAuthentication(user_id=userId, company_id=new_company.company_id)
                 db.add(user_company)
                 db.commit()
                 company.company_id = new_company.company_id
@@ -187,10 +188,12 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                     category_id = category.category_id
                 else:
                     new_category = models.Category(branch_id=branchId, company_id=companyId,
-                                                   category_name=createProduct.category_name)
-                    category_id = new_category.category_id
+                                                   category_name=createProduct.category_name, modified_by=userId,
+                                                   modified_on=datetime.now())
                     db.add(new_category)
                     db.commit()
+                    db.refresh(new_category)
+                    category_id = new_category.category_id
 
                 if createProduct.brand_name is not None:
 
@@ -200,11 +203,13 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                         brand_id = brand.brand_id
                     else:
                         new_brand = models.Brand(branch_id=branchId, company_id=companyId,
-                                                 brand_name=createProduct.brand_name)
-                        brand_id = new_brand.brand_id
+                                                 brand_name=createProduct.brand_name, modified_by=userId,
+                                                 modified_on=datetime.now())
                         db.add(new_brand)
-
                         db.commit()
+                        db.refresh(new_brand)
+                        brand_id = new_brand.brand_id
+
                 else:
                     brand_id = None
 
@@ -230,11 +235,14 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                     else:
                         new_product = models.Products(branch_id=branchId, company_id=companyId, category_id=category_id,
                                                       brand_id=brand_id, product_name=createProduct.product_name,
-                                                      product_description=createProduct.product_description)
+                                                      product_description=createProduct.product_description,
+                                                      modified_by=userId,
+                                                      modified_on=datetime.now())
 
-                        product_id = new_product.product_id
                         db.add(new_product)
                         db.commit()
+                        db.refresh(new_product)
+                        product_id = new_product.product_id
 
                 if createProduct.barcode:
 
@@ -245,7 +253,8 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                     else:
                         if createProduct.stock:
                             new_stock = models.Inventory(branch_id=branchId, company_id=companyId,
-                                                         stock=createProduct.stock)
+                                                         stock=createProduct.stock, modified_by=userId,
+                                                         modified_on=datetime.now())
                             db.add(new_stock)
                             db.flush()
                             new_variant = models.Variants(branch_id=branchId, company_id=companyId,
@@ -261,7 +270,9 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                                           SGST=createProduct.SGST,
                                                           CGST=createProduct.CGST,
                                                           stock_id=new_stock.stock_id,
-                                                          restock_reminder=createProduct.restock_reminder)
+                                                          restock_reminder=createProduct.restock_reminder,
+                                                          modified_by=userId,
+                                                          modified_on=datetime.now())
                             db.add(new_variant)
                             db.flush()
                             new_stock.variant_id = new_variant.variant_id
@@ -287,7 +298,9 @@ def add_product(createProduct: schemas.AddProducts, companyId: str, userId: str,
                                                           barcode=createProduct.barcode,
                                                           SGST=createProduct.SGST,
                                                           CGST=createProduct.CGST,
-                                                          restock_reminder=createProduct.restock_reminder)
+                                                          restock_reminder=createProduct.restock_reminder,
+                                                          modified_by=userId,
+                                                          modified_on=datetime.now())
                             db.add(new_variant)
                             db.commit()
                             return {"status": 200, "data": {"category_name": createProduct.category_name,
@@ -323,15 +336,15 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
             branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
             if branch:
                 categories = db.query(models.Category).order_by(asc(models.Category.category_id)).all()
-                return schemas.GetAllCategories(status=200, data=categories, message="get all categories")
+                return {"status": 200, "data": categories, "message": "get all categories"}
             else:
-                return schemas.GetAllCategories(status=204, data=[], message="Branch doesnt exist")
+                return {"status": 204, "data": [], "message": "Branch doesnt exist"}
 
         else:
-            return schemas.GetAllCategories(status=204, data=[], message="Company doesnt exist")
+            return {"status": 204, "data": [], "message": "Company doesnt exist"}
 
     else:
-        return schemas.GetAllCategories(status=204, data=[], message="User doesnt exist")
+        return {"status": 204, "data": [], "message": "User doesnt exist"}
 
 
 @router.get('/v1.1/{userId}/{companyId}/{branchId}/getAllProducts')
@@ -480,6 +493,7 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                     products = db.query(models.Products).filter(
                         models.Products.category_id == category.category_id).all()
                     for product in products:
+                        print("for products")
                         brand = db.query(models.Brand).filter(models.Brand.brand_id == product.brand_id).first()
                         if brand:
                             brand_name = brand.brand_name
@@ -488,8 +502,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
 
                         variants = db.query(models.Variants).filter(
                             models.Variants.product_id == product.product_id).filter(
-                            models.Variants.draft is False).filter(
-                            models.Variants.is_active is True).all()
+                            models.Variants.draft == False).filter(
+                            models.Variants.is_active == True).all()
                         if variants:
                             print("if variants")
                             product_data = {
@@ -532,6 +546,8 @@ def get_add_categories(companyId: str, userId: str, branchId: str, db=Depends(ge
                     response_data.append(category_data)
 
                 return {"status": 200, "data": response_data, "message": "get all products"}
+            else:
+                return {"status": 204, "data": [], "message": "Branch does not exists"}
 
         else:
             return {"status": 204, "data": [], "message": "Company does not exists"}
@@ -546,121 +562,143 @@ def edit_product(createProduct: schemas.EditProduct, companyId: str, userId: str
     if user:
         company = db.query(models.CompaniesV).get(companyId)
         if company:
-            try:
-                branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
-                if branch:
+            # try:
+            branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
+            if branch:
 
-                    category = db.query(models.Category).filter(
-                        models.Category.category_name == createProduct.category_name).first()
-                    if category:
-                        category_id = category.category_id
+                category = db.query(models.Category).filter(
+                    models.Category.category_name == createProduct.category_name).first()
+                if category:
+                    category_id = category.category_id
+                else:
+                    new_category = models.Category(branch_id=branchId, company_id=companyId,
+                                                   category_name=createProduct.category_name, modified_by=userId,
+                                                   modified_on=datetime.now())
+                    db.add(new_category)
+                    db.commit()
+                    db.refresh(new_category)
+                    category_id = new_category.category_id
+
+                if createProduct.brand_name is not None:
+                    brand = db.query(models.Brand).filter(
+                        models.Brand.brand_name == createProduct.brand_name).first()
+                    if brand:
+                        brand_id = brand.brand_id
                     else:
-                        category_added = models.Category(branch_id=branchId, company_id=companyId,
-                                                         category_name=createProduct.category_name)
-                        category_id = category_added.category_id
-                        db.add(category_added)
+                        brand_added = models.Brand(branch_id=branchId, company_id=companyId,
+                                                   brand_name=createProduct.brand_name, modified_by=userId,
+                                                   modified_on=datetime.now())
+                        db.add(brand_added)
+                        db.commit()
+                        db.refresh(brand_added)
+                        brand_id = brand_added.brand_id
+                else:
+                    brand_id = None
+
+                if createProduct.product_id:
+                    product_fetch = db.query(models.Products).filter(
+                        models.Products.product_id == createProduct.product_id)
+                    product_exist = product_fetch.first()
+                    if product_exist:
+                        product_id = createProduct.product_id
+                        product_exist.branch_id = branch.branch_id
+                        product_exist.company_id = companyId
+                        product_exist.category_id = category_id
+                        product_exist.brand_id = brand_id
+                        product_exist.product_name = createProduct.product_name
+                        product_exist.product_description = createProduct.product_description
+                        product_exist.modified_by = userId
+                        product_exist.modified_on = datetime.now()
                         db.commit()
 
-                    if createProduct.brand_name is not None:
-                        brand = db.query(models.Brand).filter(
-                            models.Brand.brand_name == createProduct.brand_name).first()
-                        if brand:
-                            brand_id = brand.brand_id
-                        else:
-                            brand_added = models.Brand(branch_id=branchId, company_id=companyId,
-                                                       brand_name=createProduct.brand_name)
-                            brand_id = brand_added.brand_id
-                            db.add(brand_added)
-                            db.commit()
                     else:
-                        brand_id = None
+                        return {"status": 204, "data": {}, "message": "Invalid product id"}
 
-                    if createProduct.product_id:
-                        product_check = db.query(models.Products).filter(
-                            models.Products.product_id == createProduct.product_id).first()
-                        if product_check:
-                            product_id = createProduct.product_id
-                            product_check.update(branch_id=branchId, company_id=companyId, category_id=category_id,
-                                                 brand_id=brand_id,
-                                                 product_name=createProduct.product_name,
-                                                 product_description=createProduct.product_description)
+                    if createProduct.variant_id:
+                        variant = db.query(models.Variants).filter(
+                            models.Variants.variant_id == createProduct.variant_id)
+                        variant_exists = variant.first()
+                        if variant_exists:
+                            stock_update = db.query(models.Inventory).filter(
+                                models.Inventory.stock_id == variant_exists.stock_id)
+                            stock_exist = stock_update.first()
+                            stock_exist.branch_id = branchId
+                            stock_exist.company_id = companyId
+                            stock_exist.stock = createProduct.stock
+                            stock_exist.variant_id = variant_exists.variant_id
+                            stock_exist.modified_by = userId
+                            stock_exist.modified_on = datetime.now()
 
+                            variant.update({
+                                models.Variants.branch_id: branchId,
+                                models.Variants.company_id: companyId,
+                                models.Variants.product_id: product_id,
+                                models.Variants.cost: createProduct.cost,
+                                models.Variants.stock_id: variant_exists.stock_id,
+                                models.Variants.quantity: createProduct.quantity,
+                                models.Variants.unit: createProduct.unit,
+                                models.Variants.discount_percent: createProduct.discount_percent,
+                                models.Variants.images: createProduct.images,
+                                models.Variants.draft: createProduct.draft,
+                                models.Variants.barcode: createProduct.barcode,
+                                models.Variants.restock_reminder: createProduct.restock_reminder,
+                                models.Variants.SGST: createProduct.SGST,
+                                models.Variants.CGST: createProduct.CGST,
+                                models.Variants.is_active: createProduct.variant_active,
+                                models.Variants.modified_by: userId,
+                                models.Variants.modified_on: datetime.now()
+                            })
+                            db.commit()
+                            return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                            "brand_name": createProduct.brand_name,
+                                                            "product_name": createProduct.product_name,
+                                                            "product_id": product_id,
+                                                            "product_description": createProduct.product_description},
+                                    "message": "Product Edited successfully"}
+                        else:
+                            return {"status": 204, "data": {}, "message": "invalid variant id"}
+                    else:
+                        variant = db.query(models.Variants).filter(
+                            models.Variants.barcode == createProduct.barcode).first()
+                        if variant:
+                            return {"status": 204, "data": {}, "message": "variant already exists"}
+                        else:
+                            new_stock = models.Inventory(branch_id=branchId, company_id=companyId,
+                                                         stock=createProduct.stock, modified_by=userId,
+                                                         modified_on=datetime.now())
+                            db.add(new_stock)
+                            db.flush()
+                            new_variant = models.Variants(branch_id=branchId, company_id=companyId,
+                                                          product_id=product_id,
+                                                          cost=createProduct.cost,
+                                                          quantity=createProduct.quantity,
+                                                          unit=createProduct.unit,
+                                                          stock_id=new_stock.stock_id,
+                                                          discount_percent=createProduct.discount_percent,
+                                                          images=createProduct.images,
+                                                          draft=createProduct.draft,
+                                                          barcode=createProduct.barcode,
+                                                          SGST=createProduct.SGST,
+                                                          CGST=createProduct.CGST,
+                                                          restock_reminder=createProduct.restock_reminder,
+                                                          modified_by=userId,
+                                                          modified_on=datetime.now())
+                            db.add(new_variant)
+                            db.flush()
+                            new_stock.variant_id = new_variant.variant_id
                             db.commit()
 
-                        else:
-                            return {"status": 204, "data": {}, "message": "Invalid product id"}
+                            return {"status": 200, "data": {"category_name": createProduct.category_name,
+                                                            "brand_name": createProduct.brand_name,
+                                                            "product_name": createProduct.product_name,
+                                                            "product_id": product_id,
+                                                            "product_description": createProduct.product_description},
+                                    "message": "Product Edited successfully"}
 
-                        if createProduct.variant_id:
-                            variant = db.query(models.Variants).filter(
-                                models.Variants.variant_id == createProduct.variant_id).first()
-                            if variant:
-                                stock_update = db.query(models.Inventory).filter(
-                                    models.Inventory.stock_id == variant.stock_id).firts()
-                                stock_update.update(branch_id=branchId, company_id=companyId, stock=createProduct.stock,
-                                                    variant_id=variant.variant_id)
-
-                                variant.update(branch_id=branchId, company_id=companyId, product_id=product_id,
-                                               cost=createProduct.cost,
-                                               stock_id=variant.stock_id,
-                                               quantity=createProduct.quantity,
-                                               unit=createProduct.unit,
-                                               discount_percent=createProduct.discount_percent,
-                                               images=createProduct.images,
-                                               draft=createProduct.draft,
-                                               barcode=createProduct.barcode,
-                                               restock_reminder=createProduct.restock_reminder,
-                                               SGST=createProduct.SGST,
-                                               CGST=createProduct.CGST,
-                                               is_active=createProduct.variant_active)
-
-                                db.commit()
-                                return {"status": 200, "data": {"category_name": createProduct.category_name,
-                                                                "brand_name": createProduct.brand_name,
-                                                                "product_name": createProduct.product_name,
-                                                                "product_id": product_id,
-                                                                "product_description": createProduct.product_description},
-                                        "message": "Product Edited successfully"}
-                            else:
-                                return {"status": 204, "data": {}, "message": "invalid variant id"}
-                        else:
-                            variant = db.query(models.Variants).filter(
-                                models.Variants.barcode == createProduct.barcode).first()
-                            if variant:
-                                return {"status": 204, "data": {}, "message": "variant already exists"}
-                            else:
-                                stock_add = models.Inventory(branch_id=branchId, company_id=companyId,
-                                                             stock=createProduct.stock)
-                                stock_id = stock_add.stock_id
-                                variant_added = models.Variants(branch_id=branchId, company_id=companyId,
-                                                                product_id=product_id,
-                                                                cost=createProduct.cost,
-                                                                quantity=createProduct.quantity,
-                                                                unit=createProduct.unit,
-                                                                stock_id=stock_id,
-                                                                discount_percent=createProduct.discount_percent,
-                                                                images=createProduct.images,
-                                                                draft=createProduct.draft,
-                                                                barcode=createProduct.barcode,
-                                                                SGST=createProduct.SGST,
-                                                                CGST=createProduct.CGST,
-                                                                restock_reminder=createProduct.restock_reminder)
-                                variant_id = variant_added.variant_id
-                                stock_add.variant_id = variant_id
-                                db.add(stock_add)
-                                db.add(variant_added)
-
-                                db.commit()
-                                return {"status": 200, "data": {"category_name": createProduct.category_name,
-                                                                "brand_name": createProduct.brand_name,
-                                                                "product_name": createProduct.product_name,
-                                                                "product_id": product_id,
-                                                                "product_description": createProduct.product_description},
-                                        "message": "Product Edited successfully"}
-
-                else:
-                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
-            except Exception as e:
-                return {"status": 204, "data": {}, "message": f"{e}"}
+            else:
+                return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+        # except Exception as e:
+        #     return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}
@@ -715,7 +753,7 @@ def delete_products(deleteVariants: schemas.DeleteVariants, companyId: str, user
         return {"status": 204, "data": {}, "message": "un authorized"}
 
 
-@router.post('/v1.1/{userId}/{companyId}/{branchId}/updateStock')
+@router.put('/v1.1/{userId}/{companyId}/{branchId}/updateStock')
 def update_stock(updateStock: schemas.UpdateStock, companyId: str, userId: str, branchId: str,
                  db=Depends(get_db)):
     user = db.query(models.UsersV).get(userId)
@@ -737,8 +775,12 @@ def update_stock(updateStock: schemas.UpdateStock, companyId: str, userId: str, 
                                 final_stock = stock.stock + updateStock.stock
                             else:
                                 final_stock = stock.stock - updateStock.stock
-                            stock.update(branch_id=branchId, company_id=companyId, stock=final_stock,
-                                         variant_id=updateStock.variant_id)
+                            stock.branch_id = branchId
+                            stock.company_id = companyId
+                            stock.stock = final_stock
+                            stock.variant_id = updateStock.variant_id
+                            stock.modified_by = userId
+                            stock.modified_on = datetime.now()
                             db.commit()
                             return {"status": 200, "data": {}, "message": "Updated successfully"}
 
@@ -813,11 +855,14 @@ def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branch
                                         "count": count}
                                 order_items.append(item)
                                 stock_update_query = db.query(models.Inventory).filter(
-                                    models.Inventory.stock_id == variant.stock_id)
+                                    models.Inventory.stock_id == variant.stock_id).first()
 
-                                stock_update_query.update(branch_id=branchId, company_id=companyId,
-                                                          stock=stock_data.stock - count,
-                                                          variant_id=variant_id)
+                                stock_update_query.branch_id = branchId
+                                stock_update_query.company_id = companyId
+                                stock_update_query.stock = stock_data.stock - count
+                                stock_update_query.variant_id = variant_id
+                                stock_update_query.modified_by = userId
+                                stock_update_query.modified_on = datetime.now()
 
                                 db.commit()
 
@@ -831,7 +876,8 @@ def book_order(bookOrder: schemas.BookOrder, companyId: str, userId: str, branch
                                           customer_name=bookOrder.customer_name,
                                           discount_total=bookOrder.discount_total,
                                           total_amount=bookOrder.total_amount,
-                                          subtotal=bookOrder.subtotal)
+                                          subtotal=bookOrder.subtotal, modified_by=userId,
+                                          modified_on=datetime.now())
                 db.add(add_order)
                 db.commit()
 
@@ -993,48 +1039,53 @@ def delete_category(deleteCategory: schemas.DeleteCategory, companyId: str, user
     if user:
         company = db.query(models.CompaniesV).get(companyId)
         if company:
-            try:
+            # try:
 
-                branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
-                if branch:
-                    category = db.query(models.Category).filter(
-                        models.Category.category_id == deleteCategory.category_id).first()
-                    if category:
-                        if category.category_name == 'uncategorized':
-                            return {"status": 204, "data": {}, "message": "Cannot delete this category"}
-                        else:
-                            products = db.query(models.Products).filter(
-                                models.Products.category_id == deleteCategory.category_id).all()
-                            resign_category_name = 'uncategorized'
-                            resign_category = db.query(models.Category).filter(
-                                models.Category.category_name == resign_category_name).first()
-                            if resign_category:
-                                new_category_id = resign_category.category_id
-                            else:
-                                category_added = models.Category(branch_id=branchId, company_id=companyId,
-                                                                 category_name=resign_category_name)
-                                new_category_id = category_added.category_id
-                                db.commit()
-
-                            for product in products:
-                                product.update(branch_id=branchId, company_id=companyId, category_id=new_category_id,
-                                               brand_id=product.brand_id,
-                                               product_name=product.product_name,
-                                               product_description=product.product_description)
-                                db.commit()
-
-                            db.query(models.Category).filter(
-                                models.Category.category_id.in_(deleteCategory.category_id)).delete(
-                                synchronize_session=False)
-                            db.commit()
-                            return {"status": 200, "data": {}, "message": "Category deleted successfully"}
+            branch = db.query(models.Branches).filter(models.Branches.branch_id == branchId).first()
+            if branch:
+                category = db.query(models.Category).filter(
+                    models.Category.category_id == deleteCategory.category_id).first()
+                if category:
+                    if category.category_name == 'uncategorized':
+                        return {"status": 204, "data": {}, "message": "Cannot delete this category"}
                     else:
-                        return {"status": 204, "data": {}, "message": "Incorrect category id"}
+                        products = db.query(models.Products).filter(
+                            models.Products.category_id == deleteCategory.category_id).all()
+                        resign_category_name = 'uncategorized'
+                        resign_category = db.query(models.Category).filter(
+                            models.Category.category_name == resign_category_name).first()
+                        if resign_category:
+                            new_category_id = resign_category.category_id
+                        else:
+                            category_added = models.Category(branch_id=branchId, company_id=companyId,
+                                                             category_name=resign_category_name)
+                            new_category_id = category_added.category_id
+                            db.commit()
 
+                        for product in products:
+                            product.branch_id = branch.branch_id
+                            product.company_id = companyId
+                            product.category_id = new_category_id
+                            product.brand_id = product.brand_id
+                            product.product_name = product.product_name
+                            product.product_description = product.product_description
+                            product.modified_by = userId
+                            product.modified_on = datetime.now()
+
+                            db.commit()
+
+                        db.query(models.Category).filter(
+                            models.Category.category_id == deleteCategory.category_id).delete(
+                            synchronize_session=False)
+                        db.commit()
+                        return {"status": 200, "data": {}, "message": "Category deleted successfully"}
                 else:
-                    return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
-            except Exception as e:
-                return {"status": 204, "data": {}, "message": f"{e}"}
+                    return {"status": 204, "data": {}, "message": "Incorrect category id"}
+
+            else:
+                return {"status": 204, "data": {}, "message": "Branch doesnt exist"}
+        # except Exception as e:
+        #     return {"status": 204, "data": {}, "message": f"{e}"}
 
         else:
             return {"status": 204, "data": {}, "message": "Wrong Company"}
@@ -1276,12 +1327,12 @@ def create_customer(user_id: str, company_id: str, customer: UpdateCustomer, db=
     return {"status": 200, "data": {new_customer}, "message": "Customer created successfully"}
 
 
-@router.get("/v1.1/{user_id}/getCustomers", response_model=List[AddCustomer])
-def get_customers(db=Depends(get_db)):
-    """Gets all the customers"""
-    customers = db.query(models.Customer).all()
-
-    return customers
+# @router.get("/v1.1/{user_id}/getCustomers", response_model=List[AddCustomer])
+# def get_customers(db=Depends(get_db)):
+#     """Gets all the customers"""
+#     customers = db.query(models.Customer).all()
+#
+#     return customers
 
 
 @router.get("/v1.1/{user_id}/getCustomer/{customer_number}")
@@ -1295,12 +1346,12 @@ def get_by_number(customer_number: str, db=Depends(get_db)):
     return {"status": 200, "data": {customer_by_number}, "message": f"Customer by number {customer_number}"}
 
 
-@router.get("/v1.1/{user_id}/{company_id}/getCustomersByCompany", response_model=List[AddCustomer])
+@router.get("/v1.1/{user_id}/{company_id}/getAllCustomersByCompany")
 def get_customer_by_company(company_id: str, db=Depends(get_db)):
     """Gets all the customers belonging to a particular company"""
     customer_by_company = db.query(models.Customer).filter(models.Customer.company_id == company_id).all()
 
-    return customer_by_company
+    return {"status": 200, "data": customer_by_company, "message": "Customer by company"}
 
 
 @router.put("/v1.1/{user_id}/{company_id}/updateCustomer/{customer_number}")
@@ -1316,7 +1367,7 @@ def update_customer(user_id: str, company_id: str, customer_number: str, incomin
     if to_be_updated_customer is None:
         return {"status": 204, "data": {}, "message": f"Customer with number {customer_number} doesnt exist"}
 
-    updated_customer = customer_query.update(incoming_customer_data.model_dump())
+    customer_query.update(**incoming_customer_data.model_dump())
     db.commit()
 
     return {"status": 200, "message": "Customer updated successfully."}
