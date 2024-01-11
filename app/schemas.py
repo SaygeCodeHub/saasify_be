@@ -28,6 +28,8 @@ class Authentication(BaseModel):
     user_contact: Optional[Any] = None
     user_email: Optional[str] | None = None
     user_birthdate: date | None = None
+    modules: Optional[List[str]] | None = None
+    activate_backend: Optional[bool] | None = None
 
     class Config:
         from_attributes = True
@@ -208,3 +210,35 @@ class AddEmployee(BaseModel):
     DOB: date
     type: str
     role: List[int]
+
+    class Config:
+        from_attributes = True
+
+
+class Modules(BaseModel):
+    module_id: Optional[int] | None = None
+    module_name: str
+    base_cost: int
+
+    class Config:
+        from_attributes = True
+
+
+class Roles(BaseModel):
+    role_id: Optional[int] | None = None
+    role_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class AuthBranches(Branch):
+    modules: List[Modules]
+    role: List[Roles]
+
+    class Config:
+        from_attributes = True
+
+
+class AuthenticationResponse(Companies):
+    branches: List[AuthBranches]

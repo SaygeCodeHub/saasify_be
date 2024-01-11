@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from datetime import date, datetime
 
@@ -11,9 +13,9 @@ class AddCustomer(BaseModel):
     customer_birthdate: date
     customer_points: int
     customer_status: CustomerStatus = "ACTIVE"
-    company_id: str = ""
+    company_id: Optional[str] | None = None
 
 
 class UpdateCustomer(AddCustomer):
-    modified_by: str = ""
+    modified_by: Optional[str] | None = None
     modified_on: date = datetime.now()

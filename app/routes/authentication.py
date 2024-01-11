@@ -21,7 +21,6 @@ def create_user(authentication: schemas.Authentication, db: Session = Depends(ge
                 db.add(new_user_data)
                 db.commit()
                 db.refresh(new_user_data)
-
                 return {"status": 200, "message": "User successfully Authenticated",
                         "data": {"user": {"user_name": new_user_data.user_name, "user_id": new_user_data.user_id,
                                           "user_contact": new_user_data.user_contact,

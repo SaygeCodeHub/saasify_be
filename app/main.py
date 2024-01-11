@@ -8,6 +8,7 @@ import sqlalchemy
 from fastapi import FastAPI, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
+
 from sqlalchemy import MetaData, Table, update, delete, desc, asc, func, insert
 from starlette.responses import JSONResponse
 
@@ -36,15 +37,14 @@ app.include_router(v1_1.router)
 UPLOAD_DIR = "app/images"
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred, {'storageBucket': 'saasify-5ddd8.appspot.com',
-                                     'databaseURL': 'https://saasify-5ddd8.appspot.com-default-rtdb.firebaseio.com/'})
-
 
 @app.get('/')
 def root():
     return {'message': 'Hello world'}
 
+
+cred = credentials.Certificate("saasify-de974-firebase-adminsdk-q7lul-e6555891c4.json")
+firebase_admin.initialize_app(cred)
 
 directory = "app/uploaded_images"
 if not os.path.exists(directory):

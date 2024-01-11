@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, BIGINT, ForeignKey, Date, Enum
 from sqlalchemy.orm import validates, relationship
 from sqlalchemy.sql.expression import text
-from sqlalchemy.sql.sqltypes import TIMESTAMP, Boolean, Float, JSON, Double
+from sqlalchemy.sql.sqltypes import TIMESTAMP, Boolean, Float, JSON, Double, DateTime
 from enum import Enum as PyEnum
 
 from app.database import Base
@@ -31,6 +31,21 @@ class CompaniesV(Base):
             return value
 
 
+class Modules(Base):
+    __tablename__ = "modules"
+
+    module_id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
+    module_name = Column(String, nullable=False)
+    base_cost = Column(Float, nullable=False)
+
+
+class Roles(Base):
+    __tablename__ = "roles"
+
+    role_id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
+    role_name = Column(String, nullable=False)
+
+
 class UsersV(Base):
     __tablename__ = "users"
     __table_args__ = {'extend_existing': True}
@@ -43,21 +58,12 @@ class UsersV(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     user_image = Column(String, nullable=True)
 
-    @validates('user_contact', 'user_id', 'user_name','user_email')
+    @validates('user_contact', 'user_id', 'user_name', 'user_email')
     def empty_string_to_null(self, key, value):
         if isinstance(value, str) and value == '':
             return None
         else:
             return value
-
-
-class UserCompanyV(Base):
-    __tablename__ = 'user_company'
-    __table_args__ = {'extend_existing': True}
-
-    id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
-    user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
 
 
 class Branches(Base):
@@ -81,6 +87,32 @@ class Branches(Base):
             return None
         else:
             return value
+
+
+class UserAuthentication(Base):
+    __tablename__ = 'user_auth'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
+    user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=True)
+    module_id = Column(BIGINT, ForeignKey('modules.module_id'), nullable=True)
+    role_id = Column(BIGINT, ForeignKey('roles.role_id'), nullable=True)
+
+    company = relationship("Companies")
+    user = relationship("UsersV")
+
+
+# class UserCompany(Base):
+#     __tablename__ = 'user_company'
+#
+#     id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
+#     user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
+#     company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+#
+#     company = relationship("Companies")
+#     user = relationship("UsersV")
 
 
 class Brand(Base):
@@ -264,7 +296,7 @@ class Customer(Base):
     customer_id = Column(BIGINT, primary_key=True, nullable=False, unique=True, autoincrement=True)
     company_id = Column(String, ForeignKey("companies.company_id"), nullable=False)
     customer_name = Column(String, nullable=False)
-    customer_number = Column(String, nullable=False,unique=True)
+    customer_number = Column(String, nullable=False, unique=True)
     customer_address = Column(String, nullable=True)
     customer_birthdate = Column(Date, nullable=True)
     onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
@@ -272,3 +304,69 @@ class Customer(Base):
     customer_status = Column(Enum(CustomerStatus), nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+
+
+class Employee(Base):
+    __tablename__ = 'employee'
+
+    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    employee_id = Column(String, ForeignKey('users.user_id'), primary_key=True)
+    employee_email = Column(String, ForeignKey('users.user_email'), nullable=False)
+    employee_name = Column(String, nullable=True)
+    employee_contact = Column(BIGINT, nullable=False)
+    employee_gender = Column(String, nullable=True)
+    DOJ = Column(Date, nullable=False)
+    DOB = Column(Date, nullable=False)
+    employee_address = Column(String, nullable=False)
+    adhar_no = Column(BIGINT, nullable=False)
+    pan_no = Column(BIGINT, nullable=False)
+    employee_image = Column(String, nullable=False)
+    employee_ifsc_code = Column(String, nullable=False)
+    employee_acc_no = Column(BIGINT, nullable=False)
+    employee_bank_name = Column(String, nullable=False)
+    employee_upi_code = Column(String, nullable=False)
+    employee_salary = Column(Float, nullable=False)
+    active_status = Column(Boolean, nullable=False)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+
+    company = relationship("Companies")
+
+
+class EmployeeLeaves(Base):
+    __tablename__ = 'employee_leaves'
+
+    leave_id = Column(BIGINT, primary_key=True, index=True)
+    employee_id = Column(String, ForeignKey('employee.employee_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
+    leave_from = Column(Date, nullable=False)
+    leave_till = Column(Date, nullable=False)
+    reason = Column(String, nullable=False)
+    leave_approved = Column(Boolean, nullable=True)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+
+    employee = relationship("Employee")
+
+
+class EmployeeTimeRecord(Base):
+    __tablename__ = "employee_time_records"
+
+    time_record_id = Column(BIGINT, primary_key=True, index=True)
+    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    employee_id = Column(String, ForeignKey("employee.employee_id"), nullable=False)
+    branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
+    time_in = Column(DateTime(timezone=True), server_default=text('now()'))
+    time_out = Column(DateTime(timezone=True), nullable=True)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+
+    employee = relationship("Employee")
+
+    @property
+    def time_difference(self):
+        if self.time_out and self.time_in:
+            return self.time_out - self.time_in
+        else:
+            return None
