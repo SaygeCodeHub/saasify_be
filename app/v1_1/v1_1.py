@@ -5,8 +5,8 @@ from sqlalchemy import asc, desc, func
 from sqlalchemy.orm import Session, class_mapper
 from app import schemas
 from app.database import get_db, engine
+from app.schemas import AddEmployee, UpdateCustomer
 from app.v1_1 import models
-from app.v1_1.schema import UpdateCustomer
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
@@ -1315,7 +1315,7 @@ def create_customer(user_id: str, company_id: str, customer: UpdateCustomer, db=
         models.Customer.customer_number == customer.customer_number).first()
 
     if customer_exists:
-        return {"message": "Customer with this number already exists"}
+        return {"status":204,"data":{},"message": "Customer with this number already exists"}
 
     customer.modified_by = user_id
     customer.company_id = company_id
@@ -1324,19 +1324,12 @@ def create_customer(user_id: str, company_id: str, customer: UpdateCustomer, db=
     db.commit()
     db.refresh(new_customer)
 
+    # return ResponseDTO(status=200,data=new_customer,message="Customer created successfully")
     return {"status": 200, "data": {new_customer}, "message": "Customer created successfully"}
 
 
-# @router.get("/v1.1/{user_id}/getCustomers", response_model=List[AddCustomer])
-# def get_customers(db=Depends(get_db)):
-#     """Gets all the customers"""
-#     customers = db.query(models.Customer).all()
-#
-#     return customers
-
-
-@router.get("/v1.1/{user_id}/getCustomer/{customer_number}")
-def get_by_number(customer_number: str, db=Depends(get_db)):
+@router.get("/v1.1/{user_id}/{company_id}/getCustomer/{customer_number}")
+def get_by_number(customer_number: str, company_id:str, db=Depends(get_db)):
     """Gets a customer by number"""
     customer_by_number = db.query(models.Customer).filter(models.Customer.customer_number == customer_number).first()
 
@@ -1371,3 +1364,32 @@ def update_customer(user_id: str, company_id: str, customer_number: str, incomin
     db.commit()
 
     return {"status": 200, "message": "Customer updated successfully."}
+
+# @router.get("/v1.1/{user_id}/getCustomers", response_model=List[AddCustomer])
+# def get_customers(db=Depends(get_db)):
+#     """Gets all the customers"""
+#     customers = db.query(models.Customer).all()
+#
+#     return customers
+
+
+@router.post("/v1.1/{user_id}/{company_id}/addEmployee")
+def create_employee(user_id: str, company_id: str, employee: AddEmployee, db= Depends(get_db)):
+    """Adds a new employee"""
+    employee_exists = db.query(models.Employee).filter(models.Employee.employee_email == employee.employee_email).first()
+
+    if employee_exists:
+        return {"status": 204, "data": {}, "message": "Employee with this email already exists"}
+
+    employee.employee_id = user_id
+    employee.modified_by = user_id
+    user = db.query(models.UsersV).filter(models.UsersV.user_id == user_id).first()
+    employee.employee_email = user.user_email
+    employee.company_id = company_id
+    new_employee = models.Employee(**employee.model_dump())
+    db.add(new_employee)
+    db.commit()
+    db.refresh(new_employee)
+
+    return {"status": 200, "data": {new_employee}, "message": "Customer created successfully"}
+

@@ -1,8 +1,20 @@
 from __future__ import annotations
+from app.v1_1.models import ActivityStatus
 
 from typing import Optional, List, Any
 from pydantic import BaseModel
 from datetime import date, datetime
+
+
+# class ResponseDTO(BaseModel):
+#     status: str
+#     data: object
+#     message: str
+#
+#     def __init__(self,status, data, message):
+#         self.status = status
+#         self.data = data
+#         self.message = message
 
 
 class Modifier(BaseModel):
@@ -198,18 +210,25 @@ class BookOrder(Modifier):
     subtotal: float
 
 
-class AddEmployee(BaseModel):
-    employee_id: Optional[int] | None = None
-    company_id: int
-    branch_id: int
+class AddEmployee(Modifier):
+    employee_id: str = ""
+    company_id: Optional[str] | None = None
     employee_name: str
     employee_contact: int
-    email: str
+    employee_email: str
     employee_gender: str
+    employee_image: str
     DOJ: date
     DOB: date
-    type: str
-    role: List[int]
+    employee_address: str
+    aadhar_no: int
+    pan_no: int
+    employee_ifsc_code: str
+    employee_acc_no: int
+    employee_bank_name: str
+    employee_upi_code:str
+    employee_salary: float
+    active_status: ActivityStatus = "ACTIVE"
 
     class Config:
         from_attributes = True
@@ -242,3 +261,18 @@ class AuthBranches(Branch):
 
 class AuthenticationResponse(Companies):
     branches: List[AuthBranches]
+
+
+class AddCustomer(BaseModel):
+    customer_name: str
+    customer_number: str
+    customer_address: str
+    customer_birthdate: date
+    customer_points: int
+    customer_status: ActivityStatus = "ACTIVE"
+    company_id: Optional[str] | None = None
+
+
+class UpdateCustomer(AddCustomer):
+    modified_by: Optional[str] | None = None
+    modified_on: date = datetime.now()

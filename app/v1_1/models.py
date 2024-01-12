@@ -7,6 +7,24 @@ from enum import Enum as PyEnum
 from app.database import Base
 
 
+class ActivityStatus(PyEnum):
+    ACTIVE = 1
+    INACTIVE = 0
+
+
+class HalfDayStatus(PyEnum):
+    NO_HALF_DAY = 0
+    FIRST_HALF = 1
+    SECOND_HALF = 2
+
+
+class RolesEnum(PyEnum):
+    OWNER = 1
+    EMPLOYEE = 2
+    MANAGER = 3
+    ACCOUNTANT = 4
+
+
 class CompaniesV(Base):
     __tablename__ = "companies"
     __table_args__ = {'extend_existing': True}
@@ -43,7 +61,7 @@ class Roles(Base):
     __tablename__ = "roles"
 
     role_id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
-    role_name = Column(String, nullable=False)
+    role_name = Column(Enum(RolesEnum), nullable=False)
 
 
 class UsersV(Base):
@@ -78,6 +96,7 @@ class Branches(Base):
     branch_contact = Column(BIGINT, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    location = Column(String, nullable=False)
 
     company = relationship("Companies")
 
@@ -284,11 +303,6 @@ class Orders(Base):
     branch = relationship("Branches")
 
 
-class CustomerStatus(PyEnum):
-    ACTIVE = 1
-    INACTIVE = 0
-
-
 class Customer(Base):
     __tablename__ = "customers"
     __table_args__ = {'extend_existing': True}
@@ -301,7 +315,7 @@ class Customer(Base):
     customer_birthdate = Column(Date, nullable=True)
     onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     customer_points = Column(Integer, nullable=True)
-    customer_status = Column(Enum(CustomerStatus), nullable=False)
+    customer_status = Column(Enum(ActivityStatus), nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
 
@@ -318,7 +332,7 @@ class Employee(Base):
     DOJ = Column(Date, nullable=False)
     DOB = Column(Date, nullable=False)
     employee_address = Column(String, nullable=False)
-    adhar_no = Column(BIGINT, nullable=False)
+    aadhar_no = Column(BIGINT, nullable=False)
     pan_no = Column(BIGINT, nullable=False)
     employee_image = Column(String, nullable=False)
     employee_ifsc_code = Column(String, nullable=False)
@@ -326,7 +340,7 @@ class Employee(Base):
     employee_bank_name = Column(String, nullable=False)
     employee_upi_code = Column(String, nullable=False)
     employee_salary = Column(Float, nullable=False)
-    active_status = Column(Boolean, nullable=False)
+    active_status = Column(Enum(ActivityStatus), nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
 
@@ -343,6 +357,7 @@ class EmployeeLeaves(Base):
     leave_from = Column(Date, nullable=False)
     leave_till = Column(Date, nullable=False)
     reason = Column(String, nullable=False)
+    half_day_status = Column(Enum(HalfDayStatus), nullable=False)
     leave_approved = Column(Boolean, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
