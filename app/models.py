@@ -6,7 +6,7 @@ from app.infrastructure.database import Base
 
 
 class Companies(Base):
-    __tablename__ = "companies"
+    __tablename__ = "companies1"
     __table_args__ = {'extend_existing': True}
 
     company_id = Column(String, nullable=False, primary_key=True, unique=True,
@@ -16,10 +16,10 @@ class Companies(Base):
     company_logo = Column(String, nullable=True)
     company_email = Column(String, nullable=True)
     services = Column(String, nullable=True)
-    owner = Column(String, ForeignKey('users.user_id'), nullable=False)
+    owner = Column(String, ForeignKey('users1.user_id'), nullable=False)
     onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     @validates('company_name', 'company_email', 'company_contact')
     def empty_string_to_null(self, key, value):
@@ -30,7 +30,7 @@ class Companies(Base):
 
 
 class Users(Base):
-    __tablename__ = "users"
+    __tablename__ = "users1"
     __table_args__ = {'extend_existing': True}
 
     user_id = Column(String, primary_key=True, nullable=False, unique=True)
@@ -54,5 +54,5 @@ class UserCompany(Base):
     __table_args__ = {'extend_existing': True}
 
     id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
-    user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    user_id = Column(String, ForeignKey('users1.user_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)

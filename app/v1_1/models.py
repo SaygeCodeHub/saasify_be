@@ -26,7 +26,7 @@ class RolesEnum(PyEnum):
 
 
 class CompaniesV(Base):
-    __tablename__ = "companies"
+    __tablename__ = "companies1"
     __table_args__ = {'extend_existing': True}
 
     company_id = Column(String, nullable=False, primary_key=True, unique=True,
@@ -36,10 +36,10 @@ class CompaniesV(Base):
     company_logo = Column(String, nullable=True)
     company_email = Column(String, nullable=True)
     services = Column(String, nullable=True)
-    owner = Column(String, ForeignKey('users.user_id'), nullable=False)
+    owner = Column(String, ForeignKey('users1.user_id'), nullable=False)
     onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     @validates('company_name', 'company_email', 'company_contact')
     def empty_string_to_null(self, key, value):
@@ -65,7 +65,7 @@ class Roles(Base):
 
 
 class UsersV(Base):
-    __tablename__ = "users"
+    __tablename__ = "users1"
     __table_args__ = {'extend_existing': True}
 
     user_id = Column(String, primary_key=True, nullable=False, unique=True)
@@ -88,14 +88,14 @@ class Branches(Base):
     __tablename__ = 'branches'
 
     branch_id = Column(BIGINT, primary_key=True, autoincrement=True)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     branch_name = Column(String, nullable=False)
     branch_address = Column(String, nullable=False)
     branch_currency = Column(String, nullable=False)
     branch_active = Column(Boolean, nullable=False, server_default='TRUE')
     branch_contact = Column(BIGINT, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
     location = Column(String, nullable=False)
 
     company = relationship("Companies")
@@ -113,8 +113,8 @@ class UserAuthentication(Base):
     __table_args__ = {'extend_existing': True}
 
     id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
-    user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    user_id = Column(String, ForeignKey('users1.user_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=True)
     module_id = Column(BIGINT, ForeignKey('modules.module_id'), nullable=True)
     role_id = Column(BIGINT, ForeignKey('roles.role_id'), nullable=True)
@@ -127,8 +127,8 @@ class UserAuthentication(Base):
 #     __tablename__ = 'user_company'
 #
 #     id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
-#     user_id = Column(String, ForeignKey('users.user_id'), nullable=False)
-#     company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+#     user_id = Column(String, ForeignKey('users1.user_id'), nullable=False)
+#     company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
 #
 #     company = relationship("Companies")
 #     user = relationship("UsersV")
@@ -138,11 +138,11 @@ class Brand(Base):
     __tablename__ = 'brand'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'))
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     brand_id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
     brand_name = Column(String, nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies")
     branch = relationship("Branches")
@@ -159,12 +159,12 @@ class Category(Base):
     __tablename__ = 'category'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'))
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     category_id = Column(BIGINT, primary_key=True, autoincrement=True)
     category_name = Column(String, nullable=False)
     is_active = Column(Boolean, server_default='TRUE', nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies")
     branch = relationship("Branches")
@@ -181,12 +181,12 @@ class PaymentMethod(Base):
     __tablename__ = 'payment_method'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     payment_id = Column(BIGINT, primary_key=True, autoincrement=True)
     payment_name = Column(String, nullable=False)
     is_active = Column(Boolean, server_default='TRUE', nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies")
     branch = relationship("Branches")
@@ -203,14 +203,14 @@ class Products(Base):
     __tablename__ = 'products'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     brand_id = Column(BIGINT, ForeignKey('brand.brand_id'), nullable=True)
     category_id = Column(BIGINT, ForeignKey('category.category_id'), nullable=False)
     product_id = Column(BIGINT, primary_key=True, nullable=False, autoincrement=True)
     product_name = Column(String, nullable=False)
     product_description = Column(String, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies")
     branch = relationship("Branches")
@@ -230,7 +230,7 @@ class Variants(Base):
     __tablename__ = 'variants'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     product_id = Column(BIGINT, ForeignKey('products.product_id', ondelete="CASCADE"), nullable=False)
     variant_id = Column(BIGINT, primary_key=True, autoincrement=True)
     cost = Column(Double, nullable=True)
@@ -247,7 +247,7 @@ class Variants(Base):
     SGST = Column(Float, nullable=True)
     CGST = Column(Float, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies", foreign_keys=[company_id])
     branch = relationship("Branches", foreign_keys=[branch_id])
@@ -266,7 +266,7 @@ class Inventory(Base):
     __tablename__ = 'inventory'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     variant_id = Column(BIGINT, ForeignKey("variants.variant_id", ondelete="CASCADE"), nullable=True)
     stock_id = Column(BIGINT, primary_key=True, autoincrement=True)
     stock = Column(BIGINT, nullable=True)
@@ -275,14 +275,14 @@ class Inventory(Base):
     branch = relationship("Branches", foreign_keys=[branch_id])
     variants = relationship("Variants", foreign_keys=[variant_id])
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
 
 class Orders(Base):
     __tablename__ = 'orders'
 
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     order_id = Column(BIGINT, primary_key=True, autoincrement=True)
     order_no = Column(String, nullable=False, primary_key=True, unique=True,
                       server_default=text("EXTRACT(EPOCH FROM NOW())::BIGINT"))
@@ -297,7 +297,7 @@ class Orders(Base):
     customer_name = Column(String, nullable=True)
     gst = Column(String, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies")
     branch = relationship("Branches")
@@ -308,7 +308,7 @@ class Customer(Base):
     __table_args__ = {'extend_existing': True}
 
     customer_id = Column(BIGINT, primary_key=True, nullable=False, unique=True, autoincrement=True)
-    company_id = Column(String, ForeignKey("companies.company_id"), nullable=False)
+    company_id = Column(String, ForeignKey("companies1.company_id"), nullable=False)
     customer_name = Column(String, nullable=False)
     customer_number = Column(String, nullable=False, unique=True)
     customer_address = Column(String, nullable=True)
@@ -317,15 +317,15 @@ class Customer(Base):
     customer_points = Column(Integer, nullable=True)
     customer_status = Column(Enum(ActivityStatus), nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
 
 class Employee(Base):
     __tablename__ = 'employee'
 
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
-    employee_id = Column(String, ForeignKey('users.user_id'), primary_key=True)
-    employee_email = Column(String, ForeignKey('users.user_email'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
+    employee_id = Column(String, ForeignKey('users1.user_id'), primary_key=True)
+    employee_email = Column(String, ForeignKey('users1.user_email'), nullable=False)
     employee_name = Column(String, nullable=True)
     employee_contact = Column(BIGINT, nullable=False)
     employee_gender = Column(String, nullable=True)
@@ -342,7 +342,7 @@ class Employee(Base):
     employee_salary = Column(Float, nullable=False)
     active_status = Column(Enum(ActivityStatus), nullable=False)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     company = relationship("Companies")
 
@@ -352,7 +352,7 @@ class EmployeeLeaves(Base):
 
     leave_id = Column(BIGINT, primary_key=True, index=True)
     employee_id = Column(String, ForeignKey('employee.employee_id'), nullable=False)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
     leave_from = Column(Date, nullable=False)
     leave_till = Column(Date, nullable=False)
@@ -360,7 +360,7 @@ class EmployeeLeaves(Base):
     half_day_status = Column(Enum(HalfDayStatus), nullable=False)
     leave_approved = Column(Boolean, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     employee = relationship("Employee")
 
@@ -369,13 +369,13 @@ class EmployeeTimeRecord(Base):
     __tablename__ = "employee_time_records"
 
     time_record_id = Column(BIGINT, primary_key=True, index=True)
-    company_id = Column(String, ForeignKey('companies.company_id'), nullable=False)
+    company_id = Column(String, ForeignKey('companies1.company_id'), nullable=False)
     employee_id = Column(String, ForeignKey("employee.employee_id"), nullable=False)
     branch_id = Column(BIGINT, ForeignKey('branches.branch_id'), nullable=False)
     time_in = Column(DateTime(timezone=True), server_default=text('now()'))
     time_out = Column(DateTime(timezone=True), nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(String, ForeignKey("users.user_id"), nullable=False)
+    modified_by = Column(String, ForeignKey("users1.user_id"), nullable=False)
 
     employee = relationship("Employee")
 
