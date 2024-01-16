@@ -6,6 +6,10 @@ from typing import List
 import firebase_admin
 import sqlalchemy
 from fastapi import FastAPI, Depends, UploadFile, File
+
+from app.v2_0.domain import models_2
+from app.v2_0.application import api_interceptor
+
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, storage
 
@@ -13,12 +17,14 @@ from sqlalchemy import MetaData, Table, update, delete, desc, asc, func, insert
 from starlette.responses import JSONResponse
 
 from . import models, schemas
-from .database import engine, get_db
+from app.infrastructure.database import engine, get_db
 from .routes import authentication, on_boarding
 from .routes.authentication import get_all_branches
 from app.v1_1 import v1_1
 
 models.Base.metadata.create_all(bind=engine)
+models_2.Base_2.metadata.create_all(bind=engine)
+
 metadata = MetaData()
 
 app = FastAPI()
@@ -33,6 +39,7 @@ app.add_middleware(
 app.include_router(authentication.router)
 app.include_router(on_boarding.router)
 app.include_router(v1_1.router)
+app.include_router(api_interceptor.router)
 
 UPLOAD_DIR = "app/images"
 logging.basicConfig(filename='app.log', level=logging.DEBUG)

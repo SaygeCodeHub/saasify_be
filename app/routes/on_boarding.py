@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.infrastructure.database import get_db
 from app.routes.create_tables_script import create_company, create_branch
 from passlib.context import CryptContext
 from sqlalchemy import MetaData, Table, insert, Column, BIGINT, String, Boolean
 
 from app import models, schemas
-from app.database import engine
+from app.infrastructure.database import engine
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)

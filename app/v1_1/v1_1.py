@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import asc, desc, func
 from sqlalchemy.orm import Session, class_mapper
 from app import schemas
-from app.database import get_db, engine
+from app.infrastructure.database import get_db
 from app.schemas import AddEmployee, UpdateCustomer
 from app.v1_1 import models
 
 router = APIRouter()
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
 
 def create_instance(model, data):

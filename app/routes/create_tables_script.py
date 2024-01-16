@@ -3,7 +3,7 @@ from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignK
     TIMESTAMP, Float
 
 from app import models, schemas
-from app.database import engine
+from app.infrastructure.database import engine
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)

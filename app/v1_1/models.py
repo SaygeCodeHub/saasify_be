@@ -4,7 +4,7 @@ from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP, Boolean, Float, JSON, Double, DateTime
 from enum import Enum as PyEnum
 
-from app.database import Base
+from app.infrastructure.database import Base
 
 
 class ActivityStatus(PyEnum):
