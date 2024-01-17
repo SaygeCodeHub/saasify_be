@@ -78,8 +78,8 @@ class AddCompany(AddBranch, UpdateCompany):
 
 class AddUser(Modifier):
     """Contains all the fields that will be accessible to all objects of type - 'User' """
-    first_name: str
-    last_name: str
+    first_name: str = None
+    last_name: str = None
     password: str
     user_email: str
     user_contact: int = None
@@ -89,15 +89,23 @@ class AddUser(Modifier):
     change_password_token: str = None
 
 
-class AddEmployee(Modifier):
-    email:str
+class InviteEmployee(Modifier):
+    user_email: str
     role: RolesEnum
 
+
 class UpdateUser(Modifier):
+    first_name: str
+    last_name: str
     user_birthdate: date = None
     activity_status: ActivityStatus = None
     user_image: str = "Image"
     user_contact: int = None
+
+
+class UpdateEmployee(UpdateUser):
+    first_name: str
+    last_name: str
 
 
 class Credentials(BaseModel):
@@ -109,6 +117,7 @@ class Credentials(BaseModel):
 class PwdResetToken(BaseModel):
     """Used to get the JSON object for pwd reset token"""
     token: str
+    user_email: str
 
 
 class JSONObject(BaseModel):
@@ -136,10 +145,3 @@ class GetCompany(BaseModel):
 class GetBranch(BaseModel):
     branch_name: str
     branch_id: int
-
-
-class NewEmployee(BaseModel):
-    user_id: int
-    company_id: int
-    branch_id: int
-    role: RolesEnum
