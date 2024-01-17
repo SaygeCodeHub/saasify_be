@@ -5,7 +5,7 @@ import smtplib
 
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ExceptionDTO, ResponseDTO
-from app.v2_0.domain import models_2
+from app.v2_0.domain import models
 
 """-------------------------------Password update code starts below this line-----------------------------"""
 
@@ -13,29 +13,29 @@ from app.v2_0.domain import models_2
 def check_token(token, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
-        token_match = db.query(models_2.Users).filter(models_2.Users.change_password_token == token).first()
+        token_match = db.query(models.Users).filter(models.Users.change_password_token == token).first()
 
         if not token_match:
-            return ResponseDTO("204", "Reset token doesn't match",{})
+            return ResponseDTO(204, "Reset token doesn't match",{})
 
-        return ResponseDTO("200", "Reset token matched!",{})
+        return ResponseDTO(200, "Reset token matched!",{})
     except Exception as exc:
         return ExceptionDTO(exc)
 
 
 def change_password(obj,db):
     """Updates the password and makes the change_password_token null in db"""
-    user_query = db.query(models_2.Users).filter(models_2.Users.user_email == obj.model_dump()["email"])
+    user_query = db.query(models.Users).filter(models.Users.user_email == obj.model_dump()["email"])
     user = user_query.first()
 
     if not user:
-        return ResponseDTO("404", "User not found!", {})
+        return ResponseDTO(404, "User not found!", {})
 
     hashed_pwd = hash_pwd(obj.model_dump()["password"])
     user_query.update({"change_password_token": None, "password": hashed_pwd})
     db.commit()
 
-    return ResponseDTO("200", "Password updated successfully!", {})
+    return ResponseDTO(200, "Password updated successfully!", {})
 
 
 """-------------------------------Code below this line sends the change_password_token to an individual-----------------------------"""
@@ -59,7 +59,7 @@ def create_smtp_session(fetched_email, reset_code):
 def temporarily_add_token(reset_code, fetched_email, db):
     """Temporarily stores the reset code in DB"""
     try:
-        user_query = db.query(models_2.Users).filter(models_2.Users.user_email == fetched_email)
+        user_query = db.query(models.Users).filter(models.Users.user_email == fetched_email)
 
         user_query.update({"change_password_token": reset_code})
         db.commit()
@@ -81,14 +81,14 @@ def create_password_reset_code(fetched_email, db):
 def initiate_pwd_reset(user_email, db):
     """Fetches the user who has requested for password reset and calls a method to create a smtp session"""
     try:
-        fetched_user = db.query(models_2.Users).filter(models_2.Users.user_email == user_email).first()
+        fetched_user = db.query(models.Users).filter(models.Users.user_email == user_email).first()
         if fetched_user:
             fetched_email = fetched_user.user_email
             create_password_reset_code(fetched_email, db)
         else:
-            return ResponseDTO("404", "User not found",{})
+            return ResponseDTO(404, "User not found",{})
 
     except Exception as exc:
         return ExceptionDTO(exc)
 
-    return ResponseDTO("200", "Email sent successfully",{})
+    return ResponseDTO(200, "Email sent successfully",{})

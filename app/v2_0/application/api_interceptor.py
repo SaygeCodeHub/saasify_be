@@ -4,21 +4,22 @@ from typing import List
 from fastapi import APIRouter
 from fastapi import Depends
 
-from app.infrastructure.database import engine_2, get_db
+from app.v2_0.infrastructure.database import engine, get_db
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
-    modify_branch, fetch_branches, get_all_user_data, modify_branch_settings
-from app.v2_0.application.service.employee_service import add_employee, new_emp_in_company
-from app.v2_0.domain import models_2
+    modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
+from app.v2_0.application.service.employee_service import invite_employee, add_employee
+from app.v2_0.domain import models
 
-from app.v2_0.domain.schema_2 import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
-    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, NewEmployee, UpdateCompanySettings
+from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
+    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, NewEmployee, UpdateCompanySettings, \
+    GetCompanySettings, AddEmployee
 from app.v2_0.application.service.user_service import add_user, modify_user
 
 router = APIRouter()
-models_2.Base_2.metadata.create_all(bind=engine_2)
+models.Base.metadata.create_all(bind=engine)
 
 
 @router.post("/v2.0/registerUser")
@@ -35,10 +36,10 @@ def update_user(user: UpdateUser, user_id: int, db=Depends(get_db)):
 
 @router.post("/v2.0/authenticateUser")
 def login(credentials: Credentials, db=Depends(get_db)):
-    """Individual Login"""
+    """User Login"""
     email = credentials.model_dump()["email"]
     pwd = credentials.model_dump()["password"]
-    is_user_present = db.query(models_2.Users).filter(models_2.Users.user_email == email).first()
+    is_user_present = db.query(models.Users).filter(models.Users.user_email == email).first()
 
     if not is_user_present:
         return ResponseDTO("404", "User is not registered, please register.", {})
@@ -47,8 +48,8 @@ def login(credentials: Credentials, db=Depends(get_db)):
         return ResponseDTO("401", "Password Incorrect!", {})
 
     # Get all user data
-    ucb = db.query(models_2.UserCompanyBranch).filter(
-        models_2.UserCompanyBranch.user_id == is_user_present.user_id).first()
+    ucb = db.query(models.UserCompanyBranch).filter(
+        models.UserCompanyBranch.user_id == is_user_present.user_id).first()
     if ucb.company_id is None:
         data = []
     else:
@@ -78,6 +79,16 @@ def update_password(obj: Credentials, db=Depends(get_db)):
     return change_password(obj, db)
 
 
+@router.post("/v2.0/{company_id}/sendInvite")
+def send_employee_invite(user: AddEmployee, db=Depends(get_db)):
+    return invite_employee(user, db)
+
+
+@router.post("/v2.0/addEmployee")
+def add_employee_in_company(employee: NewEmployee, db=Depends(get_db)):
+    return add_employee(employee, db)
+
+
 @router.post("/v2.0/{user_id}/createCompany")
 def create_company(company: AddCompany, user_id: int, db=Depends(get_db)):
     return add_company(company, user_id, db)
@@ -88,9 +99,9 @@ def get_company(user_id: int, db=Depends(get_db)):
     return fetch_company(user_id, db)
 
 
-@router.put("/v2.0/{user_id}/updateCompany")
-def update_company(company: UpdateCompany, user_id: int, db=Depends(get_db)):
-    return modify_company(company, user_id, db)
+@router.put("/v2.0/{user_id}/{company_id}/updateCompany")
+def update_company(company: UpdateCompany, user_id: int, company_id: int, db=Depends(get_db)):
+    return modify_company(company, user_id, company_id, db)
 
 
 @router.post("/v2.0/{user_id}/{company_id}/createBranch")
@@ -98,26 +109,22 @@ def create_branch(branch: AddBranch, user_id: int, company_id: int, db=Depends(g
     return add_branch(branch, user_id, company_id, db)
 
 
-@router.put("/v2.0/{user_id}/{company_id}/updateBranch/{branch_id}")
+@router.put("/v2.0/{user_id}/{company_id}/{branch_id}/updateBranch")
 def update_branch(branch: UpdateBranch, user_id: int, branch_id: int, company_id: int, db=Depends(get_db)):
     return modify_branch(branch, user_id, branch_id, company_id, db)
 
 
-@router.get("/v2.0/{company_id}/getBranches", response_model=List[GetBranch])
-def get_branches(company_id: int, db=Depends(get_db)):
-    return fetch_branches(company_id, db)
-
-
-@router.post("/v2.0/{company_id}/sendInvite")
-def send_employee_invite(user: AddUser, db=Depends(get_db)):
-    return add_employee(user, db)
-
-
-@router.post("/v2.0/addEmployeeInCompany")
-def add_employee_in_company(employee: NewEmployee, db=Depends(get_db)):
-    return new_emp_in_company(employee, db)
+@router.get("/v2.0/{user_id}/{company_id}/getBranches", response_model=List[GetBranch])
+def get_branches(user_id: int, company_id: int, db=Depends(get_db)):
+    return fetch_branches(user_id, company_id, db)
 
 
 @router.put("/v2.0/{user_id}/{company_id}/{branch_id}/updateBranchSettings")
-def update_branch_settings(settings:UpdateCompanySettings,user_id:int, company_id:int, branch_id:int, db = Depends(get_db)):
-    return modify_branch_settings(settings,user_id,company_id,branch_id,db)
+def update_branch_settings(settings: UpdateCompanySettings, user_id: int, company_id: int, branch_id: int,
+                           db=Depends(get_db)):
+    return modify_branch_settings(settings, user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{user_id}/{company_id}/{branch_id}/getBranchSettings", response_model=GetCompanySettings)
+def get_branch_settings(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_branch_settings(user_id, company_id, branch_id, db)
