@@ -1,7 +1,7 @@
 """Models for table creation"""
 
 from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean
-from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy.sql.sqltypes import TIMESTAMP, Float
 from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
 
@@ -21,6 +21,26 @@ class RolesEnum(PyEnum):
     EMPLOYEE = 3
 
 
+class CompanySettings(Base_2):
+    """Contains all the fields required in the 'CompanySettings' table"""
+    __tablename__ = 'company_settings'
+
+    setting_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.branch_id"),nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.company_id"),nullable=False)
+    time_in = Column(String, nullable=True)
+    time_out = Column(String, nullable=True)
+    timezone = Column(String,nullable=True)
+    currency = Column(String,nullable=True)
+    default_approver = Column(Integer, ForeignKey("users.user_id"),nullable=False)
+    overtime_rate = Column(Float,nullable=True)
+    overtime_rate_per = Column(String, nullable=True)
+    is_hq_settings = Column(Boolean, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_by = Column(Integer, nullable=False)
+
+
 class Branches(Base_2):
     """Contains all the fields required in the 'branches' table"""
     __tablename__ = 'branches'
@@ -32,6 +52,9 @@ class Branches(Base_2):
     branch_currency = Column(String, nullable=True)
     branch_address = Column(String, nullable=True)
     location = Column(String, nullable=True)
+    pincode = Column(Integer,nullable=True)
+    longitude = Column(String, nullable=True)
+    latitude = Column(String, nullable=True)
     is_head_quarter = Column(Boolean, nullable=True)
     activity_status = Column(Enum(ActivityStatus), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))

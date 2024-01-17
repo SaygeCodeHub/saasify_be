@@ -3,7 +3,70 @@ from datetime import datetime
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain import models_2
-from app.v2_0.domain.schema_2 import AddBranch
+from app.v2_0.domain.schema_2 import AddBranch, CompanySettings
+
+
+def add_branch_to_ucb(new_branch, user_id, company_id, db):
+    """Adds the branch to Users company branch table"""
+    b = db.query(models_2.UserCompanyBranch).filter(models_2.UserCompanyBranch.user_id == user_id).first()
+
+    if b.branch_id is None:
+        db.query(models_2.UserCompanyBranch).filter(models_2.UserCompanyBranch.user_id == user_id).update(
+            {"branch_id": new_branch.branch_id})
+        db.commit()
+    elif b.branch_id != new_branch.branch_id:
+        new_rel = models_2.UserCompanyBranch(user_id=user_id, company_id=company_id, branch_id=new_branch.branch_id,
+                                             role="OWNER")
+        db.add(new_rel)
+        db.commit()
+
+
+def import_hq_settings(branch_id, company_id, user_id, db):
+    """It copies the settings of headquarters branch to other branches"""
+    hq_settings = db.query(models_2.CompanySettings).filter(
+        models_2.CompanySettings.company_id == company_id and models_2.CompanySettings.is_hq_settings == "true").first()
+    imported_settings = models_2.CompanySettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
+                                                 modified_on=datetime.now(), is_hq_settings=False,
+                                                 default_approver=hq_settings.default_approver,
+                                                 time_in=hq_settings.time_in, time_out=hq_settings.time_out,
+                                                 timezone=hq_settings.timezone, currency=hq_settings.currency,
+                                                 overtime_rate=hq_settings.overtime_rate,
+                                                 overtime_rate_per=hq_settings.overtime_rate_per)
+    db.add(imported_settings)
+    db.commit()
+    db.refresh(imported_settings)
+
+    return ResponseDTO("200", "Settings Imported successfully", {})
+
+
+def add_branch_settings(company_settings, user_id, db):
+    """Adds settings to a branch"""
+    get_branch = db.query(models_2.Branches).filter(models_2.Branches.branch_id == company_settings.branch_id).first()
+
+    if get_branch.is_head_quarter is True:
+        new_settings = models_2.CompanySettings(branch_id=company_settings.branch_id,
+                                                company_id=company_settings.company_id, modified_by=user_id,
+                                                modified_on=datetime.now(), is_hq_settings=True,
+                                                default_approver=company_settings.default_approver)
+        db.add(new_settings)
+        db.commit()
+        db.refresh(new_settings)
+    else:
+        import_hq_settings(company_settings.branch_id, company_settings.company_id, user_id, db)
+
+    return ResponseDTO("200", "Settings added!", {})
+
+
+def modify_branch_settings(settings, user_id, company_id, branch_id, db):
+    """Updates the branch settings"""
+    existing_settings_query = db.query(models_2.CompanySettings).filter(models_2.CompanySettings.branch_id == branch_id)
+    existing_settings = existing_settings_query.first()
+    settings.modified_on = datetime.now()
+    settings.modified_by = user_id
+    existing_settings_query.update(settings.__dict__)
+    db.commit()
+
+    return ResponseDTO("200", "Settings updated", {})
 
 
 def add_branch(branch, user_id, company_id, db):
@@ -19,17 +82,14 @@ def add_branch(branch, user_id, company_id, db):
     db.commit()
     db.refresh(new_branch)
 
-    b = db.query(models_2.UserCompanyBranch).filter(models_2.UserCompanyBranch.user_id == user_id).first()
+    # Adds the branch in Users_Company_Branches table
+    add_branch_to_ucb(new_branch, user_id, company_id, db)
 
-    if b.branch_id is None:
-        db.query(models_2.UserCompanyBranch).filter(models_2.UserCompanyBranch.user_id == user_id).update(
-            {"branch_id": new_branch.branch_id})
-        db.commit()
-    elif b.branch_id != new_branch.branch_id:
-        new_rel = models_2.UserCompanyBranch(user_id=user_id, company_id=company_id, branch_id=new_branch.branch_id,
-                                             role="OWNER")
-        db.add(new_rel)
-        db.commit()
+    company_settings = CompanySettings
+    company_settings.branch_id = new_branch.branch_id
+    company_settings.default_approver = user_id
+    company_settings.company_id = company_id
+    add_branch_settings(company_settings, user_id, db)
 
     return ResponseDTO("200", "Branch created successfully!", {})
 

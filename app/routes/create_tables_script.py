@@ -3,10 +3,10 @@ from sqlalchemy import MetaData, Table, Column, BIGINT, String, insert, ForeignK
     TIMESTAMP, Float
 
 from app import models, schemas
-from app.infrastructure.database import engine
+from app.infrastructure.database import engine_2
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine_2)
 metadata = MetaData()
 
 
@@ -85,7 +85,7 @@ def create_branch(companyId: str, inserted_id: int, db):
         Column("customer_name", String, nullable=True),
         Column("gst", String, nullable=True))
 
-    metadata.create_all(engine)
+    metadata.create_all(engine_2)
 
 
 def create_company(companyId: str, company: schemas.CreateCompany, db):
@@ -110,7 +110,7 @@ def create_company(companyId: str, company: schemas.CreateCompany, db):
         Column("employee_gender", String, nullable=True),
         Column("employee_branch_id", BIGINT, nullable=True))
 
-    metadata.create_all(engine)
+    metadata.create_all(engine_2)
     branch_table = Table(companyId + "_branches", metadata, autoload_with=db.bind)
     stmt = insert(branch_table).returning(branch_table.c.branch_id)
     inserted_id = db.execute(stmt,

@@ -13,6 +13,24 @@ class Modifier(BaseModel):
     modified_by: int = -1
 
 
+class UpdateCompanySettings(Modifier):
+    time_in: Optional[str] = "9:30"
+    time_out: Optional[str] = "6:30"
+    timezone: Optional[str] = None
+    currency: Optional[str] = None
+    default_approver: int
+    overtime_rate: Optional[float] = None
+    overtime_rate_per: Optional[str] = "HOUR"
+
+
+class CompanySettings(UpdateCompanySettings):
+    setting_id: int
+    branch_id: int
+    company_id: int
+    is_hq_settings: bool
+    created_at: date = datetime.now()
+
+
 class UpdateBranch(Modifier):
     company_id: int = None
     branch_name: str
@@ -22,6 +40,9 @@ class UpdateBranch(Modifier):
     is_head_quarter: bool = None
     branch_contact: int = None
     location: str = None
+    pincode: int = None,
+    longitude: str = None
+    latitude: str = None
 
 
 class AddBranch(UpdateBranch):

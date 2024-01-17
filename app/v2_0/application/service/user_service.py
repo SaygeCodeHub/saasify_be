@@ -27,7 +27,7 @@ def add_user(user, db):
     ucb = models_2.UserCompanyBranch(user_id=new_user.user_id)
     db.add(ucb)
     db.commit()
-    return ResponseDTO("200", "User created successfully", {})
+    return ResponseDTO("200", "User created successfully", {"user_id":new_user.user_id,"company":[]})
 
 
 def set_modified_by(new_user, db):

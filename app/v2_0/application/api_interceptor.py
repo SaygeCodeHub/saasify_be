@@ -4,24 +4,24 @@ from typing import List
 from fastapi import APIRouter
 from fastapi import Depends
 
-from app.infrastructure.database import engine, get_db
+from app.infrastructure.database import engine_2, get_db
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
-    modify_branch, fetch_branches, get_all_user_data
+    modify_branch, fetch_branches, get_all_user_data, modify_branch_settings
 from app.v2_0.application.service.employee_service import add_employee, new_emp_in_company
 from app.v2_0.domain import models_2
 
 from app.v2_0.domain.schema_2 import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
-    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, NewEmployee
+    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, NewEmployee, UpdateCompanySettings
 from app.v2_0.application.service.user_service import add_user, modify_user
 
 router = APIRouter()
-models_2.Base_2.metadata.create_all(bind=engine)
+models_2.Base_2.metadata.create_all(bind=engine_2)
 
 
-@router.post("/v2.0/newUser")
+@router.post("/v2.0/registerUser")
 def register_user(user: AddUser, db=Depends(get_db)):
     """Calls service layer to create a new user"""
     return add_user(user, db)
@@ -33,7 +33,7 @@ def update_user(user: UpdateUser, user_id: int, db=Depends(get_db)):
     return modify_user(user, user_id, db)
 
 
-@router.post("/v2.0/login")
+@router.post("/v2.0/authenticateUser")
 def login(credentials: Credentials, db=Depends(get_db)):
     """Individual Login"""
     email = credentials.model_dump()["email"]
@@ -53,7 +53,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         data = []
     else:
 
-        complete_data = get_all_user_data(is_user_present,ucb, db)
+        complete_data = get_all_user_data(is_user_present, ucb, db)
         data = [complete_data]
 
     return ResponseDTO("200", "Login successful",
@@ -108,7 +108,7 @@ def get_branches(company_id: int, db=Depends(get_db)):
     return fetch_branches(company_id, db)
 
 
-@router.post("/v2.0/sendInvite")
+@router.post("/v2.0/{company_id}/sendInvite")
 def send_employee_invite(user: AddUser, db=Depends(get_db)):
     return add_employee(user, db)
 
@@ -116,3 +116,8 @@ def send_employee_invite(user: AddUser, db=Depends(get_db)):
 @router.post("/v2.0/addEmployeeInCompany")
 def add_employee_in_company(employee: NewEmployee, db=Depends(get_db)):
     return new_emp_in_company(employee, db)
+
+
+@router.put("/v2.0/{user_id}/{company_id}/{branch_id}/updateBranchSettings")
+def update_branch_settings(settings:UpdateCompanySettings,user_id:int, company_id:int, branch_id:int, db = Depends(get_db)):
+    return modify_branch_settings(settings,user_id,company_id,branch_id,db)

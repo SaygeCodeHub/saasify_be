@@ -6,10 +6,10 @@ from passlib.context import CryptContext
 from sqlalchemy import MetaData, Table, insert, Column, BIGINT, String, Boolean
 
 from app import models, schemas
-from app.infrastructure.database import engine
+from app.infrastructure.database import engine_2
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine_2)
 metadata = MetaData()
 
 router = APIRouter()
@@ -83,5 +83,5 @@ def add_branch(tableName: str, db=Depends(get_db)):
         Column("payment_name", String, nullable=False, unique=True),
         Column("is_active", Boolean, nullable=False, server_default='TRUE'))
 
-    meta_data.create_all(engine)
+    meta_data.create_all(engine_2)
 
