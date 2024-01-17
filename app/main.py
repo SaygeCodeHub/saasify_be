@@ -1,31 +1,12 @@
-import logging
-import os
-import shutil
-from typing import List
+from fastapi import FastAPI
 
-import firebase_admin
-import sqlalchemy
-from fastapi import FastAPI, Depends, UploadFile, File
-
-from app.v2_0.domain import models_2
+from app.v2_0.domain import models
 from app.v2_0.application import api_interceptor
 
-from fastapi.middleware.cors import CORSMiddleware
-from firebase_admin import credentials, storage
+from app.v2_0.infrastructure.database import engine
 
-from sqlalchemy import MetaData, Table, update, delete, desc, asc, func, insert
-from starlette.responses import JSONResponse
+models.Base.metadata.create_all(bind=engine)
 
-from . import models, schemas
-from app.infrastructure.database import engine_2, get_db
-from .routes import authentication, on_boarding
-from .routes.authentication import get_all_branches
-from app.v1_1 import v1_1
-
-# models.Base.metadata.create_all(bind=engine)
-models_2.Base_2.metadata.create_all(bind=engine_2)
-
-# metadata = MetaData()
 
 app = FastAPI()
 # origins = ["*"]
@@ -36,9 +17,6 @@ app = FastAPI()
 #     allow_methods=["*"],
 #     allow_headers=["*"])
 #
-# app.include_router(authentication.router)
-# app.include_router(on_boarding.router)
-# app.include_router(v1_1.router)
 app.include_router(api_interceptor.router)
 
 # UPLOAD_DIR = "app/images"

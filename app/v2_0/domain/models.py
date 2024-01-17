@@ -5,7 +5,7 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP, Float
 from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
 
-from app.infrastructure.database import Base_2
+from app.v2_0.infrastructure.database import Base
 
 
 class ActivityStatus(PyEnum):
@@ -21,13 +21,14 @@ class RolesEnum(PyEnum):
     EMPLOYEE = 3
 
 
-class CompanySettings(Base_2):
+class CompanySettings(Base):
     """Contains all the fields required in the 'CompanySettings' table"""
     __tablename__ = 'company_settings'
 
     setting_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     branch_id = Column(Integer, ForeignKey("branches.branch_id"),nullable=False)
     company_id = Column(Integer, ForeignKey("companies.company_id"),nullable=False)
+    working_days = Column(Integer, nullable = True)
     time_in = Column(String, nullable=True)
     time_out = Column(String, nullable=True)
     timezone = Column(String,nullable=True)
@@ -41,7 +42,7 @@ class CompanySettings(Base_2):
     modified_by = Column(Integer, nullable=False)
 
 
-class Branches(Base_2):
+class Branches(Base):
     """Contains all the fields required in the 'branches' table"""
     __tablename__ = 'branches'
 
@@ -62,7 +63,7 @@ class Branches(Base_2):
     modified_by = Column(Integer, nullable=False)
 
 
-class Companies(Base_2):
+class Companies(Base):
     """Contains all the fields required in the 'companies' table"""
     __tablename__ = "companies"
     __table_args__ = {'extend_existing': True}
@@ -80,7 +81,7 @@ class Companies(Base_2):
     modified_by = Column(Integer, nullable=False)
 
 
-class Users(Base_2):
+class Users(Base):
     """Contains all the fields required in the 'users' table"""
     __tablename__ = "users"
     __table_args__ = {'extend_existing': True}
@@ -100,7 +101,7 @@ class Users(Base_2):
     change_password_token = Column(String, nullable=True)
 
 
-class UserCompanyBranch(Base_2):
+class UserCompanyBranch(Base):
     """Contains all the fields required for creating the table"""
     __tablename__ = 'user_company_branch'
 

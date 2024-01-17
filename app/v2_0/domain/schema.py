@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models_2 import ActivityStatus, RolesEnum
+from app.v2_0.domain.models import ActivityStatus, RolesEnum
 
 
 class Modifier(BaseModel):
@@ -13,12 +13,23 @@ class Modifier(BaseModel):
     modified_by: int = -1
 
 
+class GetCompanySettings(BaseModel):
+    time_in: Optional[str]
+    time_out: Optional[str]
+    timezone: Optional[str]
+    currency: Optional[str]
+    default_approver: Optional[int]
+    overtime_rate: Optional[float]
+    overtime_rate_per: Optional[str]
+
+
 class UpdateCompanySettings(Modifier):
     time_in: Optional[str] = "9:30"
     time_out: Optional[str] = "6:30"
     timezone: Optional[str] = None
     currency: Optional[str] = None
     default_approver: int
+    working_days: Optional[int]
     overtime_rate: Optional[float] = None
     overtime_rate_per: Optional[str] = "HOUR"
 
@@ -77,6 +88,10 @@ class AddUser(Modifier):
     activity_status: ActivityStatus = "ACTIVE"
     change_password_token: str = None
 
+
+class AddEmployee(Modifier):
+    email:str
+    role: RolesEnum
 
 class UpdateUser(Modifier):
     user_birthdate: date = None
