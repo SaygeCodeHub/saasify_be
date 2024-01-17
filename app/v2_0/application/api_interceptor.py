@@ -10,12 +10,12 @@ from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
-from app.v2_0.application.service.employee_service import invite_employee, add_employee
+from app.v2_0.application.service.employee_service import invite_employee, modify_employee
 from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
-    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, NewEmployee, UpdateCompanySettings, \
-    GetCompanySettings, AddEmployee
+    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, UpdateEmployee, UpdateCompanySettings, \
+    GetCompanySettings, InviteEmployee
 from app.v2_0.application.service.user_service import add_user, modify_user
 
 router = APIRouter()
@@ -28,7 +28,7 @@ def register_user(user: AddUser, db=Depends(get_db)):
     return add_user(user, db)
 
 
-@router.put("/v2.0/updateUser/{user_id}")
+@router.put("/v2.0/{user_id}/updateUser")
 def update_user(user: UpdateUser, user_id: int, db=Depends(get_db)):
     """Calls service layer to update user"""
     return modify_user(user, user_id, db)
@@ -70,7 +70,7 @@ def forgot_password(user_email: JSONObject, db=Depends(get_db)):
 @router.post("/v2.0/sendVerificationLink")
 def verify_token(token: PwdResetToken, db=Depends(get_db)):
     """Calls the service layer to verify the token received by an individual"""
-    return check_token(token.model_dump()["token"], db)
+    return check_token(token.model_dump()["token"], token.model_dump()["user_email"], db)
 
 
 @router.put("/v2.0/updatePassword")
@@ -79,14 +79,19 @@ def update_password(obj: Credentials, db=Depends(get_db)):
     return change_password(obj, db)
 
 
-@router.post("/v2.0/{company_id}/sendInvite")
-def send_employee_invite(user: AddEmployee, db=Depends(get_db)):
-    return invite_employee(user, db)
+@router.post("/v2.0/{user_id}/{company_id}/{branch_id}/sendInvite")
+def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return invite_employee(employee, user_id, company_id, branch_id, db)
 
 
-@router.post("/v2.0/addEmployee")
-def add_employee_in_company(employee: NewEmployee, db=Depends(get_db)):
-    return add_employee(employee, db)
+@router.post("/v2.0/{user_id}/{company_id}/{branch_id}/updateEmployee")
+def update_employee(employee: UpdateEmployee, user_id: int, db=Depends(get_db)):
+    return modify_employee(employee, user_id, db)
+
+
+# @router.get("/v2.0/{user_id}/{company_id}/{branch_id}/getEmployees")
+# def get_employees(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+#     return fetch_employees(user_id, company_id, branch_id, db)
 
 
 @router.post("/v2.0/{user_id}/createCompany")

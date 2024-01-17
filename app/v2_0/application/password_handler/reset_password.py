@@ -10,12 +10,11 @@ from app.v2_0.domain import models
 """-------------------------------Password update code starts below this line-----------------------------"""
 
 
-def check_token(token, db):
+def check_token(token,user_email, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
-        token_match = db.query(models.Users).filter(models.Users.change_password_token == token).first()
-
-        if not token_match:
+        user = db.query(models.Users).filter(models.Users.user_email == user_email).first()
+        if user.change_password_token != token:
             return ResponseDTO(204, "Reset token doesn't match",{})
 
         return ResponseDTO(200, "Reset token matched!",{})
