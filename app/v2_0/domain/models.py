@@ -1,9 +1,10 @@
 """Models for table creation"""
 
-from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean
-from sqlalchemy.sql.sqltypes import TIMESTAMP, Float
-from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
+
+from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean
+from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.sqltypes import TIMESTAMP, Float
 
 from app.v2_0.infrastructure.database import Base
 

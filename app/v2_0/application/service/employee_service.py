@@ -1,8 +1,6 @@
 """Service layer for Employees"""
 from datetime import datetime
 
-from sqlalchemy import select
-
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.domain import models

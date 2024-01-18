@@ -1,12 +1,10 @@
 from fastapi import FastAPI
 
-from app.v2_0.domain import models
 from app.v2_0.application import api_interceptor
-
+from app.v2_0.domain import models
 from app.v2_0.infrastructure.database import engine
 
 models.Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI()
 # origins = ["*"]

@@ -182,7 +182,7 @@ def fetch_company(user_id, db):
     return existing_company
 
 
-def modify_company(company, user_id,company_id, db):
+def modify_company(company, user_id, company_id, db):
     """Updates company data"""
     company_query = db.query(models.Companies).filter(models.Companies.company_id == company_id)
     company_exists = company_query.first()

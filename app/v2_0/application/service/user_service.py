@@ -1,8 +1,8 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.domain import models
 
 
@@ -27,7 +27,7 @@ def add_user(user, db):
     ucb = models.UserCompanyBranch(user_id=new_user.user_id)
     db.add(ucb)
     db.commit()
-    return ResponseDTO(200, "User created successfully", {"user_id":new_user.user_id,"company":[]})
+    return ResponseDTO(200, "User created successfully", {"user_id": new_user.user_id, "company": []})
 
 
 def set_modified_by(new_user, db):
