@@ -89,6 +89,14 @@ class AddUser(Modifier):
     change_password_token: str = None
 
 
+class GetEmployees(BaseModel):
+    first_name: str
+    last_name: str
+    user_email: str
+    user_contact: int
+    role: RolesEnum
+
+
 class InviteEmployee(Modifier):
     user_email: str
     role: RolesEnum

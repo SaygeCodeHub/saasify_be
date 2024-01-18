@@ -33,13 +33,15 @@ def modify_employee(employee, user_id, db):
 
     return ResponseDTO(200, "Employee data updated!", {})
 
-# def fetch_employees(user_id, company_id, branch_id, db):
-#     employees = db.execute(select(models.Users.first_name,models.Users.last_name, models.Users.user_id).join(models.Users.user_id).order_by(models.UserCompanyBranch.role=="EMPLOYEE"))
-#     # db.query(models.UserCompanyBranch).join(models.Users).filter(models.UserCompanyBranch.role == "EMPLOYEE").all()
-#     # select(models.Users.first_name, models.Users.last_name, models.UserCompanyBranch.user_id,
-#     #        models.UserCompanyBranch.role).select_from(
-#     #     models.Users).join(models.UserCompanyBranch, models.UserCompanyBranch.company_id == company_id)
-#     # models.UserCompanyBranch.company_id == company_id and
-#     # models.UserCompanyBranch.branch_id == branch_id and
-#
-#     return employees
+
+def fetch_employees(branch_id, db):
+    """Returns all the employees belonging to a particular branch"""
+    stmt = (select(models.Users.first_name, models.Users.last_name, models.Users.user_email, models.Users.user_contact,
+                   models.UserCompanyBranch.role).select_from(models.Users).join(models.UserCompanyBranch,
+                                                                                 models.Users.user_id == models.UserCompanyBranch.user_id)
+            .filter(models.UserCompanyBranch.branch_id == branch_id).filter(
+        models.UserCompanyBranch.role != "OWNER"))
+
+    employees = db.execute(stmt)
+
+    return employees

@@ -24,7 +24,7 @@ def add_branch_to_ucb(new_branch, user_id, company_id, db):
 def import_hq_settings(branch_id, company_id, user_id, db):
     """It copies the settings of headquarters branch to other branches"""
     hq_settings = db.query(models.CompanySettings).filter(
-        models.CompanySettings.company_id == company_id and models.CompanySettings.is_hq_settings == "true").first()
+        models.CompanySettings.company_id == company_id).filter(models.CompanySettings.is_hq_settings == "true").first()
     imported_settings = models.CompanySettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
                                                modified_on=datetime.now(), is_hq_settings=False,
                                                default_approver=hq_settings.default_approver,
