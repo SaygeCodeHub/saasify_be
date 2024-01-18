@@ -4,19 +4,18 @@ from typing import List
 from fastapi import APIRouter
 from fastapi import Depends
 
-from app.v2_0.infrastructure.database import engine, get_db
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
 from app.v2_0.application.service.employee_service import invite_employee, modify_employee
+from app.v2_0.application.service.user_service import add_user, modify_user
 from app.v2_0.domain import models
-
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
     UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, UpdateEmployee, UpdateCompanySettings, \
     GetCompanySettings, InviteEmployee
-from app.v2_0.application.service.user_service import add_user, modify_user
+from app.v2_0.infrastructure.database import engine, get_db
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)

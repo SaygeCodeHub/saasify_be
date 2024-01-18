@@ -1,8 +1,6 @@
 """Service layer for Employees"""
 from datetime import datetime
 
-from sqlalchemy import select
-
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.domain import models
@@ -34,7 +32,6 @@ def modify_employee(employee, user_id, db):
     db.commit()
 
     return ResponseDTO(200, "Employee data updated!", {})
-
 
 # def fetch_employees(user_id, company_id, branch_id, db):
 #     employees = db.execute(select(models.Users.first_name,models.Users.last_name, models.Users.user_id).join(models.Users.user_id).order_by(models.UserCompanyBranch.role=="EMPLOYEE"))
