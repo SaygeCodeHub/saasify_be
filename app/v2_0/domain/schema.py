@@ -13,7 +13,7 @@ class Modifier(BaseModel):
     modified_by: int = -1
 
 
-class GetCompanySettings(BaseModel):
+class GetBranchSettings(BaseModel):
     time_in: Optional[str]
     time_out: Optional[str]
     timezone: Optional[str]
@@ -23,7 +23,7 @@ class GetCompanySettings(BaseModel):
     overtime_rate_per: Optional[str]
 
 
-class UpdateCompanySettings(Modifier):
+class UpdateBranchSettings(Modifier):
     time_in: Optional[str] = "9:30"
     time_out: Optional[str] = "6:30"
     timezone: Optional[str] = None
@@ -34,7 +34,7 @@ class UpdateCompanySettings(Modifier):
     overtime_rate_per: Optional[str] = "HOUR"
 
 
-class CompanySettings(UpdateCompanySettings):
+class BranchSettings(UpdateBranchSettings):
     setting_id: int
     branch_id: int
     company_id: int
@@ -52,8 +52,8 @@ class UpdateBranch(Modifier):
     branch_contact: int = None
     location: str = None
     pincode: int = None,
-    longitude: str = None
-    latitude: str = None
+    longitude: float = None
+    latitude: float = None
 
 
 class AddBranch(UpdateBranch):
@@ -82,17 +82,15 @@ class AddUser(Modifier):
     last_name: str = None
     password: str
     user_email: str
-    user_contact: int = None
-    user_birthdate: date = None
-    user_image: str = "Image"
-    activity_status: ActivityStatus = "ACTIVE"
     change_password_token: str = None
+    medical_leaves: int = 12
+    casual_leaves: int = 3
+    activity_status: ActivityStatus = "ACTIVE"
 
 
 class GetEmployees(BaseModel):
     first_name: str
     last_name: str
-    user_email: str
     user_contact: int
     role: RolesEnum
 
@@ -138,9 +136,10 @@ class GetUser(BaseModel):
     first_name: str
     last_name: str
     user_id: int
-    user_email: str
     user_contact: int
     user_image: str
+    user_email: str
+
 
 
 class GetCompany(BaseModel):
