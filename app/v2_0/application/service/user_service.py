@@ -41,9 +41,12 @@ def modify_user(user, user_id, db):
     """Updates a User"""
     user_query = db.query(models.Users).filter(models.Users.user_id == user_id)
     user_exists = user_query.first()
+    contact_exists = db.query(models.Users).filter(models.Users.user_contact == user.user_contact).first()
 
     if not user_exists:
         return ResponseDTO(404, "User not found!", {})
+    if contact_exists:
+        return ResponseDTO(403, "User with this contact already exists!", {})
 
     user.modified_on = datetime.now()
     user.modified_by = user_exists.user_id
