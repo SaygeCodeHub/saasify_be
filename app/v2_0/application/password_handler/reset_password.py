@@ -1,28 +1,28 @@
 """Contains methods to reset password. Flow starts from the bottom most function of the file"""
-import string
 import random
 import smtplib
+import string
 
-from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ExceptionDTO, ResponseDTO
+from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.domain import models
 
 """-------------------------------Password update code starts below this line-----------------------------"""
 
 
-def check_token(token,user_email, db):
+def check_token(token, user_email, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
         user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == user_email).first()
         if user.change_password_token != token:
-            return ResponseDTO(204, "Reset token doesn't match",{})
+            return ResponseDTO(204, "Reset token doesn't match", {})
 
-        return ResponseDTO(200, "Reset token matched!",{})
+        return ResponseDTO(200, "Reset token matched!", {})
     except Exception as exc:
         return ExceptionDTO(exc)
 
 
-def change_password(obj,db):
+def change_password(obj, db):
     """Updates the password and makes the change_password_token null in db"""
     user_query = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == obj.model_dump()["email"])
     user = user_query.first()
@@ -85,9 +85,9 @@ def initiate_pwd_reset(user_email, db):
             fetched_email = fetched_user.user_email
             create_password_reset_code(fetched_email, db)
         else:
-            return ResponseDTO(404, "User not found",{})
+            return ResponseDTO(404, "User not found", {})
 
     except Exception as exc:
         return ExceptionDTO(exc)
 
-    return ResponseDTO(200, "Email sent successfully",{})
+    return ResponseDTO(200, "Email sent successfully", {})

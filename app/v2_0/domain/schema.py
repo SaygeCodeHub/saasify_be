@@ -1,6 +1,6 @@
 """Schemas for different models are written here"""
 from datetime import date, datetime
-from typing import Optional, List
+from typing import Optional
 
 from pydantic import BaseModel
 
