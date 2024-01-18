@@ -13,7 +13,7 @@ from app.v2_0.domain import models
 def check_token(token,user_email, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
-        user = db.query(models.Users).filter(models.Users.user_email == user_email).first()
+        user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == user_email).first()
         if user.change_password_token != token:
             return ResponseDTO(204, "Reset token doesn't match",{})
 
@@ -24,7 +24,7 @@ def check_token(token,user_email, db):
 
 def change_password(obj,db):
     """Updates the password and makes the change_password_token null in db"""
-    user_query = db.query(models.Users).filter(models.Users.user_email == obj.model_dump()["email"])
+    user_query = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == obj.model_dump()["email"])
     user = user_query.first()
 
     if not user:
@@ -58,7 +58,7 @@ def create_smtp_session(fetched_email, reset_code):
 def temporarily_add_token(reset_code, fetched_email, db):
     """Temporarily stores the reset code in DB"""
     try:
-        user_query = db.query(models.Users).filter(models.Users.user_email == fetched_email)
+        user_query = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == fetched_email)
 
         user_query.update({"change_password_token": reset_code})
         db.commit()
@@ -80,7 +80,7 @@ def create_password_reset_code(fetched_email, db):
 def initiate_pwd_reset(user_email, db):
     """Fetches the user who has requested for password reset and calls a method to create a smtp session"""
     try:
-        fetched_user = db.query(models.Users).filter(models.Users.user_email == user_email).first()
+        fetched_user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == user_email).first()
         if fetched_user:
             fetched_email = fetched_user.user_email
             create_password_reset_code(fetched_email, db)
