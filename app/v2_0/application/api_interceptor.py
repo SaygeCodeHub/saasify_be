@@ -4,6 +4,8 @@ from typing import List
 from fastapi import APIRouter
 from fastapi import Depends
 
+from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
+    fetch_pending_leaves, modify_leave_status
 from app.v2_0.infrastructure.database import engine, get_db
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
@@ -15,11 +17,13 @@ from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
     UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, UpdateEmployee, UpdateBranchSettings, \
-    GetBranchSettings, InviteEmployee, GetEmployees, GetUser
+    GetBranchSettings, InviteEmployee, GetEmployees, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
+
+"""----------------------------------------------User related APIs-------------------------------------------------------------------"""
 
 
 @router.post("/v2.0/registerUser")
@@ -28,7 +32,7 @@ def register_user(user: AddUser, db=Depends(get_db)):
     return add_user(user, db)
 
 
-@router.get("/v2.0/{user_id}/getUser",response_model=GetUser)
+@router.get("/v2.0/{user_id}/getUser", response_model=GetUser)
 def get_user_by_id(user_id: int, db=Depends(get_db)):
     return fetch_by_id(user_id, db)
 
@@ -94,6 +98,9 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
 #     return fetch_employees(branch_id, db)
 
 
+"""----------------------------------------------Company related APIs-------------------------------------------------------------------"""
+
+
 @router.post("/v2.0/{user_id}/createCompany")
 def create_company(company: AddCompany, user_id: int, db=Depends(get_db)):
     return add_company(company, user_id, db)
@@ -107,6 +114,9 @@ def get_company(user_id: int, db=Depends(get_db)):
 @router.put("/v2.0/{company_id}/{user_id}/updateCompany")
 def update_company(company: UpdateCompany, user_id: int, company_id: int, db=Depends(get_db)):
     return modify_company(company, user_id, company_id, db)
+
+
+"""----------------------------------------------Branch related APIs-------------------------------------------------------------------"""
 
 
 @router.post("/v2.0/{company_id}/{user_id}/createBranch")
@@ -124,6 +134,9 @@ def get_branches(user_id: int, company_id: int, db=Depends(get_db)):
     return fetch_branches(user_id, company_id, db)
 
 
+"""----------------------------------------------Branch Settings related APIs-------------------------------------------------------------------"""
+
+
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranchSettings")
 def update_branch_settings(settings: UpdateBranchSettings, user_id: int, company_id: int, branch_id: int,
                            db=Depends(get_db)):
@@ -133,3 +146,33 @@ def update_branch_settings(settings: UpdateBranchSettings, user_id: int, company
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getBranchSettings", response_model=GetBranchSettings)
 def get_branch_settings(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_branch_settings(user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Leave related APIs-------------------------------------------------------------------"""
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/loadApplyLeaveScreen")
+def load_apply_leave_screen(user_id: int, company_id: int, branch_id: int,
+                            db=Depends(get_db)):
+    return get_screen_apply_leave(user_id, company_id, branch_id, db)
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/applyLeave")
+def apply_leave(leave_application: ApplyLeave, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return apply_for_leave(leave_application, user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/myLeaves", response_model=List[GetLeaves])
+def get_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_leaves(user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/pendingLeaveApprovals", response_model=List[GetPendingLeaves])
+def get_pendingLeaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_pending_leaves(user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateLeaveStatus")
+def update_leave_status(application_response: UpdateLeave, user_id: int, company_id: int, branch_id: int,
+                        db=Depends(get_db)):
+    return modify_leave_status(application_response, user_id, company_id, branch_id, db)
