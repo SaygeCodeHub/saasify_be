@@ -1,6 +1,6 @@
 """Models for table creation"""
 
-from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean,Double
+from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean, Double
 from sqlalchemy.sql.sqltypes import TIMESTAMP, Float, ARRAY
 from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
@@ -27,6 +27,12 @@ class LeaveStatus(PyEnum):
     REJECTED = 0
     PENDING = 1
     ACCEPTED = 2
+
+
+class LeaveType(PyEnum):
+    """States the type of leave"""
+    CASUAL = 0
+    MEDICAL = 1
 
 
 class BranchSettings(Base):
@@ -113,17 +119,21 @@ class UserCompanyBranch(Base):
     company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=True)
     branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=True)
     role = Column(Enum(RolesEnum), nullable=True)
+    approvers = Column(ARRAY(Integer), nullable=False)
 
 
 class Leaves(Base):
     __tablename__ = 'leaves'
 
     leave_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users_auth.user_id"),nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.company_id"),nullable=False)
-    branch_id = Column(Integer, ForeignKey("branches.branch_id"),nullable=False)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=False)
+    leave_type = Column(Enum(LeaveType),nullable=False)
     leave_reason = Column(String, nullable=False)
-    comment = Column(String, nullable=False)
+    start_date = Column(Date,nullable=False)
+    end_date = Column(Date, nullable=False)
+    comment = Column(String, nullable=True)
     approvers = Column(ARRAY(Integer), nullable=False)
     leave_status = Column(Enum(LeaveStatus), nullable=True)
     is_leave_approved = Column(Boolean, nullable=False)
@@ -136,7 +146,7 @@ class UserDetails(Base):
     __tablename__ = 'user_details'
 
     details_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users_auth.user_id"),nullable=False)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     user_contact = Column(BIGINT, nullable=True, unique=True)
