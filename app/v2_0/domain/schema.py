@@ -1,16 +1,19 @@
 """Schemas for different models are written here"""
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models import ActivityStatus, RolesEnum
+from app.v2_0.domain.models import ActivityStatus, RolesEnum, LeaveType, LeaveStatus
 
 
 class Modifier(BaseModel):
     """Contains all the fields that will be inherited by other schemas """
     modified_on: date = datetime.now()
     modified_by: int = -1
+
+
+"""----------------------------------------------Branch Settings related schemas-------------------------------------------------------------------"""
 
 
 class GetBranchSettings(BaseModel):
@@ -42,6 +45,9 @@ class BranchSettings(UpdateBranchSettings):
     created_at: date = datetime.now()
 
 
+"""----------------------------------------------Branch related Schemas-------------------------------------------------------------------"""
+
+
 class UpdateBranch(Modifier):
     company_id: int = None
     branch_name: str
@@ -61,6 +67,14 @@ class AddBranch(UpdateBranch):
     created_at: date = datetime.now()
 
 
+class GetBranch(BaseModel):
+    branch_name: str
+    branch_id: int
+
+
+"""----------------------------------------------Company related Schemas-------------------------------------------------------------------"""
+
+
 class UpdateCompany(Modifier):
     company_name: str
     company_domain: str = None
@@ -76,6 +90,16 @@ class AddCompany(AddBranch, UpdateCompany):
     onboarding_date: date = datetime.now()
 
 
+class GetCompany(BaseModel):
+    company_id: int
+    company_name: Optional[str]
+    company_logo: Optional[str]
+    company_email: Optional[str]
+
+
+"""----------------------------------------------User related Schemas-------------------------------------------------------------------"""
+
+
 class AddUser(Modifier):
     """Contains all the fields that will be accessible to all objects of type - 'User' """
     first_name: str = None
@@ -86,6 +110,27 @@ class AddUser(Modifier):
     medical_leaves: int = 12
     casual_leaves: int = 3
     activity_status: ActivityStatus = "ACTIVE"
+
+
+class GetUser(BaseModel):
+    first_name: str
+    last_name: str
+    user_id: int
+    user_contact: int
+    user_image: str
+    user_email: str
+
+
+class UpdateUser(Modifier):
+    first_name: str
+    last_name: str
+    user_birthdate: date = None
+    activity_status: ActivityStatus = None
+    user_image: str = "Image"
+    user_contact: int = None
+
+
+"""----------------------------------------------Employee related Schemas-------------------------------------------------------------------"""
 
 
 class GetEmployees(BaseModel):
@@ -100,18 +145,57 @@ class InviteEmployee(Modifier):
     role: RolesEnum
 
 
-class UpdateUser(Modifier):
-    first_name: str
-    last_name: str
-    user_birthdate: date = None
-    activity_status: ActivityStatus = None
-    user_image: str = "Image"
-    user_contact: int = None
-
-
 class UpdateEmployee(UpdateUser):
     first_name: str
     last_name: str
+
+
+"""----------------------------------------------Leaves related Schemas-------------------------------------------------------------------"""
+
+
+class UpdateLeave(Modifier):
+    leave_id: int
+    comment: str
+    leave_status: LeaveStatus = None
+    is_leave_approved: bool
+
+
+class GetPendingLeaves(BaseModel):
+    user_id: int
+    name: str
+    leave_type: LeaveType
+    leave_reason: str
+    start_date: date
+    end_date: date
+    approvers: List
+
+
+class GetLeaves(BaseModel):
+    company_id: int
+    branch_id: int
+    user_id: int
+    leave_type: LeaveType
+    leave_reason: str
+    start_date: date
+    end_date: date
+    approvers: List
+    leave_status: LeaveStatus
+
+
+class ApplyLeave(Modifier):
+    company_id: int = None
+    branch_id: int = None
+    user_id: int = None
+    leave_type: LeaveType
+    leave_reason: str
+    start_date: date
+    end_date: date
+    approvers: List
+    leave_status: LeaveStatus = "PENDING"
+    is_leave_approved: bool = False
+
+
+"""----------------------------------------------Utility Schemas-------------------------------------------------------------------"""
 
 
 class Credentials(BaseModel):
@@ -130,25 +214,3 @@ class JSONObject(BaseModel):
     """Used to get selected json fields from FE"""
     email: Optional[str] = None
     pwd: Optional[str] = None
-
-
-class GetUser(BaseModel):
-    first_name: str
-    last_name: str
-    user_id: int
-    user_contact: int
-    user_image: str
-    user_email: str
-
-
-
-class GetCompany(BaseModel):
-    company_id: int
-    company_name: Optional[str]
-    company_logo: Optional[str]
-    company_email: Optional[str]
-
-
-class GetBranch(BaseModel):
-    branch_name: str
-    branch_id: int
