@@ -10,9 +10,10 @@ from app.v2_0.domain import models
 from app.v2_0.domain.schema import AddUser
 
 
-def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
+def add_employee_to_ucb(employee,inviter, new_employee, company_id, branch_id, db):
+    approvers_list = [inviter.user_id]
     ucb_employee = models.UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id, branch_id=branch_id,
-                                            role=employee.role)
+                                            role=employee.role,approvers=approvers_list)
     db.add(ucb_employee)
     db.commit()
 
@@ -29,13 +30,13 @@ def set_employee_details(new_employee, db):
 
 def invite_employee(employee, user_id, company_id, branch_id, db):
     """Adds an employee in the db"""
-    user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+    inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
     new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
-                                    invited_by=user.user_email)
+                                    invited_by=inviter.user_email)
     db.add(new_employee)
     db.commit()
     db.refresh(new_employee)
-    add_employee_to_ucb(employee, new_employee, company_id, branch_id, db)
+    add_employee_to_ucb(employee,inviter, new_employee, company_id, branch_id, db)
     set_employee_details(new_employee, db)
     create_password_reset_code(employee.user_email, db)
 

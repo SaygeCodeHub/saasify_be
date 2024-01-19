@@ -4,7 +4,7 @@ import random
 import smtplib
 
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.application.dto.dto_classes import ExceptionDTO, ResponseDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain import models
 
 """-------------------------------Password update code starts below this line-----------------------------"""
@@ -19,7 +19,7 @@ def check_token(token,user_email, db):
 
         return ResponseDTO(200, "Reset token matched!",{})
     except Exception as exc:
-        return ExceptionDTO(exc)
+        return exc
 
 
 def change_password(obj,db):
@@ -64,7 +64,7 @@ def temporarily_add_token(reset_code, fetched_email, db):
         db.commit()
         create_smtp_session(fetched_email, reset_code)
     except Exception as exc:
-        return ExceptionDTO(exc)
+        return exc
 
 
 def create_password_reset_code(fetched_email, db):
@@ -88,6 +88,6 @@ def initiate_pwd_reset(user_email, db):
             return ResponseDTO(404, "User not found",{})
 
     except Exception as exc:
-        return ExceptionDTO(exc)
+        return exc
 
     return ResponseDTO(200, "Email sent successfully",{})

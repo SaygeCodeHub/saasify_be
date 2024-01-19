@@ -19,7 +19,8 @@ def add_user_details(user, user_id, db):
 
 
 def add_to_ucb(new_user, db):
-    ucb = models.UserCompanyBranch(user_id=new_user.user_id)
+    approvers_list = [new_user.user_id]
+    ucb = models.UserCompanyBranch(user_id=new_user.user_id,approvers=approvers_list)
     db.add(ucb)
     db.commit()
 
