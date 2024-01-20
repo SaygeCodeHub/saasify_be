@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "postgresql://db_saasify_bb5z_user:SeyzkwBSm2YpekFp4VhHpqMaCYjTpVBX@dpg-cl6nv7oicrhc73fp5750-a.singapore-postgres.render.com/db_saasify_bb5z"
+SQLALCHEMY_DATABASE_URL = "postgres://default:hurR7WSdp6wl@ep-wild-term-46659373.us-east-1.postgres.vercel-storage.com:5432/verceldb"
 
 # SQLALCHEMY_DATABASE_URL = "postgresql://postgres:root@localhost:5432/postgres"  # Jayraj's local instance for v1.1
 # SQLALCHEMY_DATABASE_URL = "postgresql://postgres:root@localhost:5432/saasify_2.0"  # Jayraj's local instance for v2.0
