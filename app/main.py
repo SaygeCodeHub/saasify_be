@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.v2_0.application import api_interceptor
 from app.v2_0.domain import models
@@ -7,23 +8,26 @@ from app.v2_0.infrastructure.database import engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-# origins = ["*"]
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"])
-#
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_interceptor.router)
 
+
+@app.get('/')
+def root():
+    return {'message': 'Hello world'}
 # UPLOAD_DIR = "app/images"
 # logging.basicConfig(filename='app.log', level=logging.DEBUG)
 #
 #
-# @app.get('/')
-# def root():
-#     return {'message': 'Hello world'}
+
 #
 #
 # cred = credentials.Certificate("saasify-de974-firebase-adminsdk-q7lul-e6555891c4.json")
