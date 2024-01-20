@@ -22,7 +22,7 @@ app.include_router(api_interceptor.router)
 
 @app.get('/')
 def root():
-    return {'message': 'Hello world'}
+    return {'message': 'Welcome to SaaSify'}
 # UPLOAD_DIR = "app/images"
 # logging.basicConfig(filename='app.log', level=logging.DEBUG)
 #
