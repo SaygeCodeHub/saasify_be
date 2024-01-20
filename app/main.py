@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.v2_0.application import api_interceptor
 from app.v2_0.domain import models
 from app.v2_0.infrastructure.database import engine
+from fastapi.responses import HTMLResponse
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -22,7 +24,12 @@ app.include_router(api_interceptor.router)
 
 @app.get('/')
 def root():
-    return {'message': 'Welcome to SaaSify'}
+    html_content = """
+    <html><body>Welcome to SaaSify backend repository! This repository contains the backend codebase for our SaaSify application. Ensure that you have updated your master branch before deploying new changes.<br>If you have any questions or encounter issues, feel free to reach out to our team members:<br><br>Aditi Diwan<br>Email: <a href = "mailto: aditi.diwan005@gmail.com">aditi.diwan005@gmail.com</a><br><br>Jayraj Deshmukh<br>Email: <a href = "mailto: jayraj.manoj@gmail.com">jayraj.manoj@gmail.com</a></body></html>
+    """
+
+    return HTMLResponse(content=html_content, status_code=200)
+
 # UPLOAD_DIR = "app/images"
 # logging.basicConfig(filename='app.log', level=logging.DEBUG)
 #
