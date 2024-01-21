@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
 
 
@@ -19,7 +19,7 @@ def add_user_details(user, user_id, db):
         db.commit()
         db.refresh(user_details)
     except Exception as exc:
-        return exc
+        return ExceptionDTO("add_user_details",exc)
 
 
 def add_to_ucb(new_user, db):
@@ -30,7 +30,7 @@ def add_to_ucb(new_user, db):
         db.add(ucb)
         db.commit()
     except Exception as exc:
-        return exc
+        return ExceptionDTO("add_to_ucb",exc)
 
 
 def add_user(user, db):
@@ -55,7 +55,7 @@ def add_user(user, db):
         return ResponseDTO(200, "User created successfully",
                            {"user_id": new_user.user_id, "name": user.first_name + " " + user.last_name, "company": []})
     except Exception as exc:
-        return exc
+        return ExceptionDTO("add_user",exc)
 
 
 def set_modified_by(new_user, db):
@@ -65,30 +65,37 @@ def set_modified_by(new_user, db):
             {"modified_by": new_user.user_id})
         db.commit()
     except Exception as exc:
-        return exc
+        return ExceptionDTO("set_modified_by",exc)
 
 
 def fetch_by_id(user_id, db):
-    user = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
-    user_auth = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
-    user.__dict__["user_email"] = user_auth.user_email
-    return user
+    """Fetches a user by his id"""
+    try:
+        user = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
+        user_auth = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user.__dict__["user_email"] = user_auth.user_email
+        return user
+    except Exception as exc:
+        return ExceptionDTO("fetch_by_id",exc)
 
 
 def modify_user(user, user_id, db):
     """Updates a User"""
-    user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id)
-    user_exists = user_query.first()
-    contact_exists = db.query(models.UserDetails).filter(models.UserDetails.user_contact == user.user_contact).first()
+    try:
+        user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id)
+        user_exists = user_query.first()
+        contact_exists = db.query(models.UserDetails).filter(models.UserDetails.user_contact == user.user_contact).first()
 
-    if not user_exists:
-        return ResponseDTO(404, "User not found!", {})
-    if contact_exists:
-        return ResponseDTO(403, "User with this contact already exists!", {})
+        if not user_exists:
+            return ResponseDTO(404, "User not found!", {})
+        if contact_exists:
+            return ResponseDTO(403, "User with this contact already exists!", {})
 
-    user.modified_on = datetime.now()
-    user.modified_by = user_exists.user_id
-    user_query.update(user.__dict__)
-    db.commit()
+        user.modified_on = datetime.now()
+        user.modified_by = user_exists.user_id
+        user_query.update(user.__dict__)
+        db.commit()
 
-    return ResponseDTO(200, "User updated successfully", {})
+        return ResponseDTO(200, "User updated successfully", {})
+    except Exception as exc:
+        return ExceptionDTO("modify_user",exc)

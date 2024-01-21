@@ -7,7 +7,7 @@ from fastapi import Depends
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_pending_leaves, modify_leave_status
 from app.v2_0.infrastructure.database import engine, get_db
-from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
@@ -16,7 +16,7 @@ from app.v2_0.application.service.employee_service import invite_employee
 from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
-    UpdateUser, UpdateCompany, UpdateBranch, GetBranch, UpdateBranchSettings, \
+    UpdateUser, UpdateCompany, UpdateBranch, UpdateBranchSettings, \
     GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id
 
@@ -46,28 +46,31 @@ def update_user(user: UpdateUser, user_id: int, db=Depends(get_db)):
 @router.post("/v2.0/authenticateUser")
 def login(credentials: Credentials, db=Depends(get_db)):
     """User Login"""
-    email = credentials.model_dump()["email"]
-    pwd = credentials.model_dump()["password"]
-    is_user_present = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == email).first()
+    try:
+        email = credentials.model_dump()["email"]
+        pwd = credentials.model_dump()["password"]
+        is_user_present = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == email).first()
 
-    if not is_user_present:
-        return ResponseDTO("404", "User is not registered, please register.", {})
+        if not is_user_present:
+            return ResponseDTO("404", "User is not registered, please register.", {})
 
-    if not verify(pwd, is_user_present.password):
-        return ResponseDTO("401", "Password Incorrect!", {})
+        if not verify(pwd, is_user_present.password):
+            return ResponseDTO("401", "Password Incorrect!", {})
 
-    # Get all user data
-    ucb = db.query(models.UserCompanyBranch).filter(
-        models.UserCompanyBranch.user_id == is_user_present.user_id).first()
-    if ucb.company_id is None:
-        data = []
-    else:
+        # Get all user data
+        ucb = db.query(models.UserCompanyBranch).filter(
+            models.UserCompanyBranch.user_id == is_user_present.user_id).first()
+        if ucb.company_id is None:
+            data = []
+        else:
 
-        complete_data = get_all_user_data(is_user_present, ucb, db)
-        data = [complete_data]
+            complete_data = get_all_user_data(is_user_present, ucb, db)
+            data = [complete_data]
 
-    return ResponseDTO("200", "Login successful",
-                       {"user_id": is_user_present.user_id, "company": data})
+        return ResponseDTO("200", "Login successful",
+                           {"user_id": is_user_present.user_id, "company": data})
+    except Exception as exc:
+        return ExceptionDTO("login",exc)
 
 
 @router.post("/v2.0/forgotPassword")
@@ -129,7 +132,7 @@ def update_branch(branch: UpdateBranch, user_id: int, branch_id: int, company_id
     return modify_branch(branch, user_id, branch_id, company_id, db)
 
 
-@router.get("/v2.0/{company_id}/{user_id}/getBranches", response_model=List[GetBranch])
+@router.get("/v2.0/{company_id}/{user_id}/getBranches")
 def get_branches(user_id: int, company_id: int, db=Depends(get_db)):
     return fetch_branches(user_id, company_id, db)
 

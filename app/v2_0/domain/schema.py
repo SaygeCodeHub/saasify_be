@@ -143,6 +143,7 @@ class GetEmployees(BaseModel):
 class InviteEmployee(Modifier):
     user_email: str
     role: RolesEnum
+    approvers: List = None
 
 
 class UpdateEmployee(UpdateUser):
