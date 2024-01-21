@@ -1,4 +1,2 @@
 /venv/
 /app.log
-*.pyc
-__pycache__/
