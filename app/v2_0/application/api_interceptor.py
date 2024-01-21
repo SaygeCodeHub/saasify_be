@@ -16,8 +16,8 @@ from app.v2_0.application.service.employee_service import invite_employee
 from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
-    UpdateUser, UpdateCompany, UpdateBranch, GetCompany, GetBranch, UpdateEmployee, UpdateBranchSettings, \
-    GetBranchSettings, InviteEmployee, GetEmployees, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave
+    UpdateUser, UpdateCompany, UpdateBranch, GetBranch, UpdateBranchSettings, \
+    GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id
 
 router = APIRouter()
@@ -106,7 +106,7 @@ def create_company(company: AddCompany, user_id: int, db=Depends(get_db)):
     return add_company(company, user_id, db)
 
 
-@router.get("/v2.0/{user_id}/getCompany", response_model=GetCompany)
+@router.get("/v2.0/{user_id}/getCompany")
 def get_company(user_id: int, db=Depends(get_db)):
     return fetch_company(user_id, db)
 
