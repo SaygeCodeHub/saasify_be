@@ -19,7 +19,7 @@ def add_user_details(user, user_id, db):
         db.commit()
         db.refresh(user_details)
     except Exception as exc:
-        return ExceptionDTO("add_user_details",exc)
+        return ExceptionDTO("add_user_details", exc)
 
 
 def add_to_ucb(new_user, db):
@@ -30,7 +30,7 @@ def add_to_ucb(new_user, db):
         db.add(ucb)
         db.commit()
     except Exception as exc:
-        return ExceptionDTO("add_to_ucb",exc)
+        return ExceptionDTO("add_to_ucb", exc)
 
 
 def add_user(user, db):
@@ -55,7 +55,7 @@ def add_user(user, db):
         return ResponseDTO(200, "User created successfully",
                            {"user_id": new_user.user_id, "name": user.first_name + " " + user.last_name, "company": []})
     except Exception as exc:
-        return ExceptionDTO("add_user",exc)
+        return ExceptionDTO("add_user", exc)
 
 
 def set_modified_by(new_user, db):
@@ -65,7 +65,7 @@ def set_modified_by(new_user, db):
             {"modified_by": new_user.user_id})
         db.commit()
     except Exception as exc:
-        return ExceptionDTO("set_modified_by",exc)
+        return ExceptionDTO("set_modified_by", exc)
 
 
 def fetch_by_id(user_id, db):
@@ -76,7 +76,7 @@ def fetch_by_id(user_id, db):
         user.__dict__["user_email"] = user_auth.user_email
         return user
     except Exception as exc:
-        return ExceptionDTO("fetch_by_id",exc)
+        return ExceptionDTO("fetch_by_id", exc)
 
 
 def modify_user(user, user_id, db):
@@ -84,7 +84,8 @@ def modify_user(user, user_id, db):
     try:
         user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id)
         user_exists = user_query.first()
-        contact_exists = db.query(models.UserDetails).filter(models.UserDetails.user_contact == user.user_contact).first()
+        contact_exists = db.query(models.UserDetails).filter(
+            models.UserDetails.user_contact == user.user_contact).first()
 
         if not user_exists:
             return ResponseDTO(404, "User not found!", {})
@@ -98,4 +99,55 @@ def modify_user(user, user_id, db):
 
         return ResponseDTO(200, "User updated successfully", {})
     except Exception as exc:
-        return ExceptionDTO("modify_user",exc)
+        return ExceptionDTO("modify_user", exc)
+
+
+def add_new_approver(approver, user_id, company_id, branch_id, db):
+    """Adds an approver to the list of approvers of a user"""
+    try:
+        user_query = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id)
+        user = user_query.first()
+
+        if user is None:
+            return ResponseDTO(404, "User not found", {})
+
+        approvers_list = user.approvers
+        approvers_set = set(approvers_list)
+        for a in approver.approvers:
+            approvers_set.add(a)
+
+        new_approvers_list = list(approvers_set)
+
+        approver.approvers = new_approvers_list
+
+        user_query.update(approver.__dict__)
+        db.commit()
+
+        return ResponseDTO(200, "Approvers added!", {})
+
+    except Exception as exc:
+        return ExceptionDTO("add_new_approver", exc)
+
+
+def remove_existing_approver(approver, user_id, company_id, branch_id, db):
+    """Removes an approver form the list of approvers of a user"""
+    try:
+        user_query = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id)
+        user = user_query.first()
+
+        if user is None:
+            return ResponseDTO(404, "User not found", {})
+
+        if len(approver.approvers) is 0:
+            company = db.query(models.Companies).filter(models.Companies.company_id == user.company_id).first()
+            approver_list = [company.owner]
+
+        approver.approvers = approver_list
+
+        user_query.update(approver.__dict__)
+        db.commit()
+
+        return ResponseDTO(200, "Approvers removed!", user)
+
+    except Exception as exc:
+        return ExceptionDTO("remove_existing_approver", exc)

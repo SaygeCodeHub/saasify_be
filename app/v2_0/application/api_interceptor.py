@@ -1,7 +1,8 @@
 """Apis are intercepted in this file"""
 from typing import List
 
-from fastapi import APIRouter
+import httpx
+from fastapi import APIRouter, HTTPException
 from fastapi import Depends
 
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
@@ -17,8 +18,9 @@ from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
     UpdateUser, UpdateCompany, UpdateBranch, UpdateBranchSettings, \
-    GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave
-from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id
+    GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave, AddApprover
+from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, add_new_approver, \
+    remove_existing_approver
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
@@ -70,7 +72,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         return ResponseDTO("200", "Login successful",
                            {"user_id": is_user_present.user_id, "company": data})
     except Exception as exc:
-        return ExceptionDTO("login",exc)
+        return ExceptionDTO("login", exc)
 
 
 @router.post("/v2.0/forgotPassword")
@@ -179,3 +181,46 @@ def get_pendingLeaves(user_id: int, company_id: int, branch_id: int, db=Depends(
 def update_leave_status(application_response: UpdateLeave, user_id: int, company_id: int, branch_id: int,
                         db=Depends(get_db)):
     return modify_leave_status(application_response, user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Approver related APIs-------------------------------------------------------------------"""
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/addApprover")
+def add_approver(approver: AddApprover, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return add_new_approver(approver, user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/removeApprover")
+def remove_approver(approver: AddApprover, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return remove_existing_approver(approver, user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Push notification APIs-------------------------------------------------------------------"""
+
+
+@router.post('/v2.0/sendPushNotification')
+def send_notification(device_token: str, title: str, body: str):
+    server_key = 'AAAAMh0B0ok:APA91bHtNakNYQgnn9uvHfcAMVrQORfb7zLjbeY-VnC6R8e832rld_6OztK2hhMvGQC0gHjvwIr-B5w8t1dTqiE7j7NqGlejQiO7X72Ol-KwzbSN9rWgE8MM3RGlcgDSEjzpmZrXFmKy'
+    fcm_endpoint = 'https://fcm.googleapis.com/fcm/send'
+
+    message = {
+        'to': device_token,
+        'notification': {
+            'title': title,
+            'body': body,
+        },
+    }
+
+    headers = {
+        'Authorization': f'key={server_key}',
+        'Content-Type': 'application/json',
+    }
+
+    with httpx.AsyncClient() as client:
+        response = client.post(fcm_endpoint, json=message, headers=headers)
+
+        if response.status_code == 200:
+            return {'message': 'Notification sent successfully'}
+        else:
+            raise HTTPException(status_code=response.status_code, detail=response.text)

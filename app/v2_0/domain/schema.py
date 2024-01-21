@@ -196,6 +196,13 @@ class ApplyLeave(Modifier):
     is_leave_approved: bool = False
 
 
+"""----------------------------------------------Approver related Schemas-------------------------------------------------------------------"""
+
+
+class AddApprover(BaseModel):
+    approvers: List
+
+
 """----------------------------------------------Utility Schemas-------------------------------------------------------------------"""
 
 
