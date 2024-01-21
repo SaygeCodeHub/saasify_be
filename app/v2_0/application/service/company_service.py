@@ -93,27 +93,31 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
 
 def add_branch(branch, user_id, company_id, db):
     """Creates a branch for a company"""
-    company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-    if company_exists is None:
-        return ResponseDTO(404, "Company not found!", {})
+    try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company not found!", {})
 
-    new_branch = models.Branches(branch_name=branch.branch_name, modified_by=user_id, company_id=company_id,
-                                 activity_status="ACTIVE",
-                                 modified_on=datetime.now(), is_head_quarter=branch.is_head_quarter)
-    db.add(new_branch)
-    db.commit()
-    db.refresh(new_branch)
+        new_branch = models.Branches(branch_name=branch.branch_name, modified_by=user_id, company_id=company_id,
+                                     activity_status="ACTIVE",
+                                     modified_on=datetime.now(), is_head_quarter=branch.is_head_quarter)
+        db.add(new_branch)
+        db.commit()
+        db.refresh(new_branch)
+        print(new_branch)
 
-    # Adds the branch in Users_Company_Branches table
-    add_branch_to_ucb(new_branch, user_id, company_id, db)
+        # Adds the branch in Users_Company_Branches table
+        add_branch_to_ucb(new_branch, user_id, company_id, db)
 
-    company_settings = BranchSettings
-    company_settings.branch_id = new_branch.branch_id
-    company_settings.default_approver = user_id
-    company_settings.company_id = company_id
-    add_branch_settings(company_settings, user_id, db)
+        company_settings = BranchSettings
+        company_settings.branch_id = new_branch.branch_id
+        company_settings.default_approver = user_id
+        company_settings.company_id = company_id
+        add_branch_settings(company_settings, user_id, db)
 
-    return ResponseDTO(200, "Branch created successfully!", {})
+        return ResponseDTO(200, "Branch created successfully!", {"branch": new_branch})
+    except Exception as exc:
+        return {"method":"Add branch", "exception":exc}
 
 
 def fetch_branches(user_id, company_id, db):
@@ -166,16 +170,18 @@ def add_company(company, user_id, db):
     branch = AddBranch
     branch.branch_name = company.branch_name
     branch.is_head_quarter = company.is_head_quarter
-    add_branch(branch, user_id, new_company.company_id, db)
+    init_branch = add_branch(branch, user_id, new_company.company_id, db)
 
-    return ResponseDTO(200, "Company created successfully", {})
+    return ResponseDTO(200, "Company created successfully",
+                       {"company_id": new_company.company_id, "company_name": new_company.company_name,
+                        "branch": init_branch})
 
 
 def fetch_company(user_id, db):
     """Fetches all companies owned by a user"""
     existing_company = db.query(models.Companies).filter(models.Companies.owner == user_id).first()
 
-    return existing_company
+    return ResponseDTO(200, f"Companies owned by {user_id} are:", {"user_id": user_id, "companies": existing_company})
 
 
 def modify_company(company, user_id, company_id, db):
