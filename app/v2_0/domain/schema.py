@@ -143,6 +143,7 @@ class GetEmployees(BaseModel):
 class InviteEmployee(Modifier):
     user_email: str
     role: RolesEnum
+    approvers: List = None
 
 
 class UpdateEmployee(UpdateUser):
@@ -193,6 +194,13 @@ class ApplyLeave(Modifier):
     approvers: List
     leave_status: LeaveStatus = "PENDING"
     is_leave_approved: bool = False
+
+
+"""----------------------------------------------Approver related Schemas-------------------------------------------------------------------"""
+
+
+class AddApprover(BaseModel):
+    approvers: List
 
 
 """----------------------------------------------Utility Schemas-------------------------------------------------------------------"""
