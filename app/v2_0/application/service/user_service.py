@@ -130,7 +130,7 @@ def update_approver(approver, user_id, company_id, branch_id, db):
         user_query.update(approver.__dict__)
         db.commit()
 
-        return ResponseDTO(200, "Approvers added!", {})
+        return ResponseDTO(200, "Approvers updated!", {})
 
     except Exception as exc:
-        return ExceptionDTO("add_new_approver", exc)
+        return ExceptionDTO("update_approver", exc)
