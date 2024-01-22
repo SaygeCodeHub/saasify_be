@@ -18,9 +18,9 @@ from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
     UpdateUser, UpdateCompany, UpdateBranch, UpdateBranchSettings, \
-    GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave, AddApprover
-from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, add_new_approver, \
-    remove_existing_approver
+    GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave, AddApprover, \
+    GetEmployees
+from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
@@ -98,7 +98,7 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
     return invite_employee(employee, user_id, company_id, branch_id, db)
 
 
-# @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees", response_model=List[GetEmployees])
+# @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
 # def get_employees(branch_id: int, db=Depends(get_db)):
 #     return fetch_employees(branch_id, db)
 
@@ -186,14 +186,9 @@ def update_leave_status(application_response: UpdateLeave, user_id: int, company
 """----------------------------------------------Approver related APIs-------------------------------------------------------------------"""
 
 
-@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/addApprover")
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateApprover")
 def add_approver(approver: AddApprover, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return add_new_approver(approver, user_id, company_id, branch_id, db)
-
-
-@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/removeApprover")
-def remove_approver(approver: AddApprover, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return remove_existing_approver(approver, user_id, company_id, branch_id, db)
+    return update_approver(approver, user_id, company_id, branch_id, db)
 
 
 """----------------------------------------------Push notification APIs-------------------------------------------------------------------"""

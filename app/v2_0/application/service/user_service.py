@@ -102,23 +102,30 @@ def modify_user(user, user_id, db):
         return ExceptionDTO("modify_user", exc)
 
 
-def add_new_approver(approver, user_id, company_id, branch_id, db):
+def update_approver(approver, user_id, company_id, branch_id, db):
     """Adds an approver to the list of approvers of a user"""
     try:
+        flag = True
         user_query = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id)
         user = user_query.first()
 
         if user is None:
             return ResponseDTO(404, "User not found", {})
 
-        approvers_list = user.approvers
-        approvers_set = set(approvers_list)
-        for a in approver.approvers:
-            approvers_set.add(a)
+        company = db.query(models.Companies).filter(models.Companies.company_id == user.company_id).first()
 
-        new_approvers_list = list(approvers_set)
+        approvers_list = approver.approvers
 
-        approver.approvers = new_approvers_list
+        for a in approvers_list:
+            if a != company.owner:
+                flag = False
+            else:
+                flag = True
+
+        if not flag or len(approvers_list) == 0:
+            approvers_list.append(company.owner)
+
+        approver.approvers = approvers_list
 
         user_query.update(approver.__dict__)
         db.commit()
@@ -127,27 +134,3 @@ def add_new_approver(approver, user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ExceptionDTO("add_new_approver", exc)
-
-
-def remove_existing_approver(approver, user_id, company_id, branch_id, db):
-    """Removes an approver form the list of approvers of a user"""
-    try:
-        user_query = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id)
-        user = user_query.first()
-
-        if user is None:
-            return ResponseDTO(404, "User not found", {})
-
-        if len(approver.approvers) is 0:
-            company = db.query(models.Companies).filter(models.Companies.company_id == user.company_id).first()
-            approver_list = [company.owner]
-
-        approver.approvers = approver_list
-
-        user_query.update(approver.__dict__)
-        db.commit()
-
-        return ResponseDTO(200, "Approvers removed!", user)
-
-    except Exception as exc:
-        return ExceptionDTO("remove_existing_approver", exc)

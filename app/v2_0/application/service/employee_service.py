@@ -62,26 +62,17 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
     except Exception as exc:
         return ExceptionDTO("invite_employee", exc)
 
+
 # def fetch_employees(branch_id, db):
 #     """Returns all the employees belonging to a particular branch"""
 #     try:
 #
-#         stmt = (select(models.UserDetails.first_name, models.UserDetails.last_name,
+#         stmt = select(models.UserDetails.first_name, models.UserDetails.last_name,
 #                        models.UserDetails.user_contact,
-#                        models.UserCompanyBranch.role)
-#         .select_from(models.UserDetails).join(models.UserCompanyBranch,
-#                                               models.UserDetails.user_id == models.UserCompanyBranch.user_id).filter(
-#             models.UserCompanyBranch.branch_id == branch_id).filter(
-#             models.UserCompanyBranch.role != "OWNER"))
-#
-#         stmt2 = (select(models.UsersAuth.user_email)
-#         .select_from(models.UsersAuth).join(models.UserCompanyBranch,
-#                                             models.UsersAuth.user_id == models.UserCompanyBranch.user_id).filter(
-#             models.UserCompanyBranch.branch_id == branch_id).filter(
-#             models.UserCompanyBranch.role != "OWNER"))
+#                        models.UserCompanyBranch.role).select_from(models.UserDetails).join(models.UserCompanyBranch,models.UserDetails.user_id == models.UserCompanyBranch.user_id)
 #
 #         employees = db.execute(stmt)
 #
 #         return employees
 #     except Exception as exc:
-#         return ExceptionDTO("fetch_employees",exc)
+#         return ExceptionDTO("fetch_employees", exc)

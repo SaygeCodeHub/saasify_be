@@ -20,18 +20,19 @@ def add_branch_to_ucb(new_branch, user_id, company_id, db):
             approvers_list = user.approvers
             new_branch_in_ucb = models.UserCompanyBranch(user_id=user_id, company_id=company_id,
                                                          branch_id=new_branch.branch_id,
-                                                         role="OWNER",approvers=approvers_list)
+                                                         role="OWNER", approvers=approvers_list)
             db.add(new_branch_in_ucb)
             db.commit()
     except Exception as exc:
-        return ExceptionDTO("add_branch_to_ucb",exc)
+        return ExceptionDTO("add_branch_to_ucb", exc)
 
 
 def import_hq_settings(branch_id, company_id, user_id, db):
     """It copies the settings of headquarters branch to other branches"""
     try:
         hq_settings = db.query(models.BranchSettings).filter(
-            models.BranchSettings.company_id == company_id).filter(models.BranchSettings.is_hq_settings == "true").first()
+            models.BranchSettings.company_id == company_id).filter(
+            models.BranchSettings.is_hq_settings == "true").first()
         imported_settings = models.BranchSettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
                                                   modified_on=datetime.now(), is_hq_settings=False,
                                                   default_approver=hq_settings.default_approver,
@@ -46,7 +47,7 @@ def import_hq_settings(branch_id, company_id, user_id, db):
 
         return ResponseDTO(200, "Settings Imported successfully", {})
     except Exception as exc:
-        return ExceptionDTO("import_hq_settings",exc)
+        return ExceptionDTO("import_hq_settings", exc)
 
 
 def add_branch_settings(company_settings, user_id, db):
@@ -67,7 +68,7 @@ def add_branch_settings(company_settings, user_id, db):
 
         return ResponseDTO(200, "Settings added!", {})
     except Exception as exc:
-        return ExceptionDTO("add_branch_settings",exc)
+        return ExceptionDTO("add_branch_settings", exc)
 
 
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):
@@ -83,8 +84,7 @@ def modify_branch_settings(settings, user_id, company_id, branch_id, db):
 
         return ResponseDTO(200, "Settings updated", {})
     except Exception as exc:
-        return ExceptionDTO("modify_branch_settings",exc)
-
+        return ExceptionDTO("modify_branch_settings", exc)
 
 
 def fetch_branch_settings(user_id, company_id, branch_id, db):
@@ -110,7 +110,7 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
 
         return settings
     except Exception as exc:
-        return ExceptionDTO("fetch_branch_settings",exc)
+        return ExceptionDTO("fetch_branch_settings", exc)
 
 
 def add_branch(branch, user_id, company_id, db):
@@ -136,7 +136,8 @@ def add_branch(branch, user_id, company_id, db):
         company_settings.company_id = company_id
         add_branch_settings(company_settings, user_id, db)
 
-        return ResponseDTO(200, "Branch created successfully!", {"branch_name":new_branch.branch_name,"branch_id":new_branch.branch_id})
+        return ResponseDTO(200, "Branch created successfully!",
+                           {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id})
     except Exception as exc:
         return ExceptionDTO("Add branch", exc)
 
@@ -150,7 +151,7 @@ def fetch_branches(user_id, company_id, db):
             ResponseDTO(404, "User not found!", {})
 
         branches = db.query(models.Branches).filter(models.Branches.company_id == company_id).all()
-        return ResponseDTO(200,"Branches fetched!",branches)
+        return ResponseDTO(200, "Branches fetched!", branches)
     except Exception as exc:
         return ExceptionDTO("fetch_branches", exc)
 
@@ -211,7 +212,6 @@ def add_company(company, user_id, db):
         return ExceptionDTO("add_company", exc)
 
 
-
 def fetch_company(user_id, db):
     """Fetches all companies owned by a user"""
     try:
@@ -220,7 +220,6 @@ def fetch_company(user_id, db):
         return ResponseDTO(200, "Companies fetched!", {"user_id": user_id, "companies": existing_company})
     except Exception as exc:
         return ExceptionDTO("fetch_company", exc)
-
 
 
 def modify_company(company, user_id, company_id, db):
