@@ -1,9 +1,11 @@
 """Service layer for Companies"""
 from datetime import datetime
 
+from sqlalchemy import select, text
+
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddBranch, BranchSettings
+from app.v2_0.domain.schema import AddBranch, BranchSettings, GetCompany
 
 
 def add_branch_to_ucb(new_branch, user_id, company_id, db):
@@ -215,9 +217,19 @@ def add_company(company, user_id, db):
 def fetch_company(user_id, db):
     """Fetches all companies owned by a user"""
     try:
-        existing_company = db.query(models.Companies).filter(models.Companies.owner == user_id).first()
+        existing_companies_query = db.query(models.Companies).filter(
+            models.Companies.owner == user_id).all()
 
-        return ResponseDTO(200, "Companies fetched!", {"user_id": user_id, "companies": existing_company})
+        existing_companies = [
+            GetCompany(
+                company_id=company.company_id,
+                company_name=company.company_name,
+                owner=company.owner,
+                activity_status=company.activity_status
+            )
+            for company in existing_companies_query
+        ]
+        return ResponseDTO(200, "Companies fetched!", {"user_id": user_id, "companies": existing_companies})
     except Exception as exc:
         return ExceptionDTO("fetch_company", exc)
 

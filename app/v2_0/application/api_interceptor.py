@@ -19,7 +19,7 @@ from app.v2_0.domain import models
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
     UpdateUser, UpdateCompany, UpdateBranch, UpdateBranchSettings, \
     GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave, AddApprover, \
-    GetEmployees
+    GetEmployees, LoginResponse
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 
 router = APIRouter()
@@ -52,7 +52,8 @@ def login(credentials: Credentials, db=Depends(get_db)):
         email = credentials.model_dump()["email"]
         pwd = credentials.model_dump()["password"]
         is_user_present = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == email).first()
-
+        user_details = db.query(models.UserDetails).filter(
+            models.UserDetails.user_id == is_user_present.user_id).first()
         if not is_user_present:
             return ResponseDTO("404", "User is not registered, please register.", {})
 
@@ -65,12 +66,13 @@ def login(credentials: Credentials, db=Depends(get_db)):
         if ucb.company_id is None:
             data = []
         else:
-
             complete_data = get_all_user_data(is_user_present, ucb, db)
             data = [complete_data]
 
         return ResponseDTO("200", "Login successful",
-                           {"user_id": is_user_present.user_id, "company": data})
+                           LoginResponse(user_id=is_user_present.user_id,
+                                         name=user_details.first_name + " " + user_details.last_name, company=data))
+
     except Exception as exc:
         return ExceptionDTO("login", exc)
 

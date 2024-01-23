@@ -93,11 +93,17 @@ class AddCompany(AddBranch, UpdateCompany):
 class GetCompany(BaseModel):
     company_id: int
     company_name: Optional[str]
-    company_logo: Optional[str]
-    company_email: Optional[str]
+    owner: Optional[int]
+    activity_status: Optional[ActivityStatus]
 
 
 """----------------------------------------------User related Schemas-------------------------------------------------------------------"""
+
+
+class LoginResponse(BaseModel):
+    user_id: int
+    name: str
+    company: List
 
 
 class AddUser(Modifier):
