@@ -1,2 +1,5 @@
 /venv/
 /app.log
+*.pyc
+__pycache__/
+/app/__pycache__/

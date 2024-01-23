@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
 
 
@@ -14,7 +14,7 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
         return {"casual_leaves": user.casual_leaves, "medical_leaves": user.medical_leaves,
                 "approvers": ucb_user.approvers}
     except Exception as exc:
-        return exc
+        return ExceptionDTO("get_screen_apply_leave",exc)
 
 
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
@@ -30,7 +30,7 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
 
         return ResponseDTO(200, "Leave application submitted", {})
     except Exception as exc:
-        return exc
+        return ExceptionDTO("apply_for_leave",exc)
 
 
 def fetch_leaves(user_id, company_id, branch_id, db):
@@ -39,15 +39,18 @@ def fetch_leaves(user_id, company_id, branch_id, db):
 
         return my_leaves
     except Exception as exc:
-        return exc
+        return ExceptionDTO("fetch_leaves",exc)
 
 
 def get_authorized_leave_requests(pending_leaves, user_id):
-    filtered_leaves = []
-    for x in pending_leaves:
-        if user_id in x.__dict__["approvers"]:
-            filtered_leaves.append(x)
-    return filtered_leaves
+    try:
+        filtered_leaves = []
+        for x in pending_leaves:
+            if user_id in x.__dict__["approvers"]:
+                filtered_leaves.append(x)
+        return filtered_leaves
+    except Exception as exc:
+        return ExceptionDTO("get_authorized_leave_requests",exc)
 
 
 def format_pending_leaves(filtered_leaves, db):
@@ -70,7 +73,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
         return final_list
 
     except Exception as exc:
-        return exc
+        return ExceptionDTO("fetch_pending_leaves", exc)
 
 
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
@@ -90,4 +93,4 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
 
         return ResponseDTO(200, "Leave status updated!", {})
     except Exception as exc:
-        return exc
+        return ExceptionDTO("modify_leave_status", exc)

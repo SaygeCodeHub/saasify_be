@@ -1,6 +1,7 @@
 """Models for table creation"""
 
 from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean, Double
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql.sqltypes import TIMESTAMP, Float, ARRAY
 from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
@@ -129,9 +130,9 @@ class Leaves(Base):
     user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=False)
     branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=False)
-    leave_type = Column(Enum(LeaveType),nullable=False)
+    leave_type = Column(Enum(LeaveType), nullable=False)
     leave_reason = Column(String, nullable=False)
-    start_date = Column(Date,nullable=False)
+    start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     comment = Column(String, nullable=True)
     approvers = Column(ARRAY(Integer), nullable=False)

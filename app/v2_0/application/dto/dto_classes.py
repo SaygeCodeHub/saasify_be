@@ -8,3 +8,10 @@ class ResponseDTO:
         self.status = status
         self.message = message
         self.data = data
+
+
+class ExceptionDTO:
+    """Exception DTO"""
+    def __init__(self,method,exception):
+        self.method = method
+        self.exception = exception
