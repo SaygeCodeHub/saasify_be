@@ -25,6 +25,11 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
         leave_application.user_id = user_id
         leave_application.company_id = company_id
         leave_application.branch_id = branch_id
+
+        if len(leave_application.approvers) is 0:
+            company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+            leave_application.approvers = [company.owner]
+
         new_leave_application = models.Leaves(**leave_application.model_dump())
         db.add(new_leave_application)
         db.commit()
