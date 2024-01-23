@@ -131,6 +131,7 @@ class GetUser(BaseModel):
     user_contact: Optional[int]
     user_image: Optional[str]
     user_email: str
+    roles: List[RolesEnum]
     user_birthdate: Optional[date]
 
 
@@ -149,13 +150,13 @@ class UpdateUser(Modifier):
 class GetEmployees(BaseModel):
     name: str
     user_contact: Optional[int]
-    role: RolesEnum
+    roles: List[RolesEnum]
     user_email: str
 
 
 class InviteEmployee(Modifier):
     user_email: str
-    role: RolesEnum
+    roles: List[RolesEnum]
     approvers: List = None
 
 

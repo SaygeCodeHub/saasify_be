@@ -34,15 +34,16 @@ def register_user(user: AddUser, db=Depends(get_db)):
     return add_user(user, db)
 
 
-@router.get("/v2.0/{user_id}/getUser", response_model=GetUser)
-def get_user_by_id(user_id: int, db=Depends(get_db)):
-    return fetch_by_id(user_id, db)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getUser/{u_id}", response_model=GetUser)
+def get_user_by_id(u_id: int, db=Depends(get_db)):
+    """u_id is the id of the person being fetched"""
+    return fetch_by_id(u_id, db)
 
 
-@router.put("/v2.0/{user_id}/updateUser")
-def update_user(user: UpdateUser, user_id: int, db=Depends(get_db)):
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser/{u_id}")
+def update_user(user: UpdateUser, user_id: int, u_id: int, db=Depends(get_db)):
     """Calls service layer to update user"""
-    return modify_user(user, user_id, db)
+    return modify_user(user, user_id, u_id, db)
 
 
 @router.post("/v2.0/authenticateUser")
@@ -79,7 +80,6 @@ def login(credentials: Credentials, db=Depends(get_db)):
 
     except Exception as exc:
         return ExceptionDTO("login", exc)
-
 
 
 @router.post("/v2.0/forgotPassword")
