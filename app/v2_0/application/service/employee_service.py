@@ -7,7 +7,7 @@ from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddUser
+from app.v2_0.domain.schema import AddUser, GetEmployees
 
 
 def add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db):
@@ -63,16 +63,30 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         return ExceptionDTO("invite_employee", exc)
 
 
-# def fetch_employees(branch_id, db):
-#     """Returns all the employees belonging to a particular branch"""
-#     try:
-#
-#         stmt = select(models.UserDetails.first_name, models.UserDetails.last_name,
-#                        models.UserDetails.user_contact,
-#                        models.UserCompanyBranch.role).select_from(models.UserDetails).join(models.UserCompanyBranch,models.UserDetails.user_id == models.UserCompanyBranch.user_id)
-#
-#         employees = db.execute(stmt)
-#
-#         return employees
-#     except Exception as exc:
-#         return ExceptionDTO("fetch_employees", exc)
+def fetch_employees(branch_id, db):
+    """Returns all the employees belonging to a particular branch"""
+    try:
+        stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
+                      models.UserCompanyBranch.role, models.UsersAuth.user_email).select_from(models.UserDetails).join(
+            models.UserCompanyBranch,
+            models.UserDetails.user_id == models.UserCompanyBranch.user_id).join(
+            models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id).filter(
+            models.UserCompanyBranch.role != "OWNER").filter(models.UserCompanyBranch.branch_id == branch_id)
+
+        print(stmt)
+        employees = db.execute(stmt)
+        result = [
+            GetEmployees(
+                name=employee.first_name + " " + employee.last_name,
+                user_contact=employee.user_contact,
+                role=employee.role,
+                user_email=employee.user_email,
+            )
+            for employee in employees
+        ]
+
+        return ResponseDTO(200, "Employees fetched!", result)
+
+    except Exception as exc:
+        return ExceptionDTO("fetch_employees", exc)
+

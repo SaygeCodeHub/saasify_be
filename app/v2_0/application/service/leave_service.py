@@ -5,6 +5,8 @@ from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
+from app.v2_0.domain.models import LeaveType
+from app.v2_0.domain.schema import ApplyLeaveResponse
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
@@ -14,7 +16,7 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
         return {"casual_leaves": user.casual_leaves, "medical_leaves": user.medical_leaves,
                 "approvers": ucb_user.approvers}
     except Exception as exc:
-        return ExceptionDTO("get_screen_apply_leave",exc)
+        return ExceptionDTO("get_screen_apply_leave", exc)
 
 
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
@@ -28,9 +30,13 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
         db.commit()
         db.refresh(new_leave_application)
 
-        return ResponseDTO(200, "Leave application submitted", {})
+        return ResponseDTO(200, "Leave application submitted",
+                           ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
+                                              leave_status=new_leave_application.leave_status,
+                                              is_leave_approved=new_leave_application.is_leave_approved,
+                                              comment=new_leave_application.comment))
     except Exception as exc:
-        return ExceptionDTO("apply_for_leave",exc)
+        return ExceptionDTO("apply_for_leave", exc)
 
 
 def fetch_leaves(user_id, company_id, branch_id, db):
@@ -39,7 +45,7 @@ def fetch_leaves(user_id, company_id, branch_id, db):
 
         return my_leaves
     except Exception as exc:
-        return ExceptionDTO("fetch_leaves",exc)
+        return ExceptionDTO("fetch_leaves", exc)
 
 
 def get_authorized_leave_requests(pending_leaves, user_id):
@@ -50,7 +56,7 @@ def get_authorized_leave_requests(pending_leaves, user_id):
                 filtered_leaves.append(x)
         return filtered_leaves
     except Exception as exc:
-        return ExceptionDTO("get_authorized_leave_requests",exc)
+        return ExceptionDTO("get_authorized_leave_requests", exc)
 
 
 def format_pending_leaves(filtered_leaves, db):
@@ -62,21 +68,39 @@ def format_pending_leaves(filtered_leaves, db):
 
 def fetch_pending_leaves(user_id, company_id, branch_id, db):
     try:
-
         pending_leaves = db.query(models.Leaves).filter(models.Leaves.leave_status == "PENDING").all()
-        filtered_leaves = get_authorized_leave_requests(pending_leaves, user_id)
+        filter_leaves_by_approver = get_authorized_leave_requests(pending_leaves, user_id)
 
-        if len(filtered_leaves) == 0:
+        if len(filter_leaves_by_approver) == 0:
             return []
         else:
-            final_list = format_pending_leaves(filtered_leaves, db)
+            final_list = format_pending_leaves(filter_leaves_by_approver, db)
         return final_list
 
     except Exception as exc:
         return ExceptionDTO("fetch_pending_leaves", exc)
 
 
+def update_user_leaves(leave, db):
+    """Updates the number of leaves of an employee"""
+    try:
+        user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == leave.user_id)
+        user = user_query.first()
+        if leave.leave_type == LeaveType.CASUAL:
+            user.casual_leaves = user.casual_leaves - 1
+            user_query.update(casual_leaves=user.casual_leaves)
+            db.commit()
+        else:
+            user.medical_leaves = user.medical_leaves - 1
+            user_query.update(medical_leaves=user.medical_leaves)
+            db.commit()
+
+    except Exception as exc:
+        return ExceptionDTO("update_user_leaves", exc)
+
+
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
+    """Leaves are ACCEPTED or REJECTED using this API"""
     try:
         leave_query = db.query(models.Leaves).filter(models.Leaves.leave_id == application_response.leave_id)
         leave = leave_query.first()
@@ -85,6 +109,7 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             return ResponseDTO(404, "Leave entry not found!", {})
         if application_response.is_leave_approved is True:
             status = "ACCEPTED"
+            update_user_leaves(leave, db)
 
         application_response.leave_status = status
         application_response.modified_by = user_id
