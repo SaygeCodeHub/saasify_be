@@ -13,7 +13,7 @@ from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
-from app.v2_0.application.service.employee_service import invite_employee
+from app.v2_0.application.service.employee_service import invite_employee, fetch_employees
 from app.v2_0.domain import models
 
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
@@ -54,7 +54,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         is_user_present = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == email).first()
         user_details = db.query(models.UserDetails).filter(
             models.UserDetails.user_id == is_user_present.user_id).first()
-        if not is_user_present:
+        if is_user_present is None:
             return ResponseDTO("404", "User is not registered, please register.", {})
 
         if not verify(pwd, is_user_present.password):
@@ -100,9 +100,9 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
     return invite_employee(employee, user_id, company_id, branch_id, db)
 
 
-# @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
-# def get_employees(branch_id: int, db=Depends(get_db)):
-#     return fetch_employees(branch_id, db)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
+def get_employees(branch_id: int, db=Depends(get_db)):
+    return fetch_employees(branch_id, db)
 
 
 """----------------------------------------------Company related APIs-------------------------------------------------------------------"""

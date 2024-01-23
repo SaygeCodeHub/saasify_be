@@ -70,6 +70,12 @@ class AddBranch(UpdateBranch):
 class GetBranch(BaseModel):
     branch_name: str
     branch_id: int
+    activity_status: ActivityStatus
+    branch_address: str
+    is_head_quarter: bool
+    branch_contact: int
+    company_id: int
+    branch_currency: str
 
 
 """----------------------------------------------Company related Schemas-------------------------------------------------------------------"""
@@ -119,12 +125,13 @@ class AddUser(Modifier):
 
 
 class GetUser(BaseModel):
-    first_name: str
-    last_name: str
+    first_name: Optional[str]
+    last_name: Optional[str]
     user_id: int
-    user_contact: int
-    user_image: str
+    user_contact: Optional[int]
+    user_image: Optional[str]
     user_email: str
+    user_birthdate: Optional[date]
 
 
 class UpdateUser(Modifier):
@@ -140,10 +147,10 @@ class UpdateUser(Modifier):
 
 
 class GetEmployees(BaseModel):
-    first_name: str
-    last_name: str
-    user_contact: int
+    name: str
+    user_contact: Optional[int]
     role: RolesEnum
+    user_email: str
 
 
 class InviteEmployee(Modifier):
@@ -160,6 +167,13 @@ class UpdateEmployee(UpdateUser):
 """----------------------------------------------Leaves related Schemas-------------------------------------------------------------------"""
 
 
+class ApplyLeaveResponse(BaseModel):
+    leave_id: int
+    leave_status: LeaveStatus
+    is_leave_approved: bool
+    comment: Optional[str]
+
+
 class UpdateLeave(Modifier):
     leave_id: int
     comment: str
@@ -168,6 +182,7 @@ class UpdateLeave(Modifier):
 
 
 class GetPendingLeaves(BaseModel):
+    leave_id: int
     user_id: int
     name: str
     leave_type: LeaveType
