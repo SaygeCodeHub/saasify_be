@@ -14,15 +14,18 @@ def add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, 
     """Adds employee to the ucb table"""
     approvers_list = [inviter.user_id]
     try:
-        if employee.approvers is not None:
-            approvers_list = employee.approvers
-            approvers_list.append(inviter.user_id)
+        for role in employee.roles:
+            if employee.approvers is not None:
+                approvers_set = set(employee.approvers)
+                approvers_set.add(inviter.user_id)
+                approvers_list = list(approvers_set)
 
-        ucb_employee = models.UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
-                                                branch_id=branch_id,
-                                                role=employee.role, approvers=approvers_list)
-        db.add(ucb_employee)
-        db.commit()
+            ucb_employee = models.UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
+                                                    branch_id=branch_id,
+                                                    role=role, approvers=approvers_list)
+            db.add(ucb_employee)
+            db.commit()
+
     except Exception as exc:
         return ExceptionDTO("add_employee_to_ucb", exc)
 
@@ -63,23 +66,32 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         return ExceptionDTO("invite_employee", exc)
 
 
+def get_role_array(user_id,db):
+    user_entries = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).all()
+    role_array = []
+    for user in user_entries:
+        role_array.append(user.role)
+    return role_array
+
+
 def fetch_employees(branch_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
         stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
-                      models.UserCompanyBranch.role, models.UsersAuth.user_email).select_from(models.UserDetails).join(
+                      models.UserCompanyBranch.role, models.UsersAuth.user_email, models.UsersAuth.user_id).select_from(
+            models.UserDetails).join(
             models.UserCompanyBranch,
             models.UserDetails.user_id == models.UserCompanyBranch.user_id).join(
             models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id).filter(
             models.UserCompanyBranch.role != "OWNER").filter(models.UserCompanyBranch.branch_id == branch_id)
-
         print(stmt)
+
         employees = db.execute(stmt)
         result = [
             GetEmployees(
                 name=employee.first_name + " " + employee.last_name,
                 user_contact=employee.user_contact,
-                role=employee.role,
+                roles=get_role_array(employee.user_id, db),
                 user_email=employee.user_email,
             )
             for employee in employees
@@ -87,6 +99,8 @@ def fetch_employees(branch_id, db):
 
         return ResponseDTO(200, "Employees fetched!", result)
 
+
     except Exception as exc:
         return ExceptionDTO("fetch_employees", exc)
+
 

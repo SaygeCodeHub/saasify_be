@@ -19,27 +19,43 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
         return ExceptionDTO("get_screen_apply_leave", exc)
 
 
+def check_remaining_leaves(user_id, leave_application, db):
+    user = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
+    if leave_application.leave_type == LeaveType.CASUAL and user.casual_leaves == 0:
+        return 0
+    if leave_application.leave_type == LeaveType.MEDICAL and user.medical_leaves == 0:
+        return 1
+    return 2
+
+
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
-        leave_application.modified_by = user_id
-        leave_application.user_id = user_id
-        leave_application.company_id = company_id
-        leave_application.branch_id = branch_id
+        message = check_remaining_leaves(user_id, leave_application, db)
+        if message == 0:
+            return ResponseDTO(200, "You have exhausted your casual leaves!", {})
+        elif message == 1:
+            return ResponseDTO(200, "You have exhausted your medical leaves!", {})
+        else:
+            leave_application.modified_by = user_id
+            leave_application.user_id = user_id
+            leave_application.company_id = company_id
+            leave_application.branch_id = branch_id
 
-        if len(leave_application.approvers) is 0:
-            company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-            leave_application.approvers = [company.owner]
+            if len(leave_application.approvers) is 0:
+                company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+                leave_application.approvers = [company.owner]
 
-        new_leave_application = models.Leaves(**leave_application.model_dump())
-        db.add(new_leave_application)
-        db.commit()
-        db.refresh(new_leave_application)
+            new_leave_application = models.Leaves(**leave_application.model_dump())
+            db.add(new_leave_application)
+            db.commit()
+            db.refresh(new_leave_application)
 
-        return ResponseDTO(200, "Leave application submitted",
-                           ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
-                                              leave_status=new_leave_application.leave_status,
-                                              is_leave_approved=new_leave_application.is_leave_approved,
-                                              comment=new_leave_application.comment))
+            return ResponseDTO(200, "Leave application submitted",
+                               ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
+                                                  leave_status=new_leave_application.leave_status,
+                                                  is_leave_approved=new_leave_application.is_leave_approved,
+                                                  comment=new_leave_application.comment))
+
     except Exception as exc:
         return ExceptionDTO("apply_for_leave", exc)
 

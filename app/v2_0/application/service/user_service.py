@@ -68,21 +68,31 @@ def set_modified_by(new_user, db):
         return ExceptionDTO("set_modified_by", exc)
 
 
-def fetch_by_id(user_id, db):
+def get_roles(user_id, db):
+    user_entries = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).all()
+    role_array = []
+    for user in user_entries:
+        role_array.append(user.role)
+    return role_array
+
+
+def fetch_by_id(u_id, db):
     """Fetches a user by his id"""
     try:
-        user = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
-        user_auth = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user = db.query(models.UserDetails).filter(models.UserDetails.user_id == u_id).first()
+        user_auth = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == u_id).first()
         user.__dict__["user_email"] = user_auth.user_email
+        user.__dict__["roles"] = get_roles(u_id, db)
         return user
     except Exception as exc:
         return ExceptionDTO("fetch_by_id", exc)
 
 
-def modify_user(user, user_id, db):
+def modify_user(user, user_id, u_id, db):
     """Updates a User"""
+    """user_id is the person who will be updating the person with u_id as the user_id"""
     try:
-        user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id)
+        user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == u_id)
         user_exists = user_query.first()
         contact_exists = db.query(models.UserDetails).filter(
             models.UserDetails.user_contact == user.user_contact).first()
@@ -93,7 +103,7 @@ def modify_user(user, user_id, db):
             return ResponseDTO(403, "User with this contact already exists!", {})
 
         user.modified_on = datetime.now()
-        user.modified_by = user_exists.user_id
+        user.modified_by = user_id
         user_query.update(user.__dict__)
         db.commit()
 
