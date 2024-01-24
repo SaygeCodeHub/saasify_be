@@ -1,7 +1,6 @@
 """Service layer for Users"""
 from datetime import datetime
 
-
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
@@ -73,10 +72,22 @@ def get_roles(user_id, db):
     return user.roles
 
 
-def fetch_by_id(u_id, db):
+def fetch_by_id(u_id,company_id, branch_id, db):
     """Fetches a user by his id"""
     try:
+        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company is None:
+            return ResponseDTO(404, "Company not found!", {})
+
+        branch = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch is None:
+            return ResponseDTO(404, "Branch not found!", {})
+
         user = db.query(models.UserDetails).filter(models.UserDetails.user_id == u_id).first()
+
+        if user is None:
+            return ResponseDTO(404,"User not found!",{})
+
         user_auth = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == u_id).first()
         user.__dict__["user_email"] = user_auth.user_email
         user.__dict__["roles"] = get_roles(u_id, db)
@@ -87,10 +98,18 @@ def fetch_by_id(u_id, db):
         return ExceptionDTO("fetch_by_id", exc)
 
 
-def modify_user(user, user_id, u_id, db):
+def modify_user(user, user_id, u_id, company_id,branch_id, db):
     """Updates a User"""
     """user_id is the person who will be updating the person with u_id as the user_id"""
     try:
+        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company is None:
+            return ResponseDTO(404, "Company not found!", {})
+
+        branch = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch is None:
+            return ResponseDTO(404, "Branch not found!", {})
+
         user_query = db.query(models.UserDetails).filter(models.UserDetails.user_id == u_id)
         user_exists = user_query.first()
         contact_exists = db.query(models.UserDetails).filter(
@@ -113,13 +132,21 @@ def modify_user(user, user_id, u_id, db):
 
 def update_leave_approvers(approvers_list, user_id, db):
     leave_query = db.query(models.Leaves).filter(models.Leaves.user_id == user_id)
-    leave_query.update({"approvers":approvers_list})
+    leave_query.update({"approvers": approvers_list})
     db.commit()
 
 
 def update_approver(approver, user_id, company_id, branch_id, db):
     """Adds an approver to the list of approvers of a user"""
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company does not exist!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         flag = True
         user_query = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id)
         user = user_query.first()

@@ -22,6 +22,14 @@ def set_employee_leaves(settings, company_id, db):
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):
     """Updates the branch settings"""
     try:
+        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company is None:
+            return ResponseDTO(404, "Company not found!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         existing_settings_query = db.query(models.BranchSettings).filter(models.BranchSettings.branch_id == branch_id)
         settings.modified_on = datetime.now()
         settings.modified_by = user_id
@@ -167,9 +175,12 @@ def fetch_branches(user_id, company_id, db):
     """Fetches the branches of given company"""
     try:
         user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
-
         if user is None:
             ResponseDTO(404, "User not found!", {})
+
+        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company is None:
+            return ResponseDTO(404, "Company not found!", {})
 
         branches = db.query(models.Branches).filter(models.Branches.company_id == company_id).all()
         return ResponseDTO(200, "Branches fetched!", branches)
@@ -180,6 +191,10 @@ def fetch_branches(user_id, company_id, db):
 def modify_branch(branch, user_id, branch_id, company_id, db):
     """Updates a branch"""
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company not found!", {})
+
         branch_query = db.query(models.Branches).filter(models.Branches.branch_id == branch_id)
         branch_exists = branch_query.first()
 
@@ -236,6 +251,10 @@ def add_company(company, user_id, db):
 def fetch_company(user_id, db):
     """Fetches all companies owned by a user"""
     try:
+        user_exists = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        if user_exists is None:
+            return ResponseDTO(404, "User does not exist!", {})
+
         existing_companies_query = db.query(models.Companies).filter(
             models.Companies.owner == user_id).all()
 
@@ -256,6 +275,10 @@ def fetch_company(user_id, db):
 def modify_company(company, user_id, company_id, db):
     """Updates company data"""
     try:
+        user_exists = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        if user_exists is None:
+            return ResponseDTO(404, "User does not exist!", {})
+
         company_query = db.query(models.Companies).filter(models.Companies.company_id == company_id)
         company_exists = company_query.first()
         if not company_exists:

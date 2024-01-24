@@ -14,6 +14,8 @@ def check_token(token, user_email, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
         user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == user_email).first()
+        if user is None:
+            return ResponseDTO(404, "User not found!",[])
         if user.change_password_token != token:
             return ResponseDTO(204, "Reset token doesn't match", {})
 
