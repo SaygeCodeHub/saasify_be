@@ -57,6 +57,14 @@ def assign_new_branch_to_existing_employee(employee, user, inviter, company_id, 
 def invite_employee(employee, user_id, company_id, branch_id, db):
     """Adds an employee in the db"""
     try:
+        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company is None:
+            return ResponseDTO(404, "Company not found!", {})
+
+        branch = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch is None:
+            return ResponseDTO(404, "Branch not found!", {})
+
         user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == employee.user_email).first()
         inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
         new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
@@ -78,9 +86,17 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         return ExceptionDTO("invite_employee", exc)
 
 
-def fetch_employees(branch_id, db):
+def fetch_employees(branch_id,company_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
+        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company is None:
+            return ResponseDTO(404, "Company not found!", {})
+
+        branch = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch is None:
+            return ResponseDTO(404, "Branch not found!", {})
+
         stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
                       models.UserDetails.current_address,
                       models.UserCompanyBranch.roles, models.UsersAuth.user_email,

@@ -8,6 +8,14 @@ from app.v2_0.domain.schema import ApplyLeaveResponse, LoadApplyLeaveScreen, Get
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company does not exist!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         user = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
         ucb_user = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).first()
         result = LoadApplyLeaveScreen(casual_leaves=user.casual_leaves, medical_leaves=user.medical_leaves,
@@ -28,6 +36,14 @@ def check_remaining_leaves(user_id, leave_application, db):
 
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company does not exist!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         message = check_remaining_leaves(user_id, leave_application, db)
         if message == 0:
             return ResponseDTO(200, "You have exhausted your casual leaves!", {})
@@ -60,6 +76,14 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
 
 def fetch_leaves(user_id, company_id, branch_id, db):
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company does not exist!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         my_leaves = db.query(models.Leaves).filter(models.Leaves.user_id == user_id).all()
         result = [
             GetLeaves(company_id=leave.company_id, branch_id=leave.branch_id, user_id=leave.user_id,
@@ -96,6 +120,14 @@ def format_pending_leaves(filtered_leaves, db):
 
 def fetch_pending_leaves(user_id, company_id, branch_id, db):
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company does not exist!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         pending_leaves = db.query(models.Leaves).filter(models.Leaves.leave_status == "PENDING").all()
         if len(pending_leaves) == 0:
             return ResponseDTO(204, "No leaves to fetch!", pending_leaves)
@@ -138,6 +170,14 @@ def update_user_leaves(leave, db):
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
     """Leaves are ACCEPTED or REJECTED using this API"""
     try:
+        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        if company_exists is None:
+            return ResponseDTO(404, "Company does not exist!", {})
+
+        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
+        if branch_exists is None:
+            return ResponseDTO(404, "Branch does not exist!", {})
+
         leave_query = db.query(models.Leaves).filter(models.Leaves.leave_id == application_response.leave_id)
         leave = leave_query.first()
         status = "REJECTED"
