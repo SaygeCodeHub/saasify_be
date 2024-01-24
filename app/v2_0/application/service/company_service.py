@@ -1,11 +1,12 @@
 """Service layer for Companies"""
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import select, text
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddBranch, BranchSettings, GetCompany, UserDataResponse
+from app.v2_0.domain.schema import AddBranch, BranchSettings, GetCompany, UserDataResponse, GetBranchSettings
 
 
 def set_employee_leaves(settings, company_id, db):
@@ -56,7 +57,9 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
         if settings is None:
             return ResponseDTO(404, "Settings do not exist!", {})
 
-        return settings
+        result = GetBranchSettings(**settings.__dict__)
+
+        return ResponseDTO(200, "Settings fetched!", result)
     except Exception as exc:
         return ExceptionDTO("fetch_branch_settings", exc)
 
@@ -135,7 +138,7 @@ def add_branch_to_ucb(new_branch, user_id, company_id, db):
         return ExceptionDTO("add_branch_to_ucb", exc)
 
 
-def add_branch(branch, user_id, company_id, db):
+def add_branch(branch, user_id, company_id, db, is_init: Optional[bool] | None = None):
     """Creates a branch for a company"""
     try:
         company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
@@ -152,9 +155,11 @@ def add_branch(branch, user_id, company_id, db):
         # Adds the branch in Users_Company_Branches table
         add_branch_to_ucb(new_branch, user_id, company_id, db)
         set_branch_settings(new_branch, user_id, company_id, db)
-
-        return ResponseDTO(200, "Branch created successfully!",
-                           {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id})
+        if is_init:
+            return {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id}
+        else:
+            return ResponseDTO(200, "Branch created successfully!",
+                               {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id})
     except Exception as exc:
         return ExceptionDTO("Add branch", exc)
 
@@ -220,7 +225,7 @@ def add_company(company, user_id, db):
         branch = AddBranch
         branch.branch_name = company.branch_name
         branch.is_head_quarter = company.is_head_quarter
-        init_branch = add_branch(branch, user_id, new_company.company_id, db)
+        init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
 
         return ResponseDTO(200, "Company created successfully",
                            {"company_id": new_company.company_id, "company_name": new_company.company_name,

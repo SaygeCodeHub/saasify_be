@@ -24,6 +24,8 @@ class GetBranchSettings(BaseModel):
     default_approver: Optional[int]
     overtime_rate: Optional[float]
     overtime_rate_per: Optional[str]
+    total_medical_leaves: Optional[int]
+    total_casual_leaves: Optional[int]
 
 
 class UpdateBranchSettings(Modifier):
@@ -127,9 +129,9 @@ class AddUser(Modifier):
 
 
 class GetUser(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    middle_name:Optional[str] = None
+    first_name: Optional[str] = ""
+    last_name: Optional[str] = ""
+    middle_name: Optional[str] = None
     user_id: int
     user_contact: Optional[int] = None
     alternate_contact: Optional[int] = None
@@ -149,8 +151,8 @@ class GetUser(BaseModel):
 
 
 class UpdateUser(Modifier):
-    first_name: str
-    last_name: str
+    first_name: str = ""
+    last_name: str = ""
     user_birthdate: date = None
     activity_status: ActivityStatus = None
     user_image: str = "Image"
@@ -159,7 +161,7 @@ class UpdateUser(Modifier):
     age: int = None
     middle_name: str = None
     gender: str = None
-    nationality:str = None
+    nationality: str = None
     marital_status: str = None
     current_address: str = None
     permanent_address: str = None
@@ -176,7 +178,7 @@ class GetEmployees(BaseModel):
     user_contact: Optional[int]
     roles: List[RolesEnum]
     user_email: str
-    current_address: str
+    current_address: Optional[str]
 
 
 class InviteEmployee(Modifier):
@@ -191,6 +193,12 @@ class UpdateEmployee(UpdateUser):
 
 
 """----------------------------------------------Leaves related Schemas-------------------------------------------------------------------"""
+
+
+class LoadApplyLeaveScreen(BaseModel):
+    casual_leaves: Optional[int]
+    medical_leaves: Optional[int]
+    approvers: List[int]
 
 
 class ApplyLeaveResponse(BaseModel):
@@ -223,6 +231,7 @@ class GetLeaves(BaseModel):
     branch_id: int
     user_id: int
     leave_type: LeaveType
+    leave_id: int
     leave_reason: str
     start_date: date
     end_date: date
