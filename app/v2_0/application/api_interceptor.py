@@ -1,26 +1,24 @@
 """Apis are intercepted in this file"""
-from typing import List
 
 import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi import Depends
 
-from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
-    fetch_pending_leaves, modify_leave_status
-from app.v2_0.infrastructure.database import engine, get_db
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees
+from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
+    fetch_pending_leaves, modify_leave_status
+from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 from app.v2_0.domain import models
-
 from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
     UpdateUser, UpdateCompany, UpdateBranch, UpdateBranchSettings, \
-    GetBranchSettings, InviteEmployee, GetUser, ApplyLeave, GetLeaves, GetPendingLeaves, UpdateLeave, AddApprover, \
-    GetEmployees, LoginResponse
-from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
+    InviteEmployee, ApplyLeave, UpdateLeave, AddApprover, \
+    LoginResponse
+from app.v2_0.infrastructure.database import engine, get_db
 
 router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
@@ -70,11 +68,11 @@ def login(credentials: Credentials, db=Depends(get_db)):
 
         ucb = db.query(models.UserCompanyBranch).filter(
             models.UserCompanyBranch.user_id == is_user_present.user_id).first()
-        if ucb.company_id is None:
-            data = []
-        else:
+        if ucb.company_id:
             complete_data = get_all_user_data(ucb, db)
             data = [complete_data]
+        else:
+            data = []
 
         if user_details.first_name is None and user_details.last_name is None:
             user_details.first_name = ""

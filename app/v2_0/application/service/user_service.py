@@ -1,7 +1,6 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from sqlalchemy import select
 
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO

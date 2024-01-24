@@ -1,10 +1,9 @@
 """Service layer for Employees"""
-from datetime import datetime
 
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
-from app.v2_0.application.password_handler.reset_password import create_password_reset_code, create_smtp_session
+from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.domain import models
 from app.v2_0.domain.schema import AddUser, GetEmployees
@@ -30,7 +29,7 @@ def add_employee_to_ucb(employee, inviter, user, company_id, branch_id, db):
         return ExceptionDTO("add_employee_to_ucb", exc)
 
 
-def set_employee_details(new_employee,branch_id, db):
+def set_employee_details(new_employee, branch_id, db):
     """Sets employee details"""
     try:
         branch_settings = db.query(models.BranchSettings).filter(models.BranchSettings.branch_id == branch_id).first()
@@ -45,12 +44,11 @@ def set_employee_details(new_employee,branch_id, db):
         return ExceptionDTO("set_employee_details", exc)
 
 
-def assign_new_branch_to_existing_employee(employee,user,inviter,company_id,branch_id,db):
-    add_employee_to_ucb(employee,inviter,user,company_id,branch_id,db)
+def assign_new_branch_to_existing_employee(employee, user, inviter, company_id, branch_id, db):
+    add_employee_to_ucb(employee, inviter, user, company_id, branch_id, db)
     msg = ""
     for role in employee.roles:
-        msg = msg+role.name
-
+        msg = msg + role.name
 
     print(msg)
     # create_smtp_session(user.user_email, msg)
@@ -63,22 +61,21 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
         new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
                                         invited_by=inviter.user_email)
-        if user is None:
+        if user:
+            assign_new_branch_to_existing_employee(employee, user, inviter, company_id, branch_id, db)
+
+        else:
             db.add(new_employee)
             db.commit()
             db.refresh(new_employee)
             add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db)
             set_employee_details(new_employee, branch_id, db)
             create_password_reset_code(employee.user_email, db)
-        else:
-            assign_new_branch_to_existing_employee(employee, user, inviter, company_id, branch_id, db)
 
+        return ResponseDTO(200, "Invite sent Successfully", {})
 
     except Exception as exc:
         return ExceptionDTO("invite_employee", exc)
-
-
-    return ResponseDTO(200, "Invite sent Successfully", {})
 
 
 def fetch_employees(branch_id, db):
@@ -108,7 +105,5 @@ def fetch_employees(branch_id, db):
 
         return ResponseDTO(200, "Employees fetched!", result)
 
-
     except Exception as exc:
         return ExceptionDTO("fetch_employees", exc)
-

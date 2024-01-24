@@ -1,7 +1,4 @@
 """Service layer for Leaves"""
-from datetime import datetime
-
-from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
@@ -114,7 +111,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
                                        start_date=item.start_date, end_date=item.end_date, approvers=item.approvers)
                       for item in final_list
                       ]
-        return ResponseDTO(200,"Leaves fetched!",result)
+        return ResponseDTO(200, "Leaves fetched!", result)
 
     except Exception as exc:
         return ExceptionDTO("fetch_pending_leaves", exc)
