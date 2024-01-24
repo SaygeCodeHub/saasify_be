@@ -43,7 +43,7 @@ def change_password(obj, db):
 """-------------------------------Code below this line sends the change_password_token to an individual-----------------------------"""
 
 
-def create_smtp_session(fetched_email, reset_code):
+def create_smtp_session(fetched_email, msg):
     """Creates a smtp session and sends an email. The exception handling is done by the library itself"""
     try:
         s = smtplib.SMTP('smtp.gmail.com', 587)
@@ -52,9 +52,7 @@ def create_smtp_session(fetched_email, reset_code):
         # Authentication
         s.login("jayraj.manoj@gmail.com", "odxfrxoyfcgzwsks")
 
-        message = reset_code
-
-        s.sendmail("jayraj.manoj@gmail.com", fetched_email, message)
+        s.sendmail("jayraj.manoj@gmail.com", fetched_email, msg)
 
         s.quit()
     except Exception as exc:

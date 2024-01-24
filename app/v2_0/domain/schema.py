@@ -33,6 +33,8 @@ class UpdateBranchSettings(Modifier):
     currency: Optional[str] = None
     default_approver: int
     working_days: Optional[int]
+    total_medical_leaves: Optional[int] = 0
+    total_casual_leaves: Optional[int] = 0
     overtime_rate: Optional[float] = None
     overtime_rate_per: Optional[str] = "HOUR"
 
@@ -119,31 +121,31 @@ class AddUser(Modifier):
     password: str
     user_email: str
     change_password_token: str = None
-    medical_leaves: Optional[int] = None
-    casual_leaves: Optional[int] = None
+    medical_leaves: Optional[int] = 0
+    casual_leaves: Optional[int] = 0
     activity_status: ActivityStatus = "ACTIVE"
 
 
 class GetUser(BaseModel):
-    first_name: Optional[str]
-    last_name: Optional[str]
-    middle_name:Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    middle_name:Optional[str] = None
     user_id: int
-    user_contact: Optional[int]
-    alternate_contact: Optional[int]
-    user_image: Optional[str]
+    user_contact: Optional[int] = None
+    alternate_contact: Optional[int] = None
+    user_image: Optional[str] = None
     user_email: str
-    roles: List[RolesEnum]
-    user_birthdate: Optional[date]
-    age: Optional[int]
-    gender: Optional[str]
-    nationality: Optional[str]
-    marital_status: Optional[str]
-    current_address: Optional[str]
-    permanent_address: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    pincode: Optional[str]
+    roles: List[RolesEnum] = None
+    user_birthdate: Optional[date] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    nationality: Optional[str] = None
+    marital_status: Optional[str] = None
+    current_address: Optional[str] = None
+    permanent_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
 
 
 class UpdateUser(Modifier):
@@ -163,7 +165,7 @@ class UpdateUser(Modifier):
     permanent_address: str = None
     city: str = None
     state: str = None
-    pincode: Optional[int]
+    pincode: Optional[int] = None
 
 
 """----------------------------------------------Employee related Schemas-------------------------------------------------------------------"""

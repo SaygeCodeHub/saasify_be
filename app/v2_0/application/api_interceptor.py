@@ -56,10 +56,13 @@ def login(credentials: Credentials, db=Depends(get_db)):
         user_details = db.query(models.UserDetails).filter(
             models.UserDetails.user_id == is_user_present.user_id).first()
         if is_user_present is None:
-            return ResponseDTO("404", "User is not registered, please register.", {})
+            return ResponseDTO(404, "User is not registered, please register.", {})
+
+        if is_user_present.password == "-":
+            return ResponseDTO(404,"Password not set yet. Please set your password",{})
 
         if not verify(pwd, is_user_present.password):
-            return ResponseDTO("401", "Password Incorrect!", {})
+            return ResponseDTO(401, "Password Incorrect!", {})
 
         # Get all user data
         ucb = db.query(models.UserCompanyBranch).filter(
@@ -74,7 +77,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
             user_details.first_name = ""
             user_details.last_name = ""
 
-        return ResponseDTO("200", "Login successful",
+        return ResponseDTO(200, "Login successful",
                            LoginResponse(user_id=is_user_present.user_id,
                                          name=user_details.first_name + " " + user_details.last_name, company=data))
 
