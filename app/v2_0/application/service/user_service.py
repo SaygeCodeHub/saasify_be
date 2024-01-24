@@ -69,11 +69,8 @@ def set_modified_by(new_user, db):
 
 
 def get_roles(user_id, db):
-    user_entries = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).all()
-    role_array = []
-    for user in user_entries:
-        role_array.append(user.role)
-    return role_array
+    user = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).first()
+    return user.roles
 
 
 def fetch_by_id(u_id, db):

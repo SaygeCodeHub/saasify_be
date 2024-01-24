@@ -4,103 +4,102 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
-from app.v2_0.application.password_handler.reset_password import create_password_reset_code
+from app.v2_0.application.password_handler.reset_password import create_password_reset_code, create_smtp_session
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.domain import models
 from app.v2_0.domain.schema import AddUser, GetEmployees
 
 
-def add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db):
+def add_employee_to_ucb(employee, inviter, user, company_id, branch_id, db):
     """Adds employee to the ucb table"""
     approvers_list = [inviter.user_id]
     try:
-        for role in employee.roles:
-            if employee.approvers is not None:
-                approvers_set = set(employee.approvers)
-                approvers_set.add(inviter.user_id)
-                approvers_list = list(approvers_set)
+        if len(employee.approvers) != 0:
+            approvers_set = set(employee.approvers)
+            approvers_set.add(inviter.user_id)
+            approvers_list = list(approvers_set)
 
-            ucb_employee = models.UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
-                                                    branch_id=branch_id,
-                                                    role=role, approvers=approvers_list)
-            db.add(ucb_employee)
-            db.commit()
+        ucb_employee = models.UserCompanyBranch(user_id=user.user_id, company_id=company_id,
+                                                branch_id=branch_id,
+                                                roles=employee.roles, approvers=approvers_list)
+
+        db.add(ucb_employee)
+        db.commit()
 
     except Exception as exc:
         return ExceptionDTO("add_employee_to_ucb", exc)
 
 
-def set_employee_details(new_employee, db):
+def set_employee_details(new_employee,branch_id, db):
     """Sets employee details"""
     try:
+        branch_settings = db.query(models.BranchSettings).filter(models.BranchSettings.branch_id == branch_id).first()
         employee_details = AddUser
         employee_details.first_name = None
         employee_details.last_name = None
-        employee_details.medical_leaves = 12
-        employee_details.casual_leaves = 3
+        employee_details.medical_leaves = branch_settings.total_medical_leaves
+        employee_details.casual_leaves = branch_settings.total_casual_leaves
         employee_details.activity_status = "ACTIVE"
         add_user_details(employee_details, new_employee.user_id, db)
     except Exception as exc:
         return ExceptionDTO("set_employee_details", exc)
 
 
+def assign_new_branch_to_existing_employee(employee,user,inviter,company_id,branch_id,db):
+    add_employee_to_ucb(employee,inviter,user,company_id,branch_id,db)
+    msg = f"New branch assigned - {branch_id}. Your roles - {employee.roles}"
+    create_smtp_session(user.user_email, msg)
+
+
 def invite_employee(employee, user_id, company_id, branch_id, db):
     """Adds an employee in the db"""
     try:
         user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == employee.user_email).first()
+        inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
+                                        invited_by=inviter.user_email)
         if user is None:
-            inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
-            new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
-                                            invited_by=inviter.user_email)
             db.add(new_employee)
             db.commit()
             db.refresh(new_employee)
             add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db)
-            set_employee_details(new_employee, db)
+            set_employee_details(new_employee,branch_id, db)
             create_password_reset_code(employee.user_email, db)
-            return ResponseDTO(200, "Invite sent Successfully", {})
         else:
-            return ResponseDTO(401, "Employee already invited!", user)
+            assign_new_branch_to_existing_employee(employee,user,inviter,company_id,branch_id,db)
+
+        return ResponseDTO(200, "Invite sent Successfully", {})
 
     except Exception as exc:
         return ExceptionDTO("invite_employee", exc)
-
-
-def get_role_array(user_id,db):
-    user_entries = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).all()
-    role_array = []
-    for user in user_entries:
-        role_array.append(user.role)
-    return role_array
 
 
 def fetch_employees(branch_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
         stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
-                      models.UserCompanyBranch.role, models.UsersAuth.user_email, models.UsersAuth.user_id).select_from(
+                      models.UserDetails.current_address,
+                      models.UserCompanyBranch.roles, models.UsersAuth.user_email,
+                      models.UsersAuth.user_id).select_from(
             models.UserDetails).join(
             models.UserCompanyBranch,
             models.UserDetails.user_id == models.UserCompanyBranch.user_id).join(
             models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id).filter(
-            models.UserCompanyBranch.role != "OWNER").filter(models.UserCompanyBranch.branch_id == branch_id)
-        print(stmt)
+            models.UserCompanyBranch.branch_id == branch_id)
 
         employees = db.execute(stmt)
         result = [
             GetEmployees(
                 name=employee.first_name + " " + employee.last_name,
                 user_contact=employee.user_contact,
-                roles=get_role_array(employee.user_id, db),
+                roles=employee.roles,
                 user_email=employee.user_email,
+                current_address=employee.current_address
             )
             for employee in employees
         ]
 
         return ResponseDTO(200, "Employees fetched!", result)
 
-
     except Exception as exc:
         return ExceptionDTO("fetch_employees", exc)
-
-
