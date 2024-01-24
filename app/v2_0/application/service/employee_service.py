@@ -58,55 +58,57 @@ def assign_new_branch_to_existing_employee(employee,user,inviter,company_id,bran
 
 def invite_employee(employee, user_id, company_id, branch_id, db):
     """Adds an employee in the db"""
-    # try:
+    try:
+        user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == employee.user_email).first()
+        inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
+                                        invited_by=inviter.user_email)
+        if user is None:
+            db.add(new_employee)
+            db.commit()
+            db.refresh(new_employee)
+            add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db)
+            set_employee_details(new_employee, branch_id, db)
+            create_password_reset_code(employee.user_email, db)
+        else:
+            assign_new_branch_to_existing_employee(employee, user, inviter, company_id, branch_id, db)
 
 
-    # except Exception as exc:
-    #     return ExceptionDTO("invite_employee", exc)
-    user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == employee.user_email).first()
-    inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
-    new_employee = models.UsersAuth(user_email=employee.user_email, password="-", modified_by=user_id,
-                                    invited_by=inviter.user_email)
-    if user is None:
-        db.add(new_employee)
-        db.commit()
-        db.refresh(new_employee)
-        add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db)
-        set_employee_details(new_employee, branch_id, db)
-        create_password_reset_code(employee.user_email, db)
-    else:
-        assign_new_branch_to_existing_employee(employee, user, inviter, company_id, branch_id, db)
+    except Exception as exc:
+        return ExceptionDTO("invite_employee", exc)
+
 
     return ResponseDTO(200, "Invite sent Successfully", {})
 
 
 def fetch_employees(branch_id, db):
     """Returns all the employees belonging to a particular branch"""
-    # try:
+    try:
+        stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
+                      models.UserDetails.current_address,
+                      models.UserCompanyBranch.roles, models.UsersAuth.user_email,
+                      models.UsersAuth.user_id).select_from(
+            models.UserDetails).join(
+            models.UserCompanyBranch,
+            models.UserDetails.user_id == models.UserCompanyBranch.user_id).join(
+            models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id).filter(
+            models.UserCompanyBranch.branch_id == branch_id)
+
+        employees = db.execute(stmt)
+        result = [
+            GetEmployees(
+                name=employee.first_name + " " + employee.last_name,
+                user_contact=employee.user_contact,
+                roles=employee.roles,
+                user_email=employee.user_email,
+                current_address=employee.current_address
+            )
+            for employee in employees
+        ]
+
+        return ResponseDTO(200, "Employees fetched!", result)
 
 
-    # except Exception as exc:
-    #     return ExceptionDTO("fetch_employees", exc)
-    stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
-                  models.UserDetails.current_address,
-                  models.UserCompanyBranch.roles, models.UsersAuth.user_email,
-                  models.UsersAuth.user_id).select_from(
-        models.UserDetails).join(
-        models.UserCompanyBranch,
-        models.UserDetails.user_id == models.UserCompanyBranch.user_id).join(
-        models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id).filter(
-        models.UserCompanyBranch.branch_id == branch_id)
+    except Exception as exc:
+        return ExceptionDTO("fetch_employees", exc)
 
-    employees = db.execute(stmt)
-    result = [
-        GetEmployees(
-            name=employee.first_name + " " + employee.last_name,
-            user_contact=employee.user_contact,
-            roles=employee.roles,
-            user_email=employee.user_email,
-            current_address=employee.current_address
-        )
-        for employee in employees
-    ]
-
-    return ResponseDTO(200, "Employees fetched!", result)
