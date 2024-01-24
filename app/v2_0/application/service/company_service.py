@@ -1,9 +1,7 @@
 """Service layer for Companies"""
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import select
-
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
@@ -139,7 +137,7 @@ def add_branch_to_ucb(new_branch, user_id, company_id, db):
         return ExceptionDTO("add_branch_to_ucb", exc)
 
 
-def add_branch(branch, user_id, company_id, db, is_init: Optional[bool] | None = None):
+def add_branch(branch, user_id, company_id, db, is_init: bool):
     """Creates a branch for a company"""
     try:
         company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
