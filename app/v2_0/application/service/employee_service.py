@@ -47,8 +47,13 @@ def set_employee_details(new_employee,branch_id, db):
 
 def assign_new_branch_to_existing_employee(employee,user,inviter,company_id,branch_id,db):
     add_employee_to_ucb(employee,inviter,user,company_id,branch_id,db)
-    msg = f"New branch assigned - {branch_id}. Your roles - {employee.roles}"
-    create_smtp_session(user.user_email, msg)
+    msg = ""
+    for role in employee.roles:
+        msg = msg+role.name
+
+
+    print(msg)
+    # create_smtp_session(user.user_email, msg)
 
 
 def invite_employee(employee, user_id, company_id, branch_id, db):
@@ -63,15 +68,17 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
             db.commit()
             db.refresh(new_employee)
             add_employee_to_ucb(employee, inviter, new_employee, company_id, branch_id, db)
-            set_employee_details(new_employee,branch_id, db)
+            set_employee_details(new_employee, branch_id, db)
             create_password_reset_code(employee.user_email, db)
         else:
-            assign_new_branch_to_existing_employee(employee,user,inviter,company_id,branch_id,db)
+            assign_new_branch_to_existing_employee(employee, user, inviter, company_id, branch_id, db)
 
-        return ResponseDTO(200, "Invite sent Successfully", {})
 
     except Exception as exc:
         return ExceptionDTO("invite_employee", exc)
+
+
+    return ResponseDTO(200, "Invite sent Successfully", {})
 
 
 def fetch_employees(branch_id, db):
@@ -101,5 +108,7 @@ def fetch_employees(branch_id, db):
 
         return ResponseDTO(200, "Employees fetched!", result)
 
+
     except Exception as exc:
         return ExceptionDTO("fetch_employees", exc)
+

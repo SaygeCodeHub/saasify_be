@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
+from app.v2_0.domain.schema import GetUser
 
 
 def add_user_details(user, user_id, db):
@@ -80,7 +81,9 @@ def fetch_by_id(u_id, db):
         user_auth = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == u_id).first()
         user.__dict__["user_email"] = user_auth.user_email
         user.__dict__["roles"] = get_roles(u_id, db)
-        return user
+        result = GetUser(**user.__dict__)
+        return ResponseDTO(200, "User fetched!", result)
+
     except Exception as exc:
         return ExceptionDTO("fetch_by_id", exc)
 
@@ -107,6 +110,12 @@ def modify_user(user, user_id, u_id, db):
         return ResponseDTO(200, "User updated successfully", {})
     except Exception as exc:
         return ExceptionDTO("modify_user", exc)
+
+
+def update_leave_approvers(approvers_list, user_id, db):
+    leave_query = db.query(models.Leaves).filter(models.Leaves.user_id == user_id)
+    leave_query.update({"approvers":approvers_list})
+    db.commit()
 
 
 def update_approver(approver, user_id, company_id, branch_id, db):
@@ -136,6 +145,8 @@ def update_approver(approver, user_id, company_id, branch_id, db):
 
         user_query.update(approver.__dict__)
         db.commit()
+
+        update_leave_approvers(approvers_list, user_id, db)
 
         return ResponseDTO(200, "Approvers updated!", {})
 

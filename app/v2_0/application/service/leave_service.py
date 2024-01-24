@@ -6,15 +6,16 @@ from sqlalchemy import select
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
 from app.v2_0.domain.models import LeaveType
-from app.v2_0.domain.schema import ApplyLeaveResponse
+from app.v2_0.domain.schema import ApplyLeaveResponse, LoadApplyLeaveScreen, GetLeaves, GetPendingLeaves
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
     try:
         user = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
         ucb_user = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).first()
-        return {"casual_leaves": user.casual_leaves, "medical_leaves": user.medical_leaves,
-                "approvers": ucb_user.approvers}
+        result = LoadApplyLeaveScreen(casual_leaves=user.casual_leaves, medical_leaves=user.medical_leaves,
+                                      approvers=ucb_user.approvers)
+        return ResponseDTO(200, "Data loaded!", result)
     except Exception as exc:
         return ExceptionDTO("get_screen_apply_leave", exc)
 
@@ -63,8 +64,17 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
 def fetch_leaves(user_id, company_id, branch_id, db):
     try:
         my_leaves = db.query(models.Leaves).filter(models.Leaves.user_id == user_id).all()
+        result = [
+            GetLeaves(company_id=leave.company_id, branch_id=leave.branch_id, user_id=leave.user_id,
+                      leave_type=leave.leave_type, leave_id=leave.leave_id, leave_reason=leave.leave_reason,
+                      start_date=leave.start_date, end_date=leave.end_date, approvers=leave.approvers,
+                      leave_status=leave.leave_status)
+            for leave in my_leaves
+        ]
+        if len(my_leaves) == 0:
+            return ResponseDTO(204, "No leaves to fetch!", my_leaves)
 
-        return my_leaves
+        return ResponseDTO(200, "Leaves fetched!", result)
     except Exception as exc:
         return ExceptionDTO("fetch_leaves", exc)
 
@@ -90,13 +100,21 @@ def format_pending_leaves(filtered_leaves, db):
 def fetch_pending_leaves(user_id, company_id, branch_id, db):
     try:
         pending_leaves = db.query(models.Leaves).filter(models.Leaves.leave_status == "PENDING").all()
+        if len(pending_leaves) == 0:
+            return ResponseDTO(204, "No leaves to fetch!", pending_leaves)
+
         filter_leaves_by_approver = get_authorized_leave_requests(pending_leaves, user_id)
 
         if len(filter_leaves_by_approver) == 0:
-            return []
+            return ResponseDTO(204, "You are not authorized to view pending leaves", [])
         else:
             final_list = format_pending_leaves(filter_leaves_by_approver, db)
-        return final_list
+            result = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
+                                       leave_type=item.leave_type, leave_reason=item.leave_reason,
+                                       start_date=item.start_date, end_date=item.end_date, approvers=item.approvers)
+                      for item in final_list
+                      ]
+        return ResponseDTO(200,"Leaves fetched!",result)
 
     except Exception as exc:
         return ExceptionDTO("fetch_pending_leaves", exc)

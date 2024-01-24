@@ -34,7 +34,7 @@ def register_user(user: AddUser, db=Depends(get_db)):
     return add_user(user, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getUser/{u_id}", response_model=GetUser)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getUser/{u_id}")
 def get_user_by_id(u_id: int, db=Depends(get_db)):
     """u_id is the id of the person being fetched"""
     return fetch_by_id(u_id, db)
@@ -52,19 +52,22 @@ def login(credentials: Credentials, db=Depends(get_db)):
     try:
         email = credentials.model_dump()["email"]
         pwd = credentials.model_dump()["password"]
+
         is_user_present = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == email).first()
-        user_details = db.query(models.UserDetails).filter(
-            models.UserDetails.user_id == is_user_present.user_id).first()
+
         if is_user_present is None:
             return ResponseDTO(404, "User is not registered, please register.", {})
 
         if is_user_present.password == "-":
-            return ResponseDTO(404,"Password not set yet. Please set your password",{})
+            return ResponseDTO(404, "Password not set yet. Please set your password", {})
 
         if not verify(pwd, is_user_present.password):
             return ResponseDTO(401, "Password Incorrect!", {})
 
         # Get all user data
+        user_details = db.query(models.UserDetails).filter(
+            models.UserDetails.user_id == is_user_present.user_id).first()
+
         ucb = db.query(models.UserCompanyBranch).filter(
             models.UserCompanyBranch.user_id == is_user_present.user_id).first()
         if ucb.company_id is None:
@@ -136,7 +139,7 @@ def update_company(company: UpdateCompany, user_id: int, company_id: int, db=Dep
 
 @router.post("/v2.0/{company_id}/{user_id}/createBranch")
 def create_branch(branch: AddBranch, user_id: int, company_id: int, db=Depends(get_db)):
-    return add_branch(branch, user_id, company_id, db)
+    return add_branch(branch, user_id, company_id, db, False)
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch")
@@ -158,7 +161,7 @@ def update_branch_settings(settings: UpdateBranchSettings, user_id: int, company
     return modify_branch_settings(settings, user_id, company_id, branch_id, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getBranchSettings", response_model=GetBranchSettings)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getBranchSettings")
 def get_branch_settings(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_branch_settings(user_id, company_id, branch_id, db)
 
@@ -167,8 +170,7 @@ def get_branch_settings(user_id: int, company_id: int, branch_id: int, db=Depend
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/loadApplyLeaveScreen")
-def load_apply_leave_screen(user_id: int, company_id: int, branch_id: int,
-                            db=Depends(get_db)):
+def load_apply_leave_screen(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return get_screen_apply_leave(user_id, company_id, branch_id, db)
 
 
@@ -177,12 +179,12 @@ def apply_leave(leave_application: ApplyLeave, user_id: int, company_id: int, br
     return apply_for_leave(leave_application, user_id, company_id, branch_id, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/myLeaves", response_model=List[GetLeaves])
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/myLeaves")
 def get_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_leaves(user_id, company_id, branch_id, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/pendingLeaveApprovals", response_model=List[GetPendingLeaves])
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/pendingLeaveApprovals")
 def get_pendingLeaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_pending_leaves(user_id, company_id, branch_id, db)
 
