@@ -42,7 +42,7 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             leave_application.company_id = company_id
             leave_application.branch_id = branch_id
 
-            if len(leave_application.approvers) is 0:
+            if len(leave_application.approvers) == 0:
                 company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
                 leave_application.approvers = [company.owner]
 
