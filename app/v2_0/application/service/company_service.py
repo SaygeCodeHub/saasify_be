@@ -5,7 +5,7 @@ from sqlalchemy import select, text
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddBranch, BranchSettings, GetCompany
+from app.v2_0.domain.schema import AddBranch, BranchSettings, GetCompany, UserDataResponse
 
 
 def add_branch_to_ucb(new_branch, user_id, company_id, db):
@@ -254,20 +254,27 @@ def modify_company(company, user_id, company_id, db):
         return ExceptionDTO("modify_company", exc)
 
 
-def get_all_user_data(user, ucb, db):
+def get_all_user_data(ucb, db):
     try:
         company = db.query(models.Companies).filter(models.Companies.company_id == ucb.company_id).first()
-        branch = db.query(models.Branches).filter(models.Branches.branch_id == ucb.branch_id).first()
-        role = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user.user_id).all()
 
-        role_array = []
-        for x in role:
-            role_array.append(x.__dict__["role"])
+        stmt = select(models.UserCompanyBranch.branch_id, models.UserCompanyBranch.roles,
+                      models.Branches.branch_name).select_from(models.UserCompanyBranch).join(
+            models.Branches, models.UserCompanyBranch.branch_id == models.Branches.branch_id).filter(
+            models.UserCompanyBranch.user_id == ucb.user_id)
+
+        branches = db.execute(stmt)
+        result = [
+            UserDataResponse(
+                branch_id=branch.branch_id,
+                branch_name=branch.branch_name,
+                roles=branch.roles
+            )
+            for branch in branches
+        ]
 
         return {"company_id": company.company_id, "company_name": company.company_name,
-                "branches": [
-                    {"branch_id": branch.branch_id, "branch_name": branch.branch_name, "role": role_array}
-                ]
+                "branches": result
                 }
     except Exception as exc:
         return ExceptionDTO("get_all_user_data", exc)

@@ -67,7 +67,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         if ucb.company_id is None:
             data = []
         else:
-            complete_data = get_all_user_data(is_user_present, ucb, db)
+            complete_data = get_all_user_data(ucb, db)
             data = [complete_data]
 
         if user_details.first_name is None and user_details.last_name is None:

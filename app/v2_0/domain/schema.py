@@ -119,20 +119,31 @@ class AddUser(Modifier):
     password: str
     user_email: str
     change_password_token: str = None
-    medical_leaves: int = 12
-    casual_leaves: int = 3
+    medical_leaves: Optional[int] = None
+    casual_leaves: Optional[int] = None
     activity_status: ActivityStatus = "ACTIVE"
 
 
 class GetUser(BaseModel):
     first_name: Optional[str]
     last_name: Optional[str]
+    middle_name:Optional[str]
     user_id: int
     user_contact: Optional[int]
+    alternate_contact: Optional[int]
     user_image: Optional[str]
     user_email: str
     roles: List[RolesEnum]
     user_birthdate: Optional[date]
+    age: Optional[int]
+    gender: Optional[str]
+    nationality: Optional[str]
+    marital_status: Optional[str]
+    current_address: Optional[str]
+    permanent_address: Optional[str]
+    city: Optional[str]
+    state: Optional[str]
+    pincode: Optional[str]
 
 
 class UpdateUser(Modifier):
@@ -142,6 +153,17 @@ class UpdateUser(Modifier):
     activity_status: ActivityStatus = None
     user_image: str = "Image"
     user_contact: int = None
+    alternate_contact: int = None
+    age: int = None
+    middle_name: str = None
+    gender: str = None
+    nationality:str = None
+    marital_status: str = None
+    current_address: str = None
+    permanent_address: str = None
+    city: str = None
+    state: str = None
+    pincode: Optional[int]
 
 
 """----------------------------------------------Employee related Schemas-------------------------------------------------------------------"""
@@ -152,6 +174,7 @@ class GetEmployees(BaseModel):
     user_contact: Optional[int]
     roles: List[RolesEnum]
     user_email: str
+    current_address: str
 
 
 class InviteEmployee(Modifier):
@@ -244,3 +267,9 @@ class JSONObject(BaseModel):
     """Used to get selected json fields from FE"""
     email: Optional[str] = None
     pwd: Optional[str] = None
+
+
+class UserDataResponse(BaseModel):
+    branch_id: int
+    branch_name: str
+    roles: List[RolesEnum]
