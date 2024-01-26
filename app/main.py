@@ -6,7 +6,6 @@ from app.v2_0.domain import models
 from app.v2_0.infrastructure.database import engine
 from fastapi.responses import HTMLResponse
 
-
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()

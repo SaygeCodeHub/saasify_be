@@ -1,4 +1,5 @@
 """Apis are intercepted in this file"""
+from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -33,15 +34,16 @@ def register_user(user: AddUser, db=Depends(get_db)):
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getUser/{u_id}")
-def get_user_by_id(u_id: int,company_id: int, branch_id: int, db=Depends(get_db)):
+def get_user_by_id(u_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     """u_id is the id of the person being fetched"""
-    return fetch_by_id(u_id,company_id, branch_id, db)
+    return fetch_by_id(u_id, company_id, branch_id, db)
 
 
-@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser/{u_id}")
-def update_user(user: UpdateUser, user_id: int, u_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser")
+def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] | None = None,
+                db=Depends(get_db)):
     """Calls service layer to update user"""
-    return modify_user(user, user_id, u_id, company_id, branch_id, db)
+    return modify_user(user, user_id, company_id, branch_id, u_id, db)
 
 
 @router.post("/v2.0/authenticateUser")
@@ -56,7 +58,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         if is_user_present is None:
             return ResponseDTO(404, "User is not registered, please register.", {})
 
-        if is_user_present.password == "-":
+        if is_user_present.password is None:
             return ResponseDTO(404, "Password not set yet. Please set your password", {})
 
         if not verify(pwd, is_user_present.password):
@@ -110,8 +112,8 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
-def get_employees(branch_id: int,company_id: int, db=Depends(get_db)):
-    return fetch_employees(branch_id,company_id, db)
+def get_employees(branch_id: int, company_id: int, db=Depends(get_db)):
+    return fetch_employees(branch_id, company_id, db)
 
 
 """----------------------------------------------Company related APIs-------------------------------------------------------------------"""
