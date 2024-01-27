@@ -306,7 +306,8 @@ class Credentials(BaseModel):
 class PwdResetToken(BaseModel):
     """Used to get the JSON object for pwd reset token"""
     token: str
-    user_email: str
+    email: str
+    password: str
 
 
 class JSONObject(BaseModel):

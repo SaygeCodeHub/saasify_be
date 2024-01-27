@@ -1,10 +1,10 @@
 """Models for table creation"""
 
-from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean, Double
-from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.sql.sqltypes import TIMESTAMP, Float, ARRAY
-from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
+
+from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean, Double
+from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.sqltypes import TIMESTAMP, Float, ARRAY, DateTime
 
 from app.v2_0.infrastructure.database import Base
 
@@ -206,3 +206,15 @@ class UserDetails(Base):
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+
+class Attendance(Base):
+    __tablename__ = 'attendance'
+
+    attendance_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=False)
+    date = Column(Date, nullable=False)
+    check_in = Column(DateTime(timezone=True), nullable=True)
+    check_out = Column(DateTime(timezone=True), nullable=True)

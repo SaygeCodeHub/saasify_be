@@ -1,12 +1,12 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.utility.app_utility import add_employee_to_ucb
 from app.v2_0.domain import models
-from app.v2_0.domain.schema import GetUser, AddUser, InviteEmployee
+from app.v2_0.domain.schema import GetUser, InviteEmployee
 
 
 def add_user_details(user, user_id, db):
