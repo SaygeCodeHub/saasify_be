@@ -42,7 +42,7 @@ def get_user_by_id(u_id: int, company_id: int, branch_id: int, db=Depends(get_db
 
 
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser")
-def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] | None = None,
+def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] = None,
                 db=Depends(get_db)):
     """Calls service layer to update user"""
     return modify_user(user, user_id, company_id, branch_id, u_id, db)
@@ -249,6 +249,5 @@ def today_attendance(user_id: int, company_id: int, branch_id: int, db=Depends(g
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/attendanceHistory")
-def attendance_history(user_id: int, company_id: int, branch_id: int, db=Depends(get_db),
-                       u_id: Optional[str] | None = None):
+def attendance_history(user_id: int, company_id: int, branch_id: int, db=Depends(get_db), u_id: Optional[str] = None):
     return attendance_history_func(user_id, company_id, branch_id, db, u_id)
