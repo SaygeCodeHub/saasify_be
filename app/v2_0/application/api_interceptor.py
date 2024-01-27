@@ -1,12 +1,15 @@
 """Apis are intercepted in this file"""
+from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi import Depends
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
+from app.v2_0.application.service.attendance_service import mark_attendance_func, get_todays_attendance, \
+    attendance_history_func
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees
@@ -33,15 +36,16 @@ def register_user(user: AddUser, db=Depends(get_db)):
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getUser/{u_id}")
-def get_user_by_id(u_id: int,company_id: int, branch_id: int, db=Depends(get_db)):
+def get_user_by_id(u_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     """u_id is the id of the person being fetched"""
-    return fetch_by_id(u_id,company_id, branch_id, db)
+    return fetch_by_id(u_id, company_id, branch_id, db)
 
 
-@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser/{u_id}")
-def update_user(user: UpdateUser, user_id: int, u_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser")
+def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] | None = None,
+                db=Depends(get_db)):
     """Calls service layer to update user"""
-    return modify_user(user, user_id, u_id, company_id, branch_id, db)
+    return modify_user(user, user_id, company_id, branch_id, u_id, db)
 
 
 @router.post("/v2.0/authenticateUser")
@@ -56,7 +60,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         if is_user_present is None:
             return ResponseDTO(404, "User is not registered, please register.", {})
 
-        if is_user_present.password == "-":
+        if is_user_present.password is None:
             return ResponseDTO(404, "Password not set yet. Please set your password", {})
 
         if not verify(pwd, is_user_present.password):
@@ -83,7 +87,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
                                          name=user_details.first_name + " " + user_details.last_name, company=data))
 
     except Exception as exc:
-        return ExceptionDTO("login", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 @router.post("/v2.0/forgotPassword")
@@ -95,7 +99,7 @@ def forgot_password(user_email: JSONObject, db=Depends(get_db)):
 @router.post("/v2.0/sendVerificationLink")
 def verify_token(token: PwdResetToken, db=Depends(get_db)):
     """Calls the service layer to verify the token received by an individual"""
-    return check_token(token.model_dump()["token"], token.model_dump()["user_email"], db)
+    return check_token(token.model_dump()["token"], token.model_dump()["email"], token, db)
 
 
 @router.put("/v2.0/updatePassword")
@@ -110,8 +114,8 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
-def get_employees(branch_id: int,company_id: int, db=Depends(get_db)):
-    return fetch_employees(branch_id,company_id, db)
+def get_employees(branch_id: int, company_id: int, db=Depends(get_db)):
+    return fetch_employees(branch_id, company_id, db)
 
 
 """----------------------------------------------Company related APIs-------------------------------------------------------------------"""
@@ -183,7 +187,7 @@ def get_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/pendingLeaveApprovals")
-def get_pendingLeaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+def get_pending_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_pending_leaves(user_id, company_id, branch_id, db)
 
 
@@ -229,3 +233,22 @@ def send_notification(device_token: str, title: str, body: str):
             return {'message': 'Notification sent successfully'}
         else:
             raise HTTPException(status_code=response.status_code, detail=response.text)
+
+
+"""----------------------------------------------Attendance related APIs-------------------------------------------------------------------"""
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/markAttendance")
+def mark_attendance(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return mark_attendance_func(company_id, branch_id, user_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/todayAttendance")
+def today_attendance(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return get_todays_attendance(user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/attendanceHistory")
+def attendance_history(user_id: int, company_id: int, branch_id: int, db=Depends(get_db),
+                       u_id: Optional[str] | None = None):
+    return attendance_history_func(user_id, company_id, branch_id, db, u_id)

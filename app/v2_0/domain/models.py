@@ -1,10 +1,10 @@
 """Models for table creation"""
 
-from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean, Double
-from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.sql.sqltypes import TIMESTAMP, Float, ARRAY
-from sqlalchemy.sql.expression import text
 from enum import Enum as PyEnum
+
+from sqlalchemy import Column, String, BIGINT, Date, Integer, Enum, ForeignKey, Boolean, Double
+from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.sqltypes import TIMESTAMP, Float, ARRAY, DateTime
 
 from app.v2_0.infrastructure.database import Base
 
@@ -36,8 +36,42 @@ class LeaveType(PyEnum):
     MEDICAL = 1
 
 
+class UserDocuments(Base):
+    """Contains all the fields required in the 'user_documents' table"""
+    __tablename__ = 'user_documents'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
+    aadhar_number = Column(BIGINT, nullable=True, unique=True)
+    name_as_per_aadhar = Column(String, nullable=True)
+    pan_number = Column(String, nullable=True)
+    passport_num = Column(String, nullable=True, unique=True)
+    passport_fname = Column(String, nullable=True)
+    passport_lname = Column(String, nullable=True)
+    expiry_date = Column(Date, nullable=True)
+    issue_date = Column(Date, nullable=True)
+    mobile_number = Column(BIGINT, nullable=True)
+    current_address = Column(String, nullable=True)
+    permanent_address = Column(String, nullable=True)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+
+class UserFinance(Base):
+    """Contains all the fields required in the 'user_finance' table"""
+    __tablename__ = 'user_finance'
+
+    fin_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
+    salary = Column(Double, nullable=True)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+
 class BranchSettings(Base):
-    """Contains all the fields required in the 'BranchSettings' table"""
+    """Contains all the fields required in the 'branch_settings' table"""
     __tablename__ = 'branch_settings'
 
     setting_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -49,14 +83,14 @@ class BranchSettings(Base):
     timezone = Column(String, nullable=True)
     currency = Column(String, nullable=True)
     default_approver = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
-    total_medical_leaves = Column(Integer,nullable=True)
+    total_medical_leaves = Column(Integer, nullable=True)
     total_casual_leaves = Column(Integer, nullable=True)
     overtime_rate = Column(Float, nullable=True)
     overtime_rate_per = Column(String, nullable=True)
     is_hq_settings = Column(Boolean, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(Integer, nullable=False)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
 
 
 class Branches(Base):
@@ -76,8 +110,8 @@ class Branches(Base):
     is_head_quarter = Column(Boolean, nullable=True)
     activity_status = Column(Enum(ActivityStatus), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(Integer, nullable=False)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
 
 
 class Companies(Base):
@@ -94,8 +128,8 @@ class Companies(Base):
     owner = Column(Integer, ForeignKey('users_auth.user_id'), nullable=False)
     activity_status = Column(Enum(ActivityStatus), nullable=False)
     onboarding_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(Integer, nullable=False)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
 
 
 class UsersAuth(Base):
@@ -104,12 +138,12 @@ class UsersAuth(Base):
     __table_args__ = {'extend_existing': True}
 
     user_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    password = Column(String, nullable=False)
+    password = Column(String, nullable=True)
     user_email = Column(String, nullable=False, unique=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     invited_by = Column(String, nullable=True)
-    modified_by = Column(Integer, nullable=False)
+    modified_by = Column(Integer, nullable=True)
     change_password_token = Column(String, nullable=True)
 
 
@@ -141,8 +175,8 @@ class Leaves(Base):
     leave_status = Column(Enum(LeaveStatus), nullable=True)
     is_leave_approved = Column(Boolean, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(Integer, nullable=False)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
 
 
 class UserDetails(Base):
@@ -161,7 +195,7 @@ class UserDetails(Base):
     nationality = Column(String, nullable=True)
     marital_status = Column(String, nullable=True)
     current_address = Column(String, nullable=True)
-    permanent_address= Column(String, nullable=True)
+    permanent_address = Column(String, nullable=True)
     city = Column(String, nullable=True)
     state = Column(String, nullable=True)
     pincode = Column(BIGINT, nullable=True)
@@ -169,6 +203,18 @@ class UserDetails(Base):
     casual_leaves = Column(Integer, nullable=True)
     user_image = Column(String, nullable=True)
     activity_status = Column(Enum(ActivityStatus), nullable=False)
-    modified_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    modified_by = Column(Integer, nullable=False)
+    modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+    modified_by = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+
+class Attendance(Base):
+    __tablename__ = 'attendance'
+
+    attendance_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=False)
+    date = Column(Date, nullable=False)
+    check_in = Column(DateTime(timezone=True), nullable=True)
+    check_out = Column(DateTime(timezone=True), nullable=True)

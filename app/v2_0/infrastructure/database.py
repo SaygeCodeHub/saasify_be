@@ -8,7 +8,6 @@ SQLALCHEMY_DATABASE_URL = "postgresql://default:hurR7WSdp6wl@ep-wild-term-466593
 # SQLALCHEMY_DATABASE_URL = "postgresql://postgres:root@localhost:5432/saasify_2.0"  # Jayraj's local instance for v2.0
 # SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Mun1chad$@localhost:5432/postgres"  # Aditi's local instance
 
-
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

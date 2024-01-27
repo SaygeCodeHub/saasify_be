@@ -9,8 +9,8 @@ from app.v2_0.domain.models import ActivityStatus, RolesEnum, LeaveType, LeaveSt
 
 class Modifier(BaseModel):
     """Contains all the fields that will be inherited by other schemas """
-    modified_on: date = datetime.now()
-    modified_by: int = -1
+    modified_on: Optional[date] = None
+    modified_by: Optional[int] = None
 
 
 """----------------------------------------------Branch Settings related schemas-------------------------------------------------------------------"""
@@ -116,11 +116,58 @@ class LoginResponse(BaseModel):
     company: List
 
 
+class PersonalInfo(Modifier):
+    first_name: str = ""
+    last_name: str = ""
+    user_email: str
+    user_birthdate: date = None
+    activity_status: ActivityStatus = None
+    user_image: str = "Image"
+    user_contact: int = None
+    alternate_contact: int = None
+    age: int = None
+    middle_name: str = None
+    gender: str = None
+    nationality: str = None
+    marital_status: str = None
+    current_address: str = None
+    permanent_address: str = None
+    city: str = None
+    state: str = None
+    pincode: Optional[int] = None
+
+
+class AadharDetails(BaseModel):
+    aadhar_number: Optional[int] = None
+    name_as_per_aadhar: str = None
+    pan_number: str = None
+
+
+class PassportDetails(BaseModel):
+    passport_num: str = None
+    passport_fname: str = None
+    passport_lname: str = None
+    expiry_date: date = None
+    issue_date: date = None
+    mobile_number: Optional[int] = None
+    current_address: str = None
+    permanent_address: str = None
+
+
+class UserDocuments(Modifier):
+    aadhar: AadharDetails
+    passport: PassportDetails
+
+
+class UserFinance(Modifier):
+    salary: Optional[float] = None
+
+
 class AddUser(Modifier):
     """Contains all the fields that will be accessible to all objects of type - 'User' """
     first_name: str = None
     last_name: str = None
-    password: str
+    password: Optional[str] = None
     user_email: str
     change_password_token: str = None
     medical_leaves: Optional[int] = 0
@@ -150,24 +197,12 @@ class GetUser(BaseModel):
     pincode: Optional[str] = None
 
 
-class UpdateUser(Modifier):
-    first_name: str = ""
-    last_name: str = ""
-    user_birthdate: date = None
-    activity_status: ActivityStatus = None
-    user_image: str = "Image"
-    user_contact: int = None
-    alternate_contact: int = None
-    age: int = None
-    middle_name: str = None
-    gender: str = None
-    nationality: str = None
-    marital_status: str = None
-    current_address: str = None
-    permanent_address: str = None
-    city: str = None
-    state: str = None
-    pincode: Optional[int] = None
+class UpdateUser(BaseModel):
+    roles: Optional[List[RolesEnum]] = None
+    approvers: Optional[List[int]] = None
+    personal_info: PersonalInfo
+    documents: UserDocuments
+    financial: UserFinance
 
 
 """----------------------------------------------Employee related Schemas-------------------------------------------------------------------"""
@@ -182,7 +217,7 @@ class GetEmployees(BaseModel):
 
 
 class InviteEmployee(Modifier):
-    user_email: str
+    user_email: Optional[str] = None
     roles: List[RolesEnum]
     approvers: List = None
 
@@ -271,7 +306,8 @@ class Credentials(BaseModel):
 class PwdResetToken(BaseModel):
     """Used to get the JSON object for pwd reset token"""
     token: str
-    user_email: str
+    email: str
+    password: str
 
 
 class JSONObject(BaseModel):
