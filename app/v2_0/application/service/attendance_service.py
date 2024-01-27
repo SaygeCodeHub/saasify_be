@@ -17,8 +17,7 @@ def fetch_attendance_today(company_id: int, branch_id: int, user_id: int, db=Dep
     return attendance
 
 
-def user_attendance_list(company_id: int, branch_id: int, user_id: int, db=Depends(get_db),
-                         u_id: Optional[str] | None = None):
+def user_attendance_list(company_id: int, branch_id: int, user_id: int, db=Depends(get_db), u_id: Optional[str] = None):
     attendance = (db.query(models.Attendance).filter(models.Attendance.user_id == (u_id if u_id else user_id)).filter(
         models.Attendance.company_id == company_id).filter(models.Attendance.branch_id == branch_id).all())
 
@@ -111,7 +110,7 @@ def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depe
 
 
 def attendance_history_func(user_id: int, company_id: int, branch_id: int, db=Depends(get_db),
-                            u_id: Optional[str] | None = None):
+                            u_id: Optional[str] = None):
     try:
         user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
         if user:
