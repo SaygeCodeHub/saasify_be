@@ -1,5 +1,5 @@
 """Contains the code that acts as a utility to various files"""
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain import models
 
 
