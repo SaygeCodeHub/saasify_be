@@ -1,13 +1,11 @@
 """Service layer for Employees"""
 
-from sqlalchemy import select
-
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_employee_to_ucb
 from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddUser, GetEmployees
+from app.v2_0.domain.schema import AddUser
 
 
 def set_employee_details(new_employee, branch_id, db):
@@ -68,25 +66,27 @@ def fetch_employees(branch_id, company_id, db):
     try:
         company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
         if company is None:
-            return ResponseDTO(404, "Company not found!", {})
+            return ResponseDTO(204, "Company not found!", {})
 
         branch = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
         if branch is None:
-            return ResponseDTO(404, "Branch not found!", {})
+            return ResponseDTO(204, "Branch not found!", {})
 
-        stmt = select(models.UserDetails.first_name, models.UserDetails.last_name, models.UserDetails.user_contact,
-                      models.UserDetails.current_address, models.UserCompanyBranch.roles, models.UsersAuth.user_email,
-                      models.UsersAuth.user_id).select_from(models.UserDetails).join(models.UserCompanyBranch,
-                                                                                     models.UserDetails.user_id == models.UserCompanyBranch.user_id).join(
-            models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id).filter(
-            models.UserCompanyBranch.branch_id == branch_id)
+        result = []
+        employees = (db.query(models.UserCompanyBranch, models.UserDetails, models.UsersAuth)
+                     .join(models.UserDetails, models.UserCompanyBranch.user_id == models.UserDetails.user_id)
+                     .join(models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id)
+                     .filter(models.UserCompanyBranch.company_id == company_id)
+                     .filter(models.UserCompanyBranch.branch_id == branch_id).all())
 
-        employees = db.execute(stmt)
-        result = [GetEmployees(name=employee.first_name + " " + employee.last_name, user_contact=employee.user_contact,
-                               roles=employee.roles, user_email=employee.user_email,
-                               current_address=employee.current_address) for employee in employees]
-
+        for employee in employees:
+            employee_data = {
+                "name": f"{employee.UserDetails.first_name} {employee.UserDetails.last_name}" if employee.UserDetails.first_name else None,
+                "user_contact": employee.UserDetails.user_contact, "roles": employee.UserCompanyBranch.roles,
+                "user_email": employee.UsersAuth.user_email, "current_address": employee.UserDetails.current_address,
+                "employee_id": employee.UserDetails.user_id, "user_image": employee.UserDetails.user_image}
+            result.append(employee_data)
         return ResponseDTO(200, "Employees fetched!", result)
 
     except Exception as exc:
-        return ExceptionDTO("fetch_employees", exc)
+        return ResponseDTO(204, str(exc), [])
