@@ -10,14 +10,14 @@ from app.v2_0.domain.models.user_auth import UsersAuth
 """-------------------------------Update password code starts below this line-----------------------------"""
 
 
-def check_token(token, user_email, obj, db):
+def check_token(obj, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
-        user = db.query(UsersAuth).filter(UsersAuth.user_email == user_email).first()
+        user = db.query(UsersAuth).filter(UsersAuth.user_email == obj.email).first()
         if user is None:
             return ResponseDTO(404, "User not found!", {})
         else:
-            if user.change_password_token != token:
+            if user.change_password_token != obj.token:
                 return ResponseDTO(204, "Reset token doesn't match", {})
             else:
                 return change_password(obj, db)
@@ -27,23 +27,24 @@ def check_token(token, user_email, obj, db):
 
 def change_password(obj, db):
     """Updates the password and makes the change_password_token null in db"""
-    try:
-        user_query = db.query(UsersAuth).filter(UsersAuth.user_email == obj.model_dump()["email"])
-        user = user_query.first()
+    user_query = db.query(UsersAuth).filter(UsersAuth.user_email == obj.model_dump()["email"])
+    user = user_query.first()
 
-        if user is None:
-            return ResponseDTO(404, "User with this email does not exist!", {})
+    if user is None:
+        return ResponseDTO(404, "User with this email does not exist!", {})
 
-        if user.change_password_token != obj.model_dump()["token"]:
-            return ResponseDTO(204, "Reset token doesn't match", {})
+    if user.change_password_token != obj.model_dump()["token"]:
+        return ResponseDTO(204, "Reset token doesn't match", {})
 
-        hashed_pwd = hash_pwd(obj.model_dump()["password"])
-        user_query.update({"change_password_token": None, "password": hashed_pwd})
-        db.commit()
+    hashed_pwd = hash_pwd(obj.model_dump()["password"])
+    user_query.update({"change_password_token": None, "password": hashed_pwd})
+    db.commit()
 
-        return ResponseDTO(200, "Password updated successfully!", {})
-    except Exception as exc:
-        return ExceptionDTO("change_password", exc)
+    return ResponseDTO(200, "Password updated successfully!", {})
+    # try:
+    #
+    # except Exception as exc:
+    #     return ExceptionDTO("change_password", exc)
 
 
 """-------------------------------Code below this line sends the change_password_token to an individual-----------------------------"""
@@ -90,10 +91,10 @@ def create_password_reset_code(fetched_email, db):
         return ExceptionDTO("create_password_reset_code", exc)
 
 
-def initiate_pwd_reset(user_email, db):
+def initiate_pwd_reset(email, db):
     """Fetches the user who has requested for password reset and calls a method to create a smtp session"""
     try:
-        fetched_user = db.query(UsersAuth).filter(UsersAuth.user_email == user_email).first()
+        fetched_user = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
         if fetched_user:
             fetched_email = fetched_user.user_email
             create_password_reset_code(fetched_email, db)

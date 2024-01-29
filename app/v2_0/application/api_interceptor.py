@@ -27,7 +27,7 @@ from app.v2_0.domain.schemas.company_schemas import AddCompany, UpdateCompany
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
-from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, PwdResetToken
+from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject
 from app.v2_0.infrastructure.database import engine, get_db
 
 router = APIRouter()
@@ -98,15 +98,15 @@ def login(credentials: Credentials, db=Depends(get_db)):
 
 
 @router.post("/v2.0/forgotPassword")
-def forgot_password(user_email: JsonObject, db=Depends(get_db)):
+def forgot_password(email: JsonObject, db=Depends(get_db)):
     """Calls the service layer to send an email for password reset"""
-    return initiate_pwd_reset(user_email.model_dump()["email"], db)
+    return initiate_pwd_reset(email.model_dump()["email"], db)
 
 
 @router.post("/v2.0/sendVerificationLink")
-def verify_token(token: PwdResetToken, db=Depends(get_db)):
+def verify_token(obj: Credentials, db=Depends(get_db)):
     """Calls the service layer to verify the token received by an individual"""
-    return check_token(token.model_dump()["token"], token.model_dump()["email"], token, db)
+    return check_token(obj, db)
 
 
 @router.put("/v2.0/updatePassword")
