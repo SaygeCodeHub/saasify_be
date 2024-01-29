@@ -47,7 +47,7 @@ def get_user_by_id(u_id: int, company_id: int, branch_id: int, db=Depends(get_db
 
 
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/updateUser")
-def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] | None = None,
+def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] = None,
                 db=Depends(get_db)):
     """Calls service layer to update user"""
     return modify_user(user, user_id, company_id, branch_id, u_id, db)
@@ -92,7 +92,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
                                          name=user_details.first_name + " " + user_details.last_name, company=data))
 
     except Exception as exc:
-        return ExceptionDTO("login", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 @router.post("/v2.0/forgotPassword")
@@ -101,10 +101,10 @@ def forgot_password(user_email: JsonObject, db=Depends(get_db)):
     return initiate_pwd_reset(user_email.model_dump()["email"], db)
 
 
-# @router.post("/v2.0/sendVerificationLink")
-# def verify_token(token: PwdResetToken, db=Depends(get_db)):
-#     """Calls the service layer to verify the token received by an individual"""
-#     return check_token(token.model_dump()["token"], token.model_dump()["user_email"], db)
+@router.post("/v2.0/sendVerificationLink")
+def verify_token(token: PwdResetToken, db=Depends(get_db)):
+    """Calls the service layer to verify the token received by an individual"""
+    return check_token(token.model_dump()["token"], token.model_dump()["email"], token, db)
 
 
 @router.put("/v2.0/updatePassword")
@@ -239,3 +239,21 @@ def send_notification(device_token: str, title: str, body: str):
             return {'message': 'Notification sent successfully'}
         else:
             raise HTTPException(status_code=response.status_code, detail=response.text)
+
+
+"""----------------------------------------------Attendance related APIs-------------------------------------------------------------------"""
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/markAttendance")
+def mark_attendance(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return mark_attendance_func(company_id, branch_id, user_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/todayAttendance")
+def today_attendance(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return get_todays_attendance(user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/attendanceHistory")
+def attendance_history(user_id: int, company_id: int, branch_id: int, db=Depends(get_db), u_id: Optional[str] = None):
+    return attendance_history_func(user_id, company_id, branch_id, db, u_id)
