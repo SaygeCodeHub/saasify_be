@@ -1,4 +1,4 @@
-"""App utils"""
+"""Password handler"""
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

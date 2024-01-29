@@ -4,14 +4,19 @@ from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_employee_to_ucb
-from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddUser
+from app.v2_0.domain.models.branch_settings import BranchSettings
+from app.v2_0.domain.models.user_auth import UsersAuth
+from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
+from app.v2_0.domain.models.user_details import UserDetails
+from app.v2_0.domain.schemas.employee_schemas import GetEmployees
+from app.v2_0.domain.schemas.user_schemas import AddUser
+
 
 
 def set_employee_details(new_employee, branch_id, db):
     """Sets employee details"""
     try:
-        branch_settings = db.query(models.BranchSettings).filter(models.BranchSettings.branch_id == branch_id).first()
+        branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
         employee_details = AddUser
         employee_details.first_name = None
         employee_details.last_name = None
@@ -39,10 +44,10 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
-            user = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == employee.user_email).first()
-            inviter = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
-            new_employee = models.UsersAuth(user_email=employee.user_email,
-                                            invited_by=inviter.user_email)
+            user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
+            inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+            new_employee = UsersAuth(user_email=employee.user_email,
+                                     invited_by=inviter.user_email)
             if user:
                 assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)
 
@@ -57,36 +62,43 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
             return ResponseDTO(200, "Invite sent Successfully", {})
         else:
             return check
+
     except Exception as exc:
         return ExceptionDTO("invite_employee", exc)
 
 
-def fetch_employees(branch_id, company_id, db):
+def fetch_employees(company_id, branch_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
-        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-        if company is None:
-            return ResponseDTO(204, "Company not found!", {})
 
-        branch = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
-        if branch is None:
-            return ResponseDTO(204, "Branch not found!", {})
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        result = []
-        employees = (db.query(models.UserCompanyBranch, models.UserDetails, models.UsersAuth)
-                     .join(models.UserDetails, models.UserCompanyBranch.user_id == models.UserDetails.user_id)
-                     .join(models.UsersAuth, models.UsersAuth.user_id == models.UserDetails.user_id)
-                     .filter(models.UserCompanyBranch.company_id == company_id)
-                     .filter(models.UserCompanyBranch.branch_id == branch_id).all())
+        if check is None:
+            stmt = select(UserDetails.first_name, UserDetails.last_name, UserDetails.user_contact,
+                          UserDetails.current_address,
+                          UserCompanyBranch.roles, UsersAuth.user_email,
+                          UsersAuth.user_id).select_from(
+                UserDetails).join(
+                UserCompanyBranch,
+                UserDetails.user_id == UserCompanyBranch.user_id).join(
+                UsersAuth, UsersAuth.user_id == UserDetails.user_id).filter(
+                UserCompanyBranch.branch_id == branch_id)
 
-        for employee in employees:
-            employee_data = {
-                "name": f"{employee.UserDetails.first_name} {employee.UserDetails.last_name}" if employee.UserDetails.first_name else None,
-                "user_contact": employee.UserDetails.user_contact, "roles": employee.UserCompanyBranch.roles,
-                "user_email": employee.UsersAuth.user_email, "current_address": employee.UserDetails.current_address,
-                "employee_id": employee.UserDetails.user_id, "user_image": employee.UserDetails.user_image}
-            result.append(employee_data)
-        return ResponseDTO(200, "Employees fetched!", result)
+            employees = db.execute(stmt)
+            result = [
+                GetEmployees(
+                    name=employee.first_name + " " + employee.last_name,
+                    user_contact=employee.user_contact,
+                    roles=employee.roles,
+                    user_email=employee.user_email,
+                    current_address=employee.current_address
+                )
+                for employee in employees
+            ]
+
+            return ResponseDTO(200, "Employees fetched!", result)
+        else:
+            return check
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), [])

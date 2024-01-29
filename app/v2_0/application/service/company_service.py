@@ -4,17 +4,26 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
-from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddBranch, BranchSettings, GetCompany, UserDataResponse, GetBranchSettings
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
+from app.v2_0.domain.models.branch_settings import BranchSettings
+from app.v2_0.domain.models.branches import Branches
+from app.v2_0.domain.models.companies import Companies
+from app.v2_0.domain.models.user_auth import UsersAuth
+from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
+from app.v2_0.domain.models.user_details import UserDetails
+from app.v2_0.domain.schemas.branch_schemas import AddBranch
+from app.v2_0.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
+from app.v2_0.domain.schemas.company_schemas import GetCompany
+from app.v2_0.domain.schemas.utility_schemas import UserDataResponse
 
 
 def set_employee_leaves(settings, company_id, db):
-    users = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.company_id == company_id).all()
+    users = db.query(UserCompanyBranch).filter(UserCompanyBranch.company_id == company_id).all()
     user_id_array = []
     for user in users:
         user_id_array.append(user.user_id)
     for ID in user_id_array:
-        query = db.query(models.UserDetails).filter(models.UserDetails.user_id == ID)
+        query = db.query(UserDetails).filter(UserDetails.user_id == ID)
         query.update({"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})
         db.commit()
 
@@ -22,22 +31,20 @@ def set_employee_leaves(settings, company_id, db):
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):
     """Updates the branch settings"""
     try:
-        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-        if company is None:
-            return ResponseDTO(404, "Company not found!", {})
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
-        if branch_exists is None:
-            return ResponseDTO(404, "Branch does not exist!", {})
+        if check is None:
+            existing_settings_query = db.query(BranchSettings).filter(
+                BranchSettings.branch_id == branch_id)
+            settings.modified_on = datetime.now()
+            settings.modified_by = user_id
+            existing_settings_query.update(settings.__dict__)
+            db.commit()
+            set_employee_leaves(settings, company_id, db)
 
-        existing_settings_query = db.query(models.BranchSettings).filter(models.BranchSettings.branch_id == branch_id)
-        settings.modified_on = datetime.now()
-        settings.modified_by = user_id
-        existing_settings_query.update(settings.__dict__)
-        db.commit()
-        set_employee_leaves(settings, company_id, db)
-
-        return ResponseDTO(200, "Settings updated", {})
+            return ResponseDTO(200, "Settings updated", {})
+        else:
+            return check
 
     except Exception as exc:
         return ExceptionDTO("modify_branch_settings", exc)
@@ -47,26 +54,24 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
     """Fetches the branch settings"""
     try:
 
-        user_exists = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-        if company_exists is None:
-            return ResponseDTO(404, "Company does not exist!", {})
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        branch_exists = db.query(models.Branches).filter(models.Branches.branch_id == branch_id).first()
-        if branch_exists is None:
-            return ResponseDTO(404, "Branch does not exist!", {})
+        if check is None:
+            settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
 
-        settings = db.query(models.BranchSettings).filter(models.BranchSettings.branch_id == branch_id).first()
+            if settings is None:
+                return ResponseDTO(404, "Settings do not exist!", {})
 
-        if settings is None:
-            return ResponseDTO(404, "Settings do not exist!", {})
+            result = GetBranchSettings(**settings.__dict__)
 
-        result = GetBranchSettings(**settings.__dict__)
+            return ResponseDTO(200, "Settings fetched!", result)
+        else:
+            return check
 
-        return ResponseDTO(200, "Settings fetched!", result)
     except Exception as exc:
         return ExceptionDTO("fetch_branch_settings", exc)
 
@@ -74,17 +79,17 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
 def import_hq_settings(branch_id, company_id, user_id, db):
     """It copies the settings of headquarters branch to other branches"""
     try:
-        hq_settings = db.query(models.BranchSettings).filter(
-            models.BranchSettings.company_id == company_id).filter(
-            models.BranchSettings.is_hq_settings == "true").first()
-        imported_settings = models.BranchSettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
-                                                  modified_on=datetime.now(), is_hq_settings=False,
-                                                  default_approver=hq_settings.default_approver,
-                                                  working_days=hq_settings.working_days,
-                                                  time_in=hq_settings.time_in, time_out=hq_settings.time_out,
-                                                  timezone=hq_settings.timezone, currency=hq_settings.currency,
-                                                  overtime_rate=hq_settings.overtime_rate,
-                                                  overtime_rate_per=hq_settings.overtime_rate_per)
+        hq_settings = db.query(BranchSettings).filter(
+            BranchSettings.company_id == company_id).filter(
+            BranchSettings.is_hq_settings == "true").first()
+        imported_settings = BranchSettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
+                                           modified_on=datetime.now(), is_hq_settings=False,
+                                           default_approver=hq_settings.default_approver,
+                                           working_days=hq_settings.working_days,
+                                           time_in=hq_settings.time_in, time_out=hq_settings.time_out,
+                                           timezone=hq_settings.timezone, currency=hq_settings.currency,
+                                           overtime_rate=hq_settings.overtime_rate,
+                                           overtime_rate_per=hq_settings.overtime_rate_per)
         db.add(imported_settings)
         db.commit()
         db.refresh(imported_settings)
@@ -97,13 +102,13 @@ def import_hq_settings(branch_id, company_id, user_id, db):
 def add_branch_settings(company_settings, user_id, db):
     """Adds settings to a branch"""
     try:
-        get_branch = db.query(models.Branches).filter(models.Branches.branch_id == company_settings.branch_id).first()
+        get_branch = db.query(Branches).filter(Branches.branch_id == company_settings.branch_id).first()
 
         if get_branch.is_head_quarter is True:
-            new_settings = models.BranchSettings(branch_id=company_settings.branch_id,
-                                                 company_id=company_settings.company_id, modified_by=user_id,
-                                                 modified_on=datetime.now(), is_hq_settings=True,
-                                                 default_approver=company_settings.default_approver)
+            new_settings = BranchSettings(branch_id=company_settings.branch_id,
+                                          company_id=company_settings.company_id, modified_by=user_id,
+                                          modified_on=datetime.now(), is_hq_settings=True,
+                                          default_approver=company_settings.default_approver)
             db.add(new_settings)
             db.commit()
             db.refresh(new_settings)
@@ -117,7 +122,7 @@ def add_branch_settings(company_settings, user_id, db):
 
 def set_branch_settings(new_branch, user_id, company_id, db):
     """Sets the branch settings"""
-    company_settings = BranchSettings
+    company_settings = BranchSettingsSchema
     company_settings.branch_id = new_branch.branch_id
     company_settings.default_approver = user_id
     company_settings.company_id = company_id
@@ -127,18 +132,18 @@ def set_branch_settings(new_branch, user_id, company_id, db):
 def add_branch_to_ucb(new_branch, user_id, company_id, db):
     """Adds the branch to Users company branch table"""
     try:
-        b = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).first()
+        b = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
 
         if b.branch_id is None:
-            db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).update(
+            db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
                 {"branch_id": new_branch.branch_id})
             db.commit()
         elif b.branch_id != new_branch.branch_id:
-            user = db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).first()
+            user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
             approvers_list = user.approvers
-            new_branch_in_ucb = models.UserCompanyBranch(user_id=user_id, company_id=company_id,
-                                                         branch_id=new_branch.branch_id,
-                                                         roles=["OWNER"], approvers=approvers_list)
+            new_branch_in_ucb = UserCompanyBranch(user_id=user_id, company_id=company_id,
+                                                  branch_id=new_branch.branch_id,
+                                                  roles=["OWNER"], approvers=approvers_list)
             db.add(new_branch_in_ucb)
             db.commit()
     except Exception as exc:
@@ -148,13 +153,13 @@ def add_branch_to_ucb(new_branch, user_id, company_id, db):
 def add_branch(branch, user_id, company_id, db, is_init: bool):
     """Creates a branch for a company"""
     try:
-        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
+        company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
         if company_exists is None:
             return ResponseDTO(404, "Company not found!", {})
 
-        new_branch = models.Branches(branch_name=branch.branch_name, modified_by=user_id, company_id=company_id,
-                                     activity_status="ACTIVE",
-                                     modified_on=datetime.now(), is_head_quarter=branch.is_head_quarter)
+        new_branch = Branches(branch_name=branch.branch_name, modified_by=user_id, company_id=company_id,
+                              activity_status="ACTIVE",
+                              modified_on=datetime.now(), is_head_quarter=branch.is_head_quarter)
         db.add(new_branch)
         db.commit()
         db.refresh(new_branch)
@@ -171,42 +176,46 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
         return ExceptionDTO("Add branch", exc)
 
 
-def fetch_branches(user_id, company_id, db):
+def fetch_branches(user_id, company_id, branch_id, db):
     """Fetches the branches of given company"""
     try:
-        user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user is None:
             ResponseDTO(404, "User not found!", {})
 
-        company = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-        if company is None:
-            return ResponseDTO(404, "Company not found!", {})
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        branches = db.query(models.Branches).filter(models.Branches.company_id == company_id).all()
-        return ResponseDTO(200, "Branches fetched!", branches)
+        if check is None:
+            branches = db.query(Branches).filter(Branches.company_id == company_id).all()
+            return ResponseDTO(200, "Branches fetched!", branches)
+        else:
+            return check
+
     except Exception as exc:
         return ExceptionDTO("fetch_branches", exc)
 
 
-def modify_branch(branch, user_id, branch_id, company_id, db):
+def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
     """Updates a branch"""
     try:
-        company_exists = db.query(models.Companies).filter(models.Companies.company_id == company_id).first()
-        if company_exists is None:
-            return ResponseDTO(404, "Company not found!", {})
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        branch_query = db.query(models.Branches).filter(models.Branches.branch_id == branch_id)
-        branch_exists = branch_query.first()
+        if check is None:
+            branch_query = db.query(Branches).filter(Branches.branch_id == bran_id)
 
-        if branch_exists is None:
-            return ResponseDTO(404, "Branch does not exist!", {})
+            if branch_query.first() is None:
+                return ResponseDTO(404, "Branch to be updated does not exist!", {})
 
-        branch.modified_by = user_id
-        branch.company_id = company_id
-        branch_query.update(branch.__dict__)
-        db.commit()
+            branch.modified_by = user_id
+            branch.modified_on = datetime.now()
+            branch.company_id = company_id
+            branch_query.update(branch.__dict__)
+            db.commit()
 
-        return ResponseDTO(200, "Branch data updated!", {})
+            return ResponseDTO(200, "Branch data updated!", {})
+        else:
+            return check
+
     except Exception as exc:
         return ExceptionDTO("modify_branch", exc)
 
@@ -214,7 +223,7 @@ def modify_branch(branch, user_id, branch_id, company_id, db):
 def add_company_to_ucb(new_company, user_id, db):
     """Adds the company to ucb table"""
     try:
-        db.query(models.UserCompanyBranch).filter(models.UserCompanyBranch.user_id == user_id).update(
+        db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
             {"company_id": new_company.company_id, "roles": ["OWNER"]})
         db.commit()
     except Exception as exc:
@@ -224,12 +233,12 @@ def add_company_to_ucb(new_company, user_id, db):
 def add_company(company, user_id, db):
     """Creates a company and adds a branch to it"""
     try:
-        user_exists = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        new_company = models.Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
-                                       activity_status=company.activity_status)
+        new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
+                                activity_status=company.activity_status)
         db.add(new_company)
         db.commit()
         db.refresh(new_company)
@@ -248,62 +257,73 @@ def add_company(company, user_id, db):
         return ExceptionDTO("add_company", exc)
 
 
-def fetch_company(user_id, db):
+def fetch_company(user_id, company_id, branch_id, db):
     """Fetches all companies owned by a user"""
     try:
-        user_exists = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        existing_companies_query = db.query(models.Companies).filter(
-            models.Companies.owner == user_id).all()
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        existing_companies = [
-            GetCompany(
-                company_id=company.company_id,
-                company_name=company.company_name,
-                owner=company.owner,
-                activity_status=company.activity_status
-            )
-            for company in existing_companies_query
-        ]
-        return ResponseDTO(200, "Companies fetched!", {"user_id": user_id, "companies": existing_companies})
+        if check is None:
+            existing_companies_query = db.query(Companies).filter(
+                Companies.owner == user_id).all()
+
+            existing_companies = [
+                GetCompany(
+                    company_id=company.company_id,
+                    company_name=company.company_name,
+                    owner=company.owner,
+                    activity_status=company.activity_status
+                )
+                for company in existing_companies_query
+            ]
+            return ResponseDTO(200, "Companies fetched!", {"user_id": user_id, "companies": existing_companies})
+        else:
+            return check
+
     except Exception as exc:
         return ExceptionDTO("fetch_company", exc)
 
 
-def modify_company(company, user_id, company_id, db):
+def modify_company(company, user_id, company_id, branch_id, comp_id, db):
     """Updates company data"""
     try:
-        user_exists = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        company_query = db.query(models.Companies).filter(models.Companies.company_id == company_id)
-        company_exists = company_query.first()
-        if not company_exists:
-            return ResponseDTO(404, "Company not found!", {})
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        company.modified_on = datetime.now()
-        company.modified_by = user_id
-        company.owner = user_id
-        company.activity_status = company.activity_status
-        company_query.update(company.__dict__)
-        db.commit()
+        if check is None:
+            company_query = db.query(Companies).filter(Companies.company_id == comp_id)
+            if company_query.first() is None:
+                return ResponseDTO(404, "The company to be updated does not exist!", {})
 
-        return ResponseDTO(200, "Company data updated!", {})
+            company.modified_on = datetime.now()
+            company.modified_by = user_id
+            company.owner = user_id
+            company.activity_status = company.activity_status
+            company_query.update(company.__dict__)
+            db.commit()
+
+            return ResponseDTO(200, "Company data updated!", {})
+        else:
+            return check
+
     except Exception as exc:
         return ExceptionDTO("modify_company", exc)
 
 
 def get_all_user_data(ucb, db):
     try:
-        company = db.query(models.Companies).filter(models.Companies.company_id == ucb.company_id).first()
+        company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
 
-        stmt = select(models.UserCompanyBranch.branch_id, models.UserCompanyBranch.roles,
-                      models.Branches.branch_name).select_from(models.UserCompanyBranch).join(
-            models.Branches, models.UserCompanyBranch.branch_id == models.Branches.branch_id).filter(
-            models.UserCompanyBranch.user_id == ucb.user_id)
+        stmt = select(UserCompanyBranch.branch_id, UserCompanyBranch.roles,
+                      Branches.branch_name).select_from(UserCompanyBranch).join(
+            Branches, UserCompanyBranch.branch_id == Branches.branch_id).filter(
+            UserCompanyBranch.user_id == ucb.user_id)
 
         branches = db.execute(stmt)
         result = [

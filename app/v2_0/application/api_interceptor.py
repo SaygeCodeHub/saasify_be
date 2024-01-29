@@ -5,9 +5,9 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi import Depends
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
-from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, check_token, change_password
+from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, change_password, check_token
 from app.v2_0.application.service.attendance_service import mark_attendance_func, get_todays_attendance, \
     attendance_history_func
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
@@ -16,15 +16,22 @@ from app.v2_0.application.service.employee_service import invite_employee, fetch
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_pending_leaves, modify_leave_status
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
-from app.v2_0.domain import models
-from app.v2_0.domain.schema import AddUser, PwdResetToken, JSONObject, Credentials, AddCompany, AddBranch, \
-    UpdateUser, UpdateCompany, UpdateBranch, UpdateBranchSettings, \
-    InviteEmployee, ApplyLeave, UpdateLeave, AddApprover, \
-    LoginResponse
+from app.v2_0.domain.models import import_models
+from app.v2_0.domain.models.user_auth import UsersAuth
+from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
+from app.v2_0.domain.models.user_details import UserDetails
+from app.v2_0.domain.schemas.approver_schemas import AddApprover
+from app.v2_0.domain.schemas.branch_schemas import AddBranch, UpdateBranch
+from app.v2_0.domain.schemas.branch_settings_schemas import UpdateBranchSettings
+from app.v2_0.domain.schemas.company_schemas import AddCompany, UpdateCompany
+from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
+from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
+from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
+from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, PwdResetToken
 from app.v2_0.infrastructure.database import engine, get_db
 
 router = APIRouter()
-models.Base.metadata.create_all(bind=engine)
+import_models.Base.metadata.create_all(bind=engine)
 
 """----------------------------------------------User related APIs-------------------------------------------------------------------"""
 
@@ -55,7 +62,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
         email = credentials.model_dump()["email"]
         pwd = credentials.model_dump()["password"]
 
-        is_user_present = db.query(models.UsersAuth).filter(models.UsersAuth.user_email == email).first()
+        is_user_present = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
 
         if is_user_present is None:
             return ResponseDTO(404, "User is not registered, please register.", {})
@@ -67,11 +74,11 @@ def login(credentials: Credentials, db=Depends(get_db)):
             return ResponseDTO(401, "Password Incorrect!", {})
 
         # Get all user data
-        user_details = db.query(models.UserDetails).filter(
-            models.UserDetails.user_id == is_user_present.user_id).first()
+        user_details = db.query(UserDetails).filter(
+            UserDetails.user_id == is_user_present.user_id).first()
 
-        ucb = db.query(models.UserCompanyBranch).filter(
-            models.UserCompanyBranch.user_id == is_user_present.user_id).first()
+        ucb = db.query(UserCompanyBranch).filter(
+            UserCompanyBranch.user_id == is_user_present.user_id).first()
         if ucb.company_id:
             complete_data = get_all_user_data(ucb, db)
             data = [complete_data]
@@ -91,7 +98,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
 
 
 @router.post("/v2.0/forgotPassword")
-def forgot_password(user_email: JSONObject, db=Depends(get_db)):
+def forgot_password(user_email: JsonObject, db=Depends(get_db)):
     """Calls the service layer to send an email for password reset"""
     return initiate_pwd_reset(user_email.model_dump()["email"], db)
 
@@ -115,7 +122,7 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
 def get_employees(branch_id: int, company_id: int, db=Depends(get_db)):
-    return fetch_employees(branch_id, company_id, db)
+    return fetch_employees(company_id, branch_id, db)
 
 
 """----------------------------------------------Company related APIs-------------------------------------------------------------------"""
@@ -126,14 +133,15 @@ def create_company(company: AddCompany, user_id: int, db=Depends(get_db)):
     return add_company(company, user_id, db)
 
 
-@router.get("/v2.0/{user_id}/getCompany")
-def get_company(user_id: int, db=Depends(get_db)):
-    return fetch_company(user_id, db)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getCompany")
+def get_company(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_company(user_id, company_id, branch_id, db)
 
 
-@router.put("/v2.0/{company_id}/{user_id}/updateCompany")
-def update_company(company: UpdateCompany, user_id: int, company_id: int, db=Depends(get_db)):
-    return modify_company(company, user_id, company_id, db)
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateCompany/{comp_id}")
+def update_company(company: UpdateCompany, user_id: int, company_id: int, branch_id: int, comp_id: int,
+                   db=Depends(get_db)):
+    return modify_company(company, user_id, company_id, branch_id, comp_id, db)
 
 
 """----------------------------------------------Branch related APIs-------------------------------------------------------------------"""
@@ -144,14 +152,14 @@ def create_branch(branch: AddBranch, user_id: int, company_id: int, db=Depends(g
     return add_branch(branch, user_id, company_id, db, False)
 
 
-@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch")
-def update_branch(branch: UpdateBranch, user_id: int, branch_id: int, company_id: int, db=Depends(get_db)):
-    return modify_branch(branch, user_id, branch_id, company_id, db)
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch/{bran_id}")
+def update_branch(branch: UpdateBranch, user_id: int, branch_id: int, company_id: int,bran_id:int,  db=Depends(get_db)):
+    return modify_branch(branch, user_id, company_id,branch_id,bran_id, db)
 
 
-@router.get("/v2.0/{company_id}/{user_id}/getBranches")
-def get_branches(user_id: int, company_id: int, db=Depends(get_db)):
-    return fetch_branches(user_id, company_id, db)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getBranches")
+def get_branches(user_id: int, company_id: int, branch_id:int,  db=Depends(get_db)):
+    return fetch_branches(user_id, company_id,branch_id, db)
 
 
 """----------------------------------------------Branch Settings related APIs-------------------------------------------------------------------"""
@@ -187,7 +195,7 @@ def get_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/pendingLeaveApprovals")
-def get_pending_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+def get_pendingLeaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_pending_leaves(user_id, company_id, branch_id, db)
 
 
