@@ -12,7 +12,6 @@ class ResponseDTO:
 
 class ExceptionDTO:
     """Exception DTO"""
-
-    def __init__(self, method, exception):
+    def __init__(self,method,exception):
         self.method = method
         self.exception = exception
