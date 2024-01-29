@@ -5,6 +5,8 @@ from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_p
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist
+from app.v2_0.domain.models.branch_settings import BranchSettings
+from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_auth import UsersAuth
@@ -20,7 +22,8 @@ def add_user_details(user, user_id, db):
     """Adds user details in the db"""
     try:
         user_details = UserDetails(user_id=user_id, first_name=user.first_name, last_name=user.last_name,
-                                   activity_status=user.activity_status,medical_leaves=user.medical_leaves, casual_leaves=user.casual_leaves)
+                                   activity_status=user.activity_status, medical_leaves=user.medical_leaves,
+                                   casual_leaves=user.casual_leaves)
         db.add(user_details)
         db.commit()
         db.refresh(user_details)
@@ -31,7 +34,7 @@ def add_user_details(user, user_id, db):
         db.add(user_finance)
         db.commit()
     except Exception as exc:
-        return ExceptionDTO("add_user_details", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def add_to_ucb(new_user, db):
@@ -42,7 +45,7 @@ def add_to_ucb(new_user, db):
         db.add(ucb)
         db.commit()
     except Exception as exc:
-        return ExceptionDTO("add_to_ucb", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def add_user(user, db):
@@ -67,7 +70,7 @@ def add_user(user, db):
                            {"user_id": new_user.user_id, "name": user.first_name + " " + user.last_name, "company": []})
 
     except Exception as exc:
-        return ExceptionDTO("add_user", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_roles(user_id, db):
@@ -96,7 +99,7 @@ def fetch_by_id(u_id, company_id, branch_id, db):
             return ResponseDTO(200, "User fetched!", result)
 
     except Exception as exc:
-        return ExceptionDTO("fetch_by_id", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def update_personal_info(personal_data, user_query, user_id, db):
@@ -127,10 +130,13 @@ def update_user_finance(finance_data, u_id, user_id, db):
     db.commit()
 
 
-def store_personal_info(personal_data, user_id, db):
+def store_personal_info(personal_data, user_id, branch_id, db):
+    branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
     new_employee = UserDetails(user_id=user_id, first_name=personal_data.__dict__["first_name"],
                                last_name=personal_data.__dict__["last_name"],
-                               activity_status=personal_data.__dict__["activity_status"])
+                               activity_status=personal_data.__dict__["activity_status"],
+                               casual_leaves=branch_settings.total_casual_leaves,
+                               medical_leaves=branch_settings.total_medical_leaves)
     db.add(new_employee)
     db.commit()
 
@@ -151,22 +157,27 @@ def store_user_finance(finance_data, user_id, db):
 
 def add_employee_manually(user, user_id, company_id, branch_id, db):
     email = user.__dict__["personal_info"].user_email
-    inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-    new_employee = UsersAuth(user_email=email,
-                             invited_by=inviter.user_email)
-    db.add(new_employee)
-    db.commit()
-    db.refresh(new_employee)
+    user_exists = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
+    if user_exists:
+        return ResponseDTO(409, "User with this email already exists", user_exists)
+    else:
+        inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+        new_employee = UsersAuth(user_email=email,
+                                 invited_by=inviter.user_email)
+        db.add(new_employee)
+        db.commit()
+        db.refresh(new_employee)
 
-    ucb_emp = InviteEmployee
-    ucb_emp.approvers = user.approvers
-    ucb_emp.roles = user.roles
-    add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
-    create_password_reset_code(email, db)
+        ucb_emp = InviteEmployee
+        ucb_emp.approvers = user.approvers
+        ucb_emp.roles = user.roles
+        add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
+        create_password_reset_code(email, db)
 
-    store_personal_info(user.__dict__["personal_info"], new_employee.user_id, db)
-    store_user_documents(user.__dict__["documents"], new_employee.user_id, db)
-    store_user_finance(user.__dict__["financial"], new_employee.user_id, db)
+        store_personal_info(user.__dict__["personal_info"], new_employee.user_id, branch_id, db)
+        store_user_documents(user.__dict__["documents"], new_employee.user_id, db)
+        store_user_finance(user.__dict__["financial"], new_employee.user_id, db)
+    return None
 
 
 def modify_user(user, user_id, company_id, branch_id, u_id, db):
@@ -181,10 +192,12 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
         else:
             if u_id == "":
 
-                add_employee_manually(user, user_id, company_id, branch_id, db)
+                response = add_employee_manually(user, user_id, company_id, branch_id, db)
 
-                return ResponseDTO(200, "User added successfully", {})
-
+                if response is None:
+                    return ResponseDTO(200, "User added successfully", {})
+                else:
+                    return response
             else:
                 user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
                 user_exists = user_query.first()
@@ -202,7 +215,7 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
                 return ResponseDTO(200, "User updated successfully", {})
 
     except Exception as exc:
-        return ExceptionDTO("modify_user", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):
@@ -248,4 +261,4 @@ def update_approver(approver, user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("update_approver", exc)
+        return ResponseDTO(204, str(exc), {})

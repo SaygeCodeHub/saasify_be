@@ -24,7 +24,7 @@ class PersonalInfo(Modifier):
     user_contact: int = None
     alternate_contact: int = None
     age: int = None
-    middle_name: str = None
+    middle_name: str = ""
     gender: str = None
     nationality: str = None
     marital_status: str = None
@@ -63,8 +63,8 @@ class UserFinanceSchema(Modifier):
 
 class AddUser(Modifier):
     """Contains all the fields that will be accessible to all objects of type - 'User' """
-    first_name: str = None
-    last_name: str = None
+    first_name: str = ""
+    last_name: str = ""
     password: Optional[str] = None
     user_email: str
     change_password_token: str = None
@@ -76,7 +76,7 @@ class AddUser(Modifier):
 class GetUser(BaseModel):
     first_name: Optional[str] = ""
     last_name: Optional[str] = ""
-    middle_name: Optional[str] = None
+    middle_name: Optional[str] = ""
     user_id: int
     user_contact: Optional[int] = None
     alternate_contact: Optional[int] = None
