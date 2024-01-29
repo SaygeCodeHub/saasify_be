@@ -1,7 +1,5 @@
 """Service layer for Employees"""
 
-from sqlalchemy import select
-
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.user_service import add_user_details
@@ -12,6 +10,7 @@ from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.schemas.employee_schemas import GetEmployees
 from app.v2_0.domain.schemas.user_schemas import AddUser
+
 
 
 def set_employee_details(new_employee, branch_id, db):
@@ -71,6 +70,7 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 def fetch_employees(company_id, branch_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
+
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
@@ -101,4 +101,4 @@ def fetch_employees(company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_employees", exc)
+        return ResponseDTO(204, str(exc), [])
