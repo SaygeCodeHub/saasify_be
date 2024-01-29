@@ -13,10 +13,10 @@ class Credentials(BaseModel):
     password: str
 
 
-# class PwdResetToken(BaseModel):
-#     """Used to get the JSON object for pwd reset token"""
-#     token: str
-#     user_email: str
+class PwdResetToken(BaseModel):
+    """Used to get the JSON object for pwd reset token"""
+    token: str
+    user_email: str
 
 
 class JsonObject(BaseModel):

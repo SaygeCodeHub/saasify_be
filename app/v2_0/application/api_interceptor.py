@@ -7,7 +7,9 @@ from fastapi import Depends
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
-from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, change_password
+from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, change_password, check_token
+from app.v2_0.application.service.attendance_service import mark_attendance_func, get_todays_attendance, \
+    attendance_history_func
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees
@@ -25,7 +27,7 @@ from app.v2_0.domain.schemas.company_schemas import AddCompany, UpdateCompany
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
-from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject
+from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, PwdResetToken
 from app.v2_0.infrastructure.database import engine, get_db
 
 router = APIRouter()

@@ -10,18 +10,19 @@ from app.v2_0.domain.models.user_auth import UsersAuth
 """-------------------------------Update password code starts below this line-----------------------------"""
 
 
-# def check_token(token, user_email, db):
-#     """Verifies the reset token stored in DB, against the token entered by an individual"""
-#     try:
-#         user = db.query(UsersAuth).filter(UsersAuth.user_email == user_email).first()
-#         if user is None:
-#             return ResponseDTO(404, "User not found!",[])
-#         if user.change_password_token != token:
-#             return ResponseDTO(204, "Reset token doesn't match", {})
-#
-#         return ResponseDTO(200, "Reset token matched!", {})
-#     except Exception as exc:
-#         return ExceptionDTO("check_token", exc)
+def check_token(token, user_email, obj, db):
+    """Verifies the reset token stored in DB, against the token entered by an individual"""
+    try:
+        user = db.query(UsersAuth).filter(UsersAuth.user_email == user_email).first()
+        if user is None:
+            return ResponseDTO(404, "User not found!", {})
+        else:
+            if user.change_password_token != token:
+                return ResponseDTO(204, "Reset token doesn't match", {})
+            else:
+                return change_password(obj, db)
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
 
 
 def change_password(obj, db):

@@ -5,21 +5,22 @@ import pytz
 from fastapi import Depends
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.domain import models
+from app.v2_0.domain.models.attendance import Attendance
+from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.infrastructure.database import get_db
 
 
 def fetch_attendance_today(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
-    attendance = db.query(models.Attendance).filter(models.Attendance.company_id == company_id).filter(
-        models.Attendance.branch_id == branch_id).filter(models.Attendance.user_id == user_id).filter(
-        models.Attendance.date == date.today()).first()
+    attendance = db.query(Attendance).filter(Attendance.company_id == company_id).filter(
+        Attendance.branch_id == branch_id).filter(Attendance.user_id == user_id).filter(
+        Attendance.date == date.today()).first()
 
     return attendance
 
 
 def user_attendance_list(company_id: int, branch_id: int, user_id: int, db=Depends(get_db), u_id: Optional[str] = None):
-    attendance = (db.query(models.Attendance).filter(models.Attendance.user_id == (u_id if u_id else user_id)).filter(
-        models.Attendance.company_id == company_id).filter(models.Attendance.branch_id == branch_id).all())
+    attendance = (db.query(Attendance).filter(Attendance.user_id == (u_id if u_id else user_id)).filter(
+        Attendance.company_id == company_id).filter(Attendance.branch_id == branch_id).all())
 
     return attendance
 
@@ -45,7 +46,7 @@ def calculate_average_working_hours(working_hours_list):
 
 def check_in(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     tz = pytz.timezone("Asia/Kolkata")
-    new_attendance = models.Attendance(company_id=company_id, branch_id=branch_id, user_id=user_id, date=date.today())
+    new_attendance = Attendance(company_id=company_id, branch_id=branch_id, user_id=user_id, date=date.today())
     new_attendance.check_in = datetime.now(tz)
     db.add(new_attendance)
     db.commit()
@@ -76,7 +77,7 @@ def check_out(attendance, db=Depends(get_db)):
 
 def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     try:
-        user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user:
             attendance = fetch_attendance_today(company_id, branch_id, user_id, db)
 
@@ -93,7 +94,7 @@ def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depen
 
 def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     try:
-        user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
 
         if user:
             attendance = fetch_attendance_today(company_id, branch_id, user_id, db)
@@ -112,11 +113,11 @@ def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depe
 def attendance_history_func(user_id: int, company_id: int, branch_id: int, db=Depends(get_db),
                             u_id: Optional[str] = None):
     try:
-        user = db.query(models.UsersAuth).filter(models.UsersAuth.user_id == user_id).first()
+        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user:
             attendance = (
-                db.query(models.Attendance).filter(models.Attendance.user_id == (u_id if u_id else user_id)).filter(
-                    models.Attendance.company_id == company_id).filter(models.Attendance.branch_id == branch_id).all())
+                db.query(Attendance).filter(Attendance.user_id == (u_id if u_id else user_id)).filter(
+                    Attendance.company_id == company_id).filter(Attendance.branch_id == branch_id).all())
             history = []
             for i in attendance:
                 history.append({"check_in": i.check_in, "check_out": i.check_out, "date": i.date})
@@ -130,11 +131,11 @@ def attendance_history_func(user_id: int, company_id: int, branch_id: int, db=De
 
 def get_average_working_hours(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     working_hours_list = []
-    attendances = db.query(models.Attendance).filter(models.Attendance.company_id == company_id,
-                                                     models.Attendance.branch_id == branch_id,
-                                                     models.Attendance.user_id == user_id,
-                                                     models.Attendance.check_in.isnot(None),
-                                                     models.Attendance.check_out.isnot(None)).all()
+    attendances = db.query(Attendance).filter(Attendance.company_id == company_id,
+                                              Attendance.branch_id == branch_id,
+                                              Attendance.user_id == user_id,
+                                              Attendance.check_in.isnot(None),
+                                              Attendance.check_out.isnot(None)).all()
 
     for attendance in attendances:
         working_hours_list.append(calculate_working_hours(attendance.check_in, attendance.check_out))
