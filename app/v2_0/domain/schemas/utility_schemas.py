@@ -13,16 +13,9 @@ class Credentials(BaseModel):
     password: str
 
 
-class PwdResetToken(BaseModel):
-    """Used to get the JSON object for pwd reset token"""
-    token: str
-    user_email: str
-
-
 class JsonObject(BaseModel):
     """Used to get selected json fields from FE"""
     email: Optional[str] = None
-    pwd: Optional[str] = None
 
 
 class UserDataResponse(BaseModel):
