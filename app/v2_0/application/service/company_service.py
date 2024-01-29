@@ -24,8 +24,11 @@ def set_employee_leaves(settings, company_id, db):
         user_id_array.append(user.user_id)
     for ID in user_id_array:
         query = db.query(UserDetails).filter(UserDetails.user_id == ID)
-        query.update({"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})
-        db.commit()
+        u = query.first()
+        if u.medical_leaves is None and u.casual_leaves is None:
+            query.update(
+                {"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})
+            db.commit()
 
 
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):

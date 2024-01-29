@@ -20,7 +20,7 @@ def add_user_details(user, user_id, db):
     """Adds user details in the db"""
     try:
         user_details = UserDetails(user_id=user_id, first_name=user.first_name, last_name=user.last_name,
-                                          activity_status=user.activity_status)
+                                   activity_status=user.activity_status,medical_leaves=user.medical_leaves, casual_leaves=user.casual_leaves)
         db.add(user_details)
         db.commit()
         db.refresh(user_details)
@@ -129,8 +129,8 @@ def update_user_finance(finance_data, u_id, user_id, db):
 
 def store_personal_info(personal_data, user_id, db):
     new_employee = UserDetails(user_id=user_id, first_name=personal_data.__dict__["first_name"],
-                                      last_name=personal_data.__dict__["last_name"],
-                                      activity_status=personal_data.__dict__["activity_status"])
+                               last_name=personal_data.__dict__["last_name"],
+                               activity_status=personal_data.__dict__["activity_status"])
     db.add(new_employee)
     db.commit()
 
@@ -153,7 +153,7 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
     email = user.__dict__["personal_info"].user_email
     inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
     new_employee = UsersAuth(user_email=email,
-                                    invited_by=inviter.user_email)
+                             invited_by=inviter.user_email)
     db.add(new_employee)
     db.commit()
     db.refresh(new_employee)
