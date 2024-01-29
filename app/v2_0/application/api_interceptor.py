@@ -85,10 +85,6 @@ def login(credentials: Credentials, db=Depends(get_db)):
         else:
             data = []
 
-        if user_details.first_name is None and user_details.last_name is None:
-            user_details.first_name = ""
-            user_details.last_name = ""
-
         return ResponseDTO(200, "Login successful",
                            LoginResponse(user_id=is_user_present.user_id,
                                          name=user_details.first_name + " " + user_details.last_name, company=data))

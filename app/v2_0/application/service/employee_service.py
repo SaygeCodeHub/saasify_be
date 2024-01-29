@@ -1,4 +1,5 @@
 """Service layer for Employees"""
+from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
@@ -12,14 +13,13 @@ from app.v2_0.domain.schemas.employee_schemas import GetEmployees
 from app.v2_0.domain.schemas.user_schemas import AddUser
 
 
-
 def set_employee_details(new_employee, branch_id, db):
     """Sets employee details"""
     try:
         branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
         employee_details = AddUser
-        employee_details.first_name = None
-        employee_details.last_name = None
+        employee_details.first_name = ""
+        employee_details.last_name = ""
         employee_details.medical_leaves = branch_settings.total_medical_leaves
         employee_details.casual_leaves = branch_settings.total_casual_leaves
         employee_details.activity_status = "ACTIVE"
@@ -70,7 +70,6 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 def fetch_employees(company_id, branch_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
-
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
@@ -85,6 +84,7 @@ def fetch_employees(company_id, branch_id, db):
                 UserCompanyBranch.branch_id == branch_id)
 
             employees = db.execute(stmt)
+
             result = [
                 GetEmployees(
                     name=employee.first_name + " " + employee.last_name,
