@@ -20,6 +20,7 @@ def set_employee_details(new_employee, branch_id, db):
         employee_details = AddUser
         employee_details.first_name = ""
         employee_details.last_name = ""
+        employee_details.middle_name = ""
         employee_details.medical_leaves = branch_settings.total_medical_leaves
         employee_details.casual_leaves = branch_settings.total_casual_leaves
         employee_details.activity_status = "ACTIVE"
