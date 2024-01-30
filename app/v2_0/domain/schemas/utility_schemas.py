@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import RolesEnum
+from app.v2_0.domain.models.enums import DesignationEnum, Modules
 
 
 class Credentials(BaseModel):
@@ -21,4 +21,6 @@ class JsonObject(BaseModel):
 class UserDataResponse(BaseModel):
     branch_id: int
     branch_name: str
-    roles: List[RolesEnum]
+    designations: List[DesignationEnum]
+    accessible_modules: List[Modules]
+    # accessible_features: List[Features]

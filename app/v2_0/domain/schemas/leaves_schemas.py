@@ -8,10 +8,15 @@ from app.v2_0.domain.models.enums import LeaveStatus, LeaveType
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
 
 
+class ApproverData(BaseModel):
+    id: int
+    approver_name: str
+
+
 class LoadApplyLeaveScreen(BaseModel):
     casual_leaves: Optional[int]
     medical_leaves: Optional[int]
-    approvers: List[int]
+    approvers: List[ApproverData]
 
 
 class ApplyLeaveResponse(BaseModel):

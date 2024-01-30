@@ -2,11 +2,10 @@
 from datetime import datetime
 
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
-from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist
+from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist, add_owner_to_ucb
 from app.v2_0.domain.models.branch_settings import BranchSettings
-from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_auth import UsersAuth
@@ -27,22 +26,13 @@ def add_user_details(user, user_id, db):
         db.add(user_details)
         db.commit()
         db.refresh(user_details)
+        # Creates an entry in the documents table for the corresponding user_id
         user_docs = UserDocuments(user_id=user_id)
         db.add(user_docs)
         db.commit()
+        # Creates an entry in the finance table for the corresponding user_id
         user_finance = UserFinance(user_id=user_id)
         db.add(user_finance)
-        db.commit()
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
-
-
-def add_to_ucb(new_user, db):
-    """Adds the data mapped to a user into db"""
-    try:
-        approvers_list = [new_user.user_id]
-        ucb = UserCompanyBranch(user_id=new_user.user_id, approvers=approvers_list)
-        db.add(ucb)
         db.commit()
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
@@ -64,7 +54,7 @@ def add_user(user, db):
         db.refresh(new_user)
 
         add_user_details(user, new_user.user_id, db)
-        add_to_ucb(new_user, db)
+        add_owner_to_ucb(new_user, db)
 
         return ResponseDTO(200, "User created successfully",
                            {"user_id": new_user.user_id, "name": user.first_name + " " + user.last_name, "company": []})
@@ -73,9 +63,9 @@ def add_user(user, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def get_roles(user_id, db):
+def get_designations(user_id, db):
     user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
-    return user.roles
+    return user.designations
 
 
 def fetch_by_id(u_id, company_id, branch_id, db):
@@ -94,7 +84,7 @@ def fetch_by_id(u_id, company_id, branch_id, db):
 
             user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
             user.__dict__["user_email"] = user_auth.user_email
-            user.__dict__["roles"] = get_roles(u_id, db)
+            user.__dict__["designations"] = get_designations(u_id, db)
             result = GetUser(**user.__dict__)
             return ResponseDTO(200, "User fetched!", result)
 
@@ -170,7 +160,7 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
 
         ucb_emp = InviteEmployee
         ucb_emp.approvers = user.approvers
-        ucb_emp.roles = user.roles
+        ucb_emp.designations = user.designations
         add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
         create_password_reset_code(email, db)
 
