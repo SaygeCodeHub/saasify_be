@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import ActivityStatus, DesignationEnum
+from app.v2_0.domain.models.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
 
 
@@ -98,6 +98,8 @@ class GetUser(BaseModel):
 class UpdateUser(BaseModel):
     designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
+    accessible_features: List[Features] = None
+    accessible_modules: List[Modules] = None
     personal_info: PersonalInfo
     documents: UserDocumentsSchema
     financial: UserFinanceSchema

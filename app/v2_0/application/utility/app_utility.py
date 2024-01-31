@@ -23,19 +23,21 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
     """Adds employee to the ucb table"""
     company = db.query(Companies).filter(Companies.company_id == company_id).first()
     approvers_list = [company.owner]
+    features_array = employee.accessible_features
     try:
         if len(employee.approvers) != 0:
             approvers_set = set(employee.approvers)
             approvers_set.add(company.owner)
             approvers_list = list(approvers_set)
 
+        if len(employee.accessible_features) == 0:
+            features_array = get_all_features(employee.accessible_modules)
+
         ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
                                          branch_id=branch_id,
                                          designations=employee.designations, approvers=approvers_list,
                                          accessible_modules=employee.accessible_modules,
-                                         accessible_features=employee.accessible_features)
-
-        print(ucb_employee)
+                                         accessible_features=features_array)
 
         db.add(ucb_employee)
         db.commit()
@@ -55,23 +57,13 @@ def add_owner_to_ucb(new_user, db):
         return ResponseDTO(204, str(exc), {})
 
 
-# def get_all_features(module_array):
-#     final_array = []
-#     for module in module_array:
-#         if module.name == 'HR':
-#             array = list(HRModuleFeatures.__members__)
-#             final_array.append(array)
-#         if module.name == 'POS':
-#             array = list(POSModuleFeatures.__members__)
-#             final_array.append(array)
-#         if module.name == 'INVOICING':
-#             array = list(InvoicingModuleFeatures.__members__)
-#             final_array.append(array)
-#         if module.name == 'INVENTORY':
-#             array = list(InventoryModuleFeatures.__members__)
-#             final_array.append(array)
-#
-#     return [element for sublist in final_array for element in sublist]
+def get_all_features(module_array):
+    features = []
+    for module in module_array:
+        for feature in list(Features.__members__):
+            if feature.startswith(module.name):
+                features.append(feature)
+    return features
 
 
 def add_module_to_ucb(branch_id, user_id, module_array, db):
@@ -79,11 +71,23 @@ def add_module_to_ucb(branch_id, user_id, module_array, db):
     query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
         UserCompanyBranch.branch_id == branch_id)
 
-    # features_array = get_all_features(module_array)
+    user = query.first()
+
+    if len(module_array) == 0:
+        subscribed_modules_set = []
+        features_array = []
+    else:
+        # Fetches the currently subscribed modules
+        subscribed_modules_set = set(user.accessible_modules)
+
+        for module in module_array:
+            subscribed_modules_set.add(module)
+
+        features_array = get_all_features(subscribed_modules_set)
 
     query.update(
-        {"accessible_modules": module_array,
-         "accessible_features": list(Features.__members__)})
+        {"accessible_modules": subscribed_modules_set,
+         "accessible_features": features_array})
     db.commit()
 
 

@@ -12,10 +12,10 @@ from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
-from app.v2_0.domain.schemas.branch_schemas import AddBranch
+from app.v2_0.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
-from app.v2_0.domain.schemas.company_schemas import GetCompany
-from app.v2_0.domain.schemas.utility_schemas import UserDataResponse
+from app.v2_0.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
+from app.v2_0.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
 
 
 def set_employee_leaves(settings, company_id, db):
@@ -150,11 +150,13 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
         # Adds the branch in Users_Company_Branches table
         add_branch_to_ucb(new_branch, user_id, company_id, db)
         set_branch_settings(new_branch, user_id, company_id, db)
+
         if is_init:
-            return {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id}
+            return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id, modules=[])
         else:
             return ResponseDTO(200, "Branch created successfully!",
-                               {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id})
+                               CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
+                                                    modules=[]))
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
 
@@ -205,29 +207,31 @@ def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
 
 def add_company(company, user_id, db):
     """Creates a company and adds a branch to it"""
-    try:
-        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-        if user_exists is None:
-            return ResponseDTO(404, "User does not exist!", {})
+    # try:
+    user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+    if user_exists is None:
+        return ResponseDTO(404, "User does not exist!", {})
 
-        new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
-                                activity_status=company.activity_status)
-        db.add(new_company)
-        db.commit()
-        db.refresh(new_company)
+    new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
+                            activity_status=company.activity_status)
+    db.add(new_company)
+    db.commit()
+    db.refresh(new_company)
 
-        add_company_to_ucb(new_company, user_id, db)
+    add_company_to_ucb(new_company, user_id, db)
 
-        branch = AddBranch
-        branch.branch_name = company.branch_name
-        branch.is_head_quarter = company.is_head_quarter
-        init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
+    branch = AddBranch
+    branch.branch_name = company.branch_name
+    branch.is_head_quarter = company.is_head_quarter
+    init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
 
-        return ResponseDTO(200, "Company created successfully",
-                           {"company_id": new_company.company_id, "company_name": new_company.company_name,
-                            "branch": init_branch})
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    return ResponseDTO(200, "Company created successfully",
+                       AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
+                                          branch=init_branch))
+
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def fetch_company(user_id, company_id, branch_id, db):
@@ -312,9 +316,7 @@ def get_all_user_data(ucb, db):
             for branch in branches
         ]
 
-        return {"company_id": company.company_id, "company_name": company.company_name,
-                "branches": result
-                }
+        return GetUserDataResponse(company_id=company.company_id, company_name=company.company_name, branches=result)
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})

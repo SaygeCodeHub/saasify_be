@@ -42,3 +42,7 @@ class Features(PyEnum):
     POS_FEATURE_1 = 1
     INVENTORY_FEATURE_1 = 2
     INVOICING_FEATURE_1 = 3
+    # HR_FEATURE_2 = 4
+    # POS_FEATURE_2 = 5
+    # INVENTORY_FEATURE_2 = 6
+    # INVOICING_FEATURE_2 = 7

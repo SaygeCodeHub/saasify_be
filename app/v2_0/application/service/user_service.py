@@ -4,7 +4,8 @@ from datetime import datetime
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
-from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist, add_owner_to_ucb
+from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist, \
+    add_owner_to_ucb
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.leaves import Leaves
@@ -161,6 +162,8 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
         ucb_emp = InviteEmployee
         ucb_emp.approvers = user.approvers
         ucb_emp.designations = user.designations
+        ucb_emp.accessible_modules = user.accessible_modules
+        ucb_emp.accessible_features = user.accessible_features
         add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
         create_password_reset_code(email, db)
 
@@ -173,39 +176,36 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
 def modify_user(user, user_id, company_id, branch_id, u_id, db):
     """Updates a User"""
     """user_id is the person who will be updating the person with u_id as the user_id"""
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        if check is not None:
-            return check
+    check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        else:
-            if u_id == "":
+    if check is not None:
+        return check
 
-                response = add_employee_manually(user, user_id, company_id, branch_id, db)
+    else:
+        if u_id == "":
 
-                if response is None:
-                    return ResponseDTO(200, "User added successfully", {})
-                else:
-                    return response
+            response = add_employee_manually(user, user_id, company_id, branch_id, db)
+
+            if response is None:
+                return ResponseDTO(200, "User added successfully", {})
             else:
-                user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
-                user_exists = user_query.first()
-                # contact_exists = db.query(models.UserDetails).filter(
-                #     models.UserDetails.user_contact == user.__dict__["personal_info"].user_contact).first()
+                return response
+        else:
+            user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
+            user_exists = user_query.first()
+            # contact_exists = db.query(models.UserDetails).filter(
+            #     models.UserDetails.user_contact == user.__dict__["personal_info"].user_contact).first()
 
-                if not user_exists:
-                    return ResponseDTO(404, "User not found!", {})
-                # if contact_exists:
-                #     return ResponseDTO(403, "User with this contact already exists!", {})
+            if not user_exists:
+                return ResponseDTO(404, "User not found!", {})
+            # if contact_exists:
+            #     return ResponseDTO(403, "User with this contact already exists!", {})
 
-                update_personal_info(user.__dict__["personal_info"], user_query, user_id, db)
-                update_user_documents(user.__dict__["documents"], u_id, user_id, db)
-                update_user_finance(user.__dict__["financial"], u_id, user_id, db)
-                return ResponseDTO(200, "User updated successfully", {})
-
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+            update_personal_info(user.__dict__["personal_info"], user_query, user_id, db)
+            update_user_documents(user.__dict__["documents"], u_id, user_id, db)
+            update_user_finance(user.__dict__["financial"], u_id, user_id, db)
+            return ResponseDTO(200, "User updated successfully", {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):

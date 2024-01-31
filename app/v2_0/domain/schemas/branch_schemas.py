@@ -1,10 +1,12 @@
 """Schemas for Branches"""
 from datetime import date, datetime
+from typing import List
 
 from pydantic import BaseModel
 
 from app.v2_0.domain.models.enums import ActivityStatus
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
+from app.v2_0.domain.schemas.module_schemas import ModuleInfoResponse
 
 
 class UpdateBranch(Modifier):
@@ -35,3 +37,9 @@ class GetBranch(BaseModel):
     branch_contact: int
     company_id: int
     branch_currency: str
+
+
+class CreateBranchResponse(BaseModel):
+    branch_name: str
+    branch_id: int
+    modules: List[ModuleInfoResponse]
