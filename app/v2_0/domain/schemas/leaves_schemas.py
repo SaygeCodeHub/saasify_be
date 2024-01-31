@@ -21,7 +21,7 @@ class LoadApplyLeaveScreen(BaseModel):
 
 class ApplyLeaveResponse(BaseModel):
     leave_id: int
-    leave_status: LeaveStatus
+    leave_status: str
     is_leave_approved: bool
     comment: Optional[str]
 
@@ -37,7 +37,7 @@ class GetPendingLeaves(BaseModel):
     leave_id: int
     user_id: int
     name: str
-    leave_type: LeaveType
+    leave_type: str
     leave_reason: str
     start_date: date
     end_date: date
@@ -45,16 +45,14 @@ class GetPendingLeaves(BaseModel):
 
 
 class GetLeaves(BaseModel):
-    company_id: int
-    branch_id: int
     user_id: int
-    leave_type: LeaveType
+    leave_type: str
     leave_id: int
     leave_reason: str
     start_date: date
     end_date: date
     approvers: List
-    leave_status: LeaveStatus
+    leave_status: str
 
 
 class ApplyLeave(Modifier):
