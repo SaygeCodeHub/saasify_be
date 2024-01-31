@@ -1,13 +1,14 @@
 """Service layer for Leaves"""
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import LeaveType
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
-from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, GetPendingLeaves
+from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
+    GetPendingLeaves, ApproverData
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
@@ -17,14 +18,23 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
         if check is None:
             user = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
             ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
+
+            approver_data = []
+
+            for approver in ucb_user.approvers:
+                user = db.query(UserDetails).filter(UserDetails.user_id == approver).first()
+
+                data = ApproverData(id=approver, approver_name=user.first_name + " " + user.last_name)
+                approver_data.append(data)
+
             result = LoadApplyLeaveScreen(casual_leaves=user.casual_leaves, medical_leaves=user.medical_leaves,
-                                          approvers=ucb_user.approvers)
+                                          approvers=approver_data)
             return ResponseDTO(200, "Data loaded!", result)
         else:
             return check
 
     except Exception as exc:
-        return ExceptionDTO("get_screen_apply_leave", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def check_remaining_leaves(user_id, leave_application, db):
@@ -70,7 +80,7 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("apply_for_leave", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def fetch_leaves(user_id, company_id, branch_id, db):
@@ -94,7 +104,7 @@ def fetch_leaves(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_leaves", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_authorized_leave_requests(pending_leaves, user_id):
@@ -105,7 +115,7 @@ def get_authorized_leave_requests(pending_leaves, user_id):
                 filtered_leaves.append(x)
         return filtered_leaves
     except Exception as exc:
-        return ExceptionDTO("get_authorized_leave_requests", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def format_pending_leaves(filtered_leaves, db):
@@ -140,7 +150,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_pending_leaves", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def update_user_leaves(leave, db):
@@ -158,7 +168,7 @@ def update_user_leaves(leave, db):
             db.commit()
 
     except Exception as exc:
-        return ExceptionDTO("update_user_leaves", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
@@ -186,4 +196,4 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             return check
 
     except Exception as exc:
-        return ExceptionDTO("modify_leave_status", exc)
+        return ResponseDTO(204, str(exc), {})
