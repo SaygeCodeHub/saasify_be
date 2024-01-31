@@ -1,13 +1,15 @@
 """Service layer for Leaves"""
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import LeaveType
+from app.v2_0.domain.models.enums import LeaveType, LeaveStatus
 from app.v2_0.domain.models.leaves import Leaves
+from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
-from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, GetPendingLeaves
+from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
+    GetPendingLeaves, ApproverData
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
@@ -17,14 +19,23 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
         if check is None:
             user = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
             ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
+
+            approver_data = []
+
+            for approver in ucb_user.approvers:
+                user = db.query(UserDetails).filter(UserDetails.user_id == approver).first()
+
+                data = ApproverData(id=approver, approver_name=user.first_name + " " + user.last_name)
+                approver_data.append(data)
+
             result = LoadApplyLeaveScreen(casual_leaves=user.casual_leaves, medical_leaves=user.medical_leaves,
-                                          approvers=ucb_user.approvers)
+                                          approvers=approver_data)
             return ResponseDTO(200, "Data loaded!", result)
         else:
             return check
 
     except Exception as exc:
-        return ExceptionDTO("get_screen_apply_leave", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def check_remaining_leaves(user_id, leave_application, db):
@@ -63,14 +74,22 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
 
                 return ResponseDTO(200, "Leave application submitted",
                                    ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
-                                                      leave_status=new_leave_application.leave_status,
+                                                      leave_status=new_leave_application.leave_status.name,
                                                       is_leave_approved=new_leave_application.is_leave_approved,
                                                       comment=new_leave_application.comment))
         else:
             return check
 
     except Exception as exc:
-        return ExceptionDTO("apply_for_leave", exc)
+        return ResponseDTO(204, str(exc), {})
+
+
+def get_approver_names(approver_ids, db):
+    approver_names = []
+    for ID in approver_ids:
+        approver = db.query(UserDetails).filter(UserDetails.user_id == ID).first()
+        approver_names.append(approver.first_name + " " + approver.last_name)
+    return approver_names
 
 
 def fetch_leaves(user_id, company_id, branch_id, db):
@@ -80,10 +99,12 @@ def fetch_leaves(user_id, company_id, branch_id, db):
         if check is None:
             my_leaves = db.query(Leaves).filter(Leaves.user_id == user_id).all()
             result = [
-                GetLeaves(company_id=leave.company_id, branch_id=leave.branch_id, user_id=leave.user_id,
-                          leave_type=leave.leave_type, leave_id=leave.leave_id, leave_reason=leave.leave_reason,
-                          start_date=leave.start_date, end_date=leave.end_date, approvers=leave.approvers,
-                          leave_status=leave.leave_status)
+                GetLeaves(user_id=leave.user_id,
+                          leave_type=leave.leave_type.name, leave_id=leave.leave_id, leave_reason=leave.leave_reason,
+                          start_date=leave.start_date, end_date=leave.end_date,
+                          approvers=get_approver_names(leave.approvers, db),
+                          leave_status=leave.leave_status.name)
+
                 for leave in my_leaves
             ]
             if len(my_leaves) == 0:
@@ -94,7 +115,7 @@ def fetch_leaves(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_leaves", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_authorized_leave_requests(pending_leaves, user_id):
@@ -105,7 +126,7 @@ def get_authorized_leave_requests(pending_leaves, user_id):
                 filtered_leaves.append(x)
         return filtered_leaves
     except Exception as exc:
-        return ExceptionDTO("get_authorized_leave_requests", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def format_pending_leaves(filtered_leaves, db):
@@ -120,7 +141,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
-            pending_leaves = db.query(Leaves).filter(Leaves.leave_status == "PENDING").all()
+            pending_leaves = db.query(Leaves).filter(Leaves.leave_status == LeaveStatus.PENDING).all()
             if len(pending_leaves) == 0:
                 return ResponseDTO(204, "No leaves to fetch!", pending_leaves)
 
@@ -131,8 +152,9 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
             else:
                 final_list = format_pending_leaves(filter_leaves_by_approver, db)
                 result = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
-                                           leave_type=item.leave_type, leave_reason=item.leave_reason,
-                                           start_date=item.start_date, end_date=item.end_date, approvers=item.approvers)
+                                           leave_type=item.leave_type.name, leave_reason=item.leave_reason,
+                                           start_date=item.start_date, end_date=item.end_date,
+                                           approvers=get_approver_names(item.approvers, db))
                           for item in final_list
                           ]
             return ResponseDTO(200, "Leaves fetched!", result)
@@ -140,7 +162,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_pending_leaves", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def update_user_leaves(leave, db):
@@ -158,7 +180,7 @@ def update_user_leaves(leave, db):
             db.commit()
 
     except Exception as exc:
-        return ExceptionDTO("update_user_leaves", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
@@ -186,4 +208,4 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             return check
 
     except Exception as exc:
-        return ExceptionDTO("modify_leave_status", exc)
+        return ResponseDTO(204, str(exc), {})
