@@ -15,7 +15,7 @@ from app.v2_0.application.service.company_service import add_company, add_branch
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_pending_leaves, modify_leave_status
-from app.v2_0.application.service.module_service import add_module
+from app.v2_0.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 from app.v2_0.domain.models import import_models
 from app.v2_0.domain.models.user_auth import UsersAuth
@@ -266,3 +266,13 @@ def attendance_history(user_id: int, company_id: int, branch_id: int, db=Depends
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/addModules")
 def subscribe_module(module: ModuleSchema, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return add_module(module, user_id, branch_id, company_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getSubscribedModules")
+def get_subscribed_modules(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_subscribed_modules(user_id,company_id,branch_id,db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getAllModules")
+def get_all_modules(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_all_modules(user_id,company_id,branch_id,db)

@@ -14,3 +14,11 @@ class ModuleSchema(Modifier):
 
 class ModuleInfoResponse(BaseModel):
     module_name: str
+
+
+class GetSubscribedModules(BaseModel):
+    module_name: str
+    is_subscribed: bool
+    start_date: date
+    end_date: date
+
