@@ -3,18 +3,19 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
-from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
+from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_company_to_ucb, \
+    add_branch_to_ucb
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
-from app.v2_0.domain.schemas.branch_schemas import AddBranch
+from app.v2_0.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
-from app.v2_0.domain.schemas.company_schemas import GetCompany
-from app.v2_0.domain.schemas.utility_schemas import UserDataResponse
+from app.v2_0.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
+from app.v2_0.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
 
 
 def set_employee_leaves(settings, company_id, db):
@@ -50,7 +51,7 @@ def modify_branch_settings(settings, user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("modify_branch_settings", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def fetch_branch_settings(user_id, company_id, branch_id, db):
@@ -76,7 +77,7 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_branch_settings", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def import_hq_settings(branch_id, company_id, user_id, db):
@@ -99,7 +100,7 @@ def import_hq_settings(branch_id, company_id, user_id, db):
 
         return ResponseDTO(200, "Settings Imported successfully", {})
     except Exception as exc:
-        return ExceptionDTO("import_hq_settings", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def add_branch_settings(company_settings, user_id, db):
@@ -120,7 +121,7 @@ def add_branch_settings(company_settings, user_id, db):
 
         return ResponseDTO(200, "Settings added!", {})
     except Exception as exc:
-        return ExceptionDTO("add_branch_settings", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def set_branch_settings(new_branch, user_id, company_id, db):
@@ -130,27 +131,6 @@ def set_branch_settings(new_branch, user_id, company_id, db):
     company_settings.default_approver = user_id
     company_settings.company_id = company_id
     add_branch_settings(company_settings, user_id, db)
-
-
-def add_branch_to_ucb(new_branch, user_id, company_id, db):
-    """Adds the branch to Users company branch table"""
-    try:
-        b = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
-
-        if b.branch_id is None:
-            db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
-                {"branch_id": new_branch.branch_id})
-            db.commit()
-        elif b.branch_id != new_branch.branch_id:
-            user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
-            approvers_list = user.approvers
-            new_branch_in_ucb = UserCompanyBranch(user_id=user_id, company_id=company_id,
-                                                  branch_id=new_branch.branch_id,
-                                                  roles=["OWNER"], approvers=approvers_list)
-            db.add(new_branch_in_ucb)
-            db.commit()
-    except Exception as exc:
-        return ExceptionDTO("add_branch_to_ucb", exc)
 
 
 def add_branch(branch, user_id, company_id, db, is_init: bool):
@@ -170,13 +150,15 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
         # Adds the branch in Users_Company_Branches table
         add_branch_to_ucb(new_branch, user_id, company_id, db)
         set_branch_settings(new_branch, user_id, company_id, db)
+
         if is_init:
-            return {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id}
+            return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id, modules=[])
         else:
             return ResponseDTO(200, "Branch created successfully!",
-                               {"branch_name": new_branch.branch_name, "branch_id": new_branch.branch_id})
+                               CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
+                                                    modules=[]))
     except Exception as exc:
-        return ExceptionDTO("Add branch", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def fetch_branches(user_id, company_id, branch_id, db):
@@ -195,7 +177,7 @@ def fetch_branches(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_branches", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
@@ -220,44 +202,36 @@ def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("modify_branch", exc)
-
-
-def add_company_to_ucb(new_company, user_id, db):
-    """Adds the company to ucb table"""
-    try:
-        db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
-            {"company_id": new_company.company_id, "roles": ["OWNER"]})
-        db.commit()
-    except Exception as exc:
-        return ExceptionDTO("add_company_to_ucb", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def add_company(company, user_id, db):
     """Creates a company and adds a branch to it"""
-    try:
-        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-        if user_exists is None:
-            return ResponseDTO(404, "User does not exist!", {})
+    # try:
+    user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+    if user_exists is None:
+        return ResponseDTO(404, "User does not exist!", {})
 
-        new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
-                                activity_status=company.activity_status)
-        db.add(new_company)
-        db.commit()
-        db.refresh(new_company)
+    new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
+                            activity_status=company.activity_status)
+    db.add(new_company)
+    db.commit()
+    db.refresh(new_company)
 
-        add_company_to_ucb(new_company, user_id, db)
+    add_company_to_ucb(new_company, user_id, db)
 
-        branch = AddBranch
-        branch.branch_name = company.branch_name
-        branch.is_head_quarter = company.is_head_quarter
-        init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
+    branch = AddBranch
+    branch.branch_name = company.branch_name
+    branch.is_head_quarter = company.is_head_quarter
+    init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
 
-        return ResponseDTO(200, "Company created successfully",
-                           {"company_id": new_company.company_id, "company_name": new_company.company_name,
-                            "branch": init_branch})
-    except Exception as exc:
-        return ExceptionDTO("add_company", exc)
+    return ResponseDTO(200, "Company created successfully",
+                       AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
+                                          branch=init_branch))
+
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def fetch_company(user_id, company_id, branch_id, db):
@@ -287,7 +261,7 @@ def fetch_company(user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("fetch_company", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def modify_company(company, user_id, company_id, branch_id, comp_id, db):
@@ -316,14 +290,16 @@ def modify_company(company, user_id, company_id, branch_id, comp_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("modify_company", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_all_user_data(ucb, db):
     try:
         company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
 
-        stmt = select(UserCompanyBranch.branch_id, UserCompanyBranch.roles,
+        stmt = select(UserCompanyBranch.branch_id, UserCompanyBranch.designations,
+                      UserCompanyBranch.accessible_features,
+                      UserCompanyBranch.accessible_modules,
                       Branches.branch_name).select_from(UserCompanyBranch).join(
             Branches, UserCompanyBranch.branch_id == Branches.branch_id).filter(
             UserCompanyBranch.user_id == ucb.user_id)
@@ -333,13 +309,14 @@ def get_all_user_data(ucb, db):
             UserDataResponse(
                 branch_id=branch.branch_id,
                 branch_name=branch.branch_name,
-                roles=branch.roles
+                designations=branch.designations,
+                accessible_modules=branch.accessible_modules,
+                accessible_features=branch.accessible_features
             )
             for branch in branches
         ]
 
-        return {"company_id": company.company_id, "company_name": company.company_name,
-                "branches": result
-                }
+        return GetUserDataResponse(company_id=company.company_id, company_name=company.company_name, branches=result)
+
     except Exception as exc:
-        return ExceptionDTO("get_all_user_data", exc)
+        return ResponseDTO(204, str(exc), {})

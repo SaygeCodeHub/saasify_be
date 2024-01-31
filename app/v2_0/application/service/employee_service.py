@@ -1,7 +1,7 @@
 """Service layer for Employees"""
 from sqlalchemy import select
 
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_employee_to_ucb
@@ -26,14 +26,14 @@ def set_employee_details(new_employee, branch_id, db):
         employee_details.activity_status = "ACTIVE"
         add_user_details(employee_details, new_employee.user_id, db)
     except Exception as exc:
-        return ExceptionDTO("set_employee_details", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db):
     add_employee_to_ucb(employee, user, company_id, branch_id, db)
     msg = ""
-    for role in employee.roles:
-        msg = msg + role.name
+    for designation in employee.designations:
+        msg = msg + designation.name
 
     print(msg)
     # create_smtp_session(user.user_email, msg)
@@ -65,7 +65,7 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
             return check
 
     except Exception as exc:
-        return ExceptionDTO("invite_employee", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def fetch_employees(company_id, branch_id, db):
@@ -76,7 +76,7 @@ def fetch_employees(company_id, branch_id, db):
         if check is None:
             stmt = select(UserDetails.first_name, UserDetails.last_name, UserDetails.user_contact,
                           UserDetails.current_address,
-                          UserCompanyBranch.roles, UsersAuth.user_email,
+                          UserCompanyBranch.designations, UsersAuth.user_email,
                           UsersAuth.user_id).select_from(
                 UserDetails).join(
                 UserCompanyBranch,
@@ -90,7 +90,7 @@ def fetch_employees(company_id, branch_id, db):
                 GetEmployees(
                     name=employee.first_name + " " + employee.last_name,
                     user_contact=employee.user_contact,
-                    roles=employee.roles,
+                    designations=employee.designations,
                     user_email=employee.user_email,
                     current_address=employee.current_address
                 )

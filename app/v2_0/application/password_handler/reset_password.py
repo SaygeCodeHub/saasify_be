@@ -4,7 +4,7 @@ import random
 import smtplib
 
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.application.dto.dto_classes import ResponseDTO, ExceptionDTO
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain.models.user_auth import UsersAuth
 
 """-------------------------------Update password code starts below this line-----------------------------"""
@@ -63,7 +63,7 @@ def create_smtp_session(fetched_email, msg):
 
         s.quit()
     except Exception as exc:
-        return ExceptionDTO("create_smtp_session", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def temporarily_add_token(reset_code, fetched_email, db):
@@ -75,7 +75,7 @@ def temporarily_add_token(reset_code, fetched_email, db):
         db.commit()
         create_smtp_session(fetched_email, reset_code)
     except Exception as exc:
-        return ExceptionDTO("temporarily_add_token", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def create_password_reset_code(fetched_email, db):
@@ -88,7 +88,7 @@ def create_password_reset_code(fetched_email, db):
         temporarily_add_token(reset_code, fetched_email, db)
         return reset_code
     except Exception as exc:
-        return ExceptionDTO("create_password_reset_code", exc)
+        return ResponseDTO(204, str(exc), {})
 
 
 def initiate_pwd_reset(email, db):
@@ -103,4 +103,4 @@ def initiate_pwd_reset(email, db):
         return ResponseDTO(200, "Email sent successfully", {})
 
     except Exception as exc:
-        return ExceptionDTO("initiate_pwd_reset", exc)
+        return ResponseDTO(204, str(exc), {})

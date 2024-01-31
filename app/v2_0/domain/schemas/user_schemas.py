@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import ActivityStatus, RolesEnum
+from app.v2_0.domain.models.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
 
 
@@ -82,7 +82,7 @@ class GetUser(BaseModel):
     alternate_contact: Optional[int] = None
     user_image: Optional[str] = None
     user_email: str
-    roles: List[RolesEnum] = None
+    designations: List[DesignationEnum] = None
     user_birthdate: Optional[date] = None
     age: Optional[int] = None
     gender: Optional[str] = None
@@ -96,8 +96,10 @@ class GetUser(BaseModel):
 
 
 class UpdateUser(BaseModel):
-    roles: Optional[List[RolesEnum]] = None
+    designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
+    accessible_features: List[Features] = None
+    accessible_modules: List[Modules] = None
     personal_info: PersonalInfo
     documents: UserDocumentsSchema
     financial: UserFinanceSchema

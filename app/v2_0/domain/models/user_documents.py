@@ -13,7 +13,7 @@ class UserDocuments(Base):
     user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     aadhar_number = Column(BIGINT, nullable=True, unique=True)
     name_as_per_aadhar = Column(String, nullable=True)
-    pan_number = Column(String, nullable=True)
+    pan_number = Column(String, nullable=True,unique=True)
     passport_num = Column(String, nullable=True, unique=True)
     passport_fname = Column(String, nullable=True)
     passport_lname = Column(String, nullable=True)

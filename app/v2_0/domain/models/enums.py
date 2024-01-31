@@ -9,12 +9,11 @@ class ActivityStatus(PyEnum):
     ACTIVE = 1
 
 
-class RolesEnum(PyEnum):
-    """Enum for roles of an employee in a company"""
+class DesignationEnum(PyEnum):
+    """Enum for designations of an employee in a company"""
     OWNER = 0
     MANAGER = 1
-    ACCOUNTANT = 2
-    EMPLOYEE = 3
+    EMPLOYEE = 2
 
 
 class LeaveStatus(PyEnum):
@@ -28,3 +27,22 @@ class LeaveType(PyEnum):
     """States the type of leave"""
     CASUAL = 0
     MEDICAL = 1
+
+
+class Modules(PyEnum):
+    """States the modules"""
+    HR = 0
+    POS = 1
+    INVENTORY = 2
+    INVOICING = 3
+
+
+class Features(PyEnum):
+    HR_FEATURE_1 = 0
+    POS_FEATURE_1 = 1
+    INVENTORY_FEATURE_1 = 2
+    INVOICING_FEATURE_1 = 3
+    # HR_FEATURE_2 = 4
+    # POS_FEATURE_2 = 5
+    # INVENTORY_FEATURE_2 = 6
+    # INVOICING_FEATURE_2 = 7

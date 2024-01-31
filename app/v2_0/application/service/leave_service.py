@@ -153,8 +153,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
                 final_list = format_pending_leaves(filter_leaves_by_approver, db)
                 result = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
                                            leave_type=item.leave_type.name, leave_reason=item.leave_reason,
-                                           start_date=item.start_date, end_date=item.end_date,
-                                           approvers=get_approver_names(item.approvers, db))
+                                           start_date=item.start_date, end_date=item.end_date, approvers=get_approver_names(item.approvers,db))
                           for item in final_list
                           ]
             return ResponseDTO(200, "Leaves fetched!", result)
