@@ -9,7 +9,7 @@ SQLALCHEMY_DATABASE_URL = "postgresql://default:hurR7WSdp6wl@ep-wild-term-466593
 # SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Mun1chad$@localhost:5432/postgres"  # Aditi's local instance
 
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
