@@ -3,8 +3,9 @@
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import LeaveType
+from app.v2_0.domain.models.enums import LeaveType, LeaveStatus
 from app.v2_0.domain.models.leaves import Leaves
+from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
@@ -73,7 +74,7 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
 
                 return ResponseDTO(200, "Leave application submitted",
                                    ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
-                                                      leave_status=new_leave_application.leave_status,
+                                                      leave_status=new_leave_application.leave_status.name,
                                                       is_leave_approved=new_leave_application.is_leave_approved,
                                                       comment=new_leave_application.comment))
         else:
@@ -83,6 +84,14 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
+def get_approver_names(approver_ids, db):
+    approver_names = []
+    for ID in approver_ids:
+        approver = db.query(UserDetails).filter(UserDetails.user_id == ID).first()
+        approver_names.append(approver.first_name + " " + approver.last_name)
+    return approver_names
+
+
 def fetch_leaves(user_id, company_id, branch_id, db):
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
@@ -90,10 +99,12 @@ def fetch_leaves(user_id, company_id, branch_id, db):
         if check is None:
             my_leaves = db.query(Leaves).filter(Leaves.user_id == user_id).all()
             result = [
-                GetLeaves(company_id=leave.company_id, branch_id=leave.branch_id, user_id=leave.user_id,
-                          leave_type=leave.leave_type, leave_id=leave.leave_id, leave_reason=leave.leave_reason,
-                          start_date=leave.start_date, end_date=leave.end_date, approvers=leave.approvers,
-                          leave_status=leave.leave_status)
+                GetLeaves(user_id=leave.user_id,
+                          leave_type=leave.leave_type.name, leave_id=leave.leave_id, leave_reason=leave.leave_reason,
+                          start_date=leave.start_date, end_date=leave.end_date,
+                          approvers=get_approver_names(leave.approvers, db),
+                          leave_status=leave.leave_status.name)
+
                 for leave in my_leaves
             ]
             if len(my_leaves) == 0:
@@ -130,7 +141,7 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
-            pending_leaves = db.query(Leaves).filter(Leaves.leave_status == "PENDING").all()
+            pending_leaves = db.query(Leaves).filter(Leaves.leave_status == LeaveStatus.PENDING).all()
             if len(pending_leaves) == 0:
                 return ResponseDTO(204, "No leaves to fetch!", pending_leaves)
 
@@ -141,8 +152,8 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
             else:
                 final_list = format_pending_leaves(filter_leaves_by_approver, db)
                 result = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
-                                           leave_type=item.leave_type, leave_reason=item.leave_reason,
-                                           start_date=item.start_date, end_date=item.end_date, approvers=item.approvers)
+                                           leave_type=item.leave_type.name, leave_reason=item.leave_reason,
+                                           start_date=item.start_date, end_date=item.end_date, approvers=get_approver_names(item.approvers,db))
                           for item in final_list
                           ]
             return ResponseDTO(200, "Leaves fetched!", result)
