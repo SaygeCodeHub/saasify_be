@@ -61,8 +61,8 @@ def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int,
 def login(credentials: Credentials, db=Depends(get_db)):
     """User Login"""
     try:
-        email = credentials.model_dump()["email"]
-        pwd = credentials.model_dump()["password"]
+        email = credentials.email
+        pwd = credentials.password
 
         is_user_present = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
 
@@ -70,7 +70,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
             return ResponseDTO(404, "User is not registered, please register.", {})
 
         if is_user_present.password is None:
-            return ResponseDTO(404, "Password not set yet. Please set your password", {})
+            return ResponseDTO(404, "Password is not set yet. Please set your password", {})
 
         if not verify(pwd, is_user_present.password):
             return ResponseDTO(401, "Password Incorrect!", {})
@@ -270,9 +270,9 @@ def subscribe_module(module: ModuleSchema, user_id: int, company_id: int, branch
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getSubscribedModules")
 def get_subscribed_modules(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return fetch_subscribed_modules(user_id,company_id,branch_id,db)
+    return fetch_subscribed_modules(user_id, company_id, branch_id, db)
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getAllModules")
 def get_all_modules(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return fetch_all_modules(user_id,company_id,branch_id,db)
+    return fetch_all_modules(user_id, company_id, branch_id, db)

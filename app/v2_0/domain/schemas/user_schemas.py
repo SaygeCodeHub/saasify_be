@@ -68,8 +68,8 @@ class AddUser(Modifier):
     password: Optional[str] = None
     user_email: str
     change_password_token: str = None
-    medical_leaves: Optional[int] = None
-    casual_leaves: Optional[int] = None
+    medical_leaves: Optional[int] = 12
+    casual_leaves: Optional[int] = 3
     activity_status: ActivityStatus = "ACTIVE"
 
 

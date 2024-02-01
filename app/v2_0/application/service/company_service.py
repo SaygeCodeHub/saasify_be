@@ -111,7 +111,8 @@ def add_branch_settings(company_settings, user_id, db):
         if get_branch.is_head_quarter is True:
             new_settings = BranchSettings(branch_id=company_settings.branch_id,
                                           company_id=company_settings.company_id, modified_by=user_id,
-                                          modified_on=datetime.now(), is_hq_settings=True,
+                                          modified_on=datetime.now(), is_hq_settings=True, total_casual_leaves=3,
+                                          total_medical_leaves=12,
                                           default_approver=company_settings.default_approver)
             db.add(new_settings)
             db.commit()

@@ -26,8 +26,8 @@ class UpdateBranchSettings(Modifier):
     currency: Optional[str] = None
     default_approver: int
     working_days: Optional[int]
-    total_medical_leaves: Optional[int] = 0
-    total_casual_leaves: Optional[int] = 0
+    total_medical_leaves: Optional[int] = 12
+    total_casual_leaves: Optional[int] = 3
     overtime_rate: Optional[float] = None
     overtime_rate_per: Optional[str] = "HOUR"
 
