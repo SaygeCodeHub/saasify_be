@@ -21,3 +21,5 @@ SQLAlchemy==2.0.25
 starlette==0.35.1
 typing_extensions==4.9.0
 tzdata==2023.3
+
+alembic~=1.13.1

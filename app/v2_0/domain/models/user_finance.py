@@ -13,6 +13,7 @@ class UserFinance(Base):
     fin_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     salary = Column(Double, nullable=True)
+    deduction = Column(Double, nullable=True, server_default='0.0')
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))

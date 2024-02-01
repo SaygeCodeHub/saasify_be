@@ -8,6 +8,7 @@ from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
+from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
     GetPendingLeaves, ApproverData
 
@@ -153,7 +154,8 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
                 final_list = format_pending_leaves(filter_leaves_by_approver, db)
                 result = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
                                            leave_type=item.leave_type.name, leave_reason=item.leave_reason,
-                                           start_date=item.start_date, end_date=item.end_date, approvers=get_approver_names(item.approvers,db))
+                                           start_date=item.start_date, end_date=item.end_date,
+                                           approvers=get_approver_names(item.approvers, db))
                           for item in final_list
                           ]
             return ResponseDTO(200, "Leaves fetched!", result)
@@ -172,14 +174,28 @@ def update_user_leaves(leave, db):
         if leave.leave_type == LeaveType.CASUAL:
             user.casual_leaves = user.casual_leaves - 1
             user_query.update(casual_leaves=user.casual_leaves)
-            db.commit()
         else:
             user.medical_leaves = user.medical_leaves - 1
             user_query.update(medical_leaves=user.medical_leaves)
-            db.commit()
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+
+
+def deduct_salary(leave, db):
+    """Deducts the salary of an employee for each leave"""
+    user_query = db.query(UserFinance).filter(UserFinance.user_id == leave.user_id)
+    user = user_query.first()
+
+    if user is None:
+        return ResponseDTO(404, "User not found!", {})
+
+    per_day_pay = user.salary / 30
+
+    add_deduction = user.deduction
+    add_deduction = add_deduction + per_day_pay
+
+    user_query.update({"deduction": add_deduction})
 
 
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
@@ -196,6 +212,7 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             if application_response.is_leave_approved is True:
                 status = "ACCEPTED"
                 update_user_leaves(leave, db)
+                deduct_salary(leave, db)
 
             application_response.leave_status = status
             application_response.modified_by = user_id
@@ -207,4 +224,5 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             return check
 
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
