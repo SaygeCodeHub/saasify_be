@@ -177,35 +177,39 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
     """Updates a User"""
     """user_id is the person who will be updating the person with u_id as the user_id"""
 
-    check = check_if_company_and_branch_exist(company_id, branch_id, db)
+    try:
 
-    if check is not None:
-        return check
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-    else:
-        if u_id == "":
+        if check is not None:
+            return check
 
-            response = add_employee_manually(user, user_id, company_id, branch_id, db)
-
-            if response is None:
-                return ResponseDTO(200, "User added successfully", {})
-            else:
-                return response
         else:
-            user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
-            user_exists = user_query.first()
-            # contact_exists = db.query(models.UserDetails).filter(
-            #     models.UserDetails.user_contact == user.__dict__["personal_info"].user_contact).first()
+            if u_id == "":
 
-            if not user_exists:
-                return ResponseDTO(404, "User not found!", {})
-            # if contact_exists:
-            #     return ResponseDTO(403, "User with this contact already exists!", {})
+                response = add_employee_manually(user, user_id, company_id, branch_id, db)
 
-            update_personal_info(user.__dict__["personal_info"], user_query, user_id, db)
-            update_user_documents(user.__dict__["documents"], u_id, user_id, db)
-            update_user_finance(user.__dict__["financial"], u_id, user_id, db)
-            return ResponseDTO(200, "User updated successfully", {})
+                if response is None:
+                    return ResponseDTO(200, "User added successfully", {})
+                else:
+                    return response
+            else:
+                user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
+                user_exists = user_query.first()
+                # contact_exists = db.query(models.UserDetails).filter(
+                #     models.UserDetails.user_contact == user.__dict__["personal_info"].user_contact).first()
+
+                if not user_exists:
+                    return ResponseDTO(404, "User not found!", {})
+                # if contact_exists:
+                #     return ResponseDTO(403, "User with this contact already exists!", {})
+
+                update_personal_info(user.__dict__["personal_info"], user_query, user_id, db)
+                update_user_documents(user.__dict__["documents"], u_id, user_id, db)
+                update_user_finance(user.__dict__["financial"], u_id, user_id, db)
+                return ResponseDTO(200, "User updated successfully", {})
+    except Exception as exc:
+        return ResponseDTO(204,str(exc),{})
 
 
 def update_leave_approvers(approvers_list, user_id, db):
