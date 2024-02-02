@@ -33,16 +33,16 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
         if len(employee.accessible_features) == 0:
             features_array = get_all_features(employee.accessible_modules)
 
-        ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
+        ucb_employee = UserCompanyBranch(user_id=None, company_id=company_id,
                                          branch_id=branch_id,
                                          designations=employee.designations, approvers=approvers_list,
                                          accessible_modules=employee.accessible_modules,
                                          accessible_features=features_array)
 
         db.add(ucb_employee)
-        db.commit()
 
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 

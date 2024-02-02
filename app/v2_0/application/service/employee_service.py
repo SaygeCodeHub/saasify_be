@@ -7,7 +7,7 @@ from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_employee_to_ucb
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
-from app.v2_0.domain.models.enums import DesignationEnum
+from app.v2_0.domain.models.enums import DesignationEnum, ActivityStatus
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
@@ -26,7 +26,7 @@ def set_employee_details(new_employee, branch_id, db):
         employee_details.middle_name = ""
         employee_details.medical_leaves = branch_settings.total_medical_leaves
         employee_details.casual_leaves = branch_settings.total_casual_leaves
-        employee_details.activity_status = "ACTIVE"
+        employee_details.activity_status = ActivityStatus.ACTIVE
         add_user_details(employee_details, new_employee.user_id, db)
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
@@ -50,6 +50,7 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         if check is None:
             user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
             inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+
             new_employee = UsersAuth(user_email=employee.user_email,
                                      invited_by=inviter.user_email)
             if user:
@@ -57,17 +58,18 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
             else:
                 db.add(new_employee)
-                db.commit()
-                db.refresh(new_employee)
+                db.flush()
                 add_employee_to_ucb(employee, new_employee, company_id, branch_id, db)
                 set_employee_details(new_employee, branch_id, db)
                 create_password_reset_code(employee.user_email, db)
+                db.commit()
 
             return ResponseDTO(200, "Invite sent Successfully", {})
         else:
             return check
 
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 

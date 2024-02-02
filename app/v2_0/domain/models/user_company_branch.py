@@ -11,7 +11,7 @@ class UserCompanyBranch(Base):
     __tablename__ = 'user_company_branch'
 
     ucb_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=True)
     branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=True)
     designations = Column(ARRAY(Enum(DesignationEnum)), nullable=True)

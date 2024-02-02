@@ -25,17 +25,16 @@ def add_user_details(user, user_id, db):
                                    activity_status=user.activity_status, medical_leaves=user.medical_leaves,
                                    casual_leaves=user.casual_leaves)
         db.add(user_details)
-        db.commit()
-        db.refresh(user_details)
+        db.flush()
         # Creates an entry in the documents table for the corresponding user_id
         user_docs = UserDocuments(user_id=user_id)
         db.add(user_docs)
-        db.commit()
         # Creates an entry in the finance table for the corresponding user_id
         user_finance = UserFinance(user_id=user_id)
         db.add(user_finance)
-        db.commit()
+
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
