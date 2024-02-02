@@ -142,6 +142,8 @@ def fetch_employee_salaries(user_id, company_id, branch_id, db):
                                     resultant_salary=salary.salary - salary.deduction)
                 for salary in salaries
             ]
+            if len(result) == 0:
+                return ResponseDTO(200,"There are no employees in this branch!",{})
             return ResponseDTO(200, "Salaries fetched!", result)
 
         else:
