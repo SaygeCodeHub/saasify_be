@@ -40,9 +40,8 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
                                          accessible_features=features_array)
 
         db.add(ucb_employee)
-
+        db.commit()
     except Exception as exc:
-        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 

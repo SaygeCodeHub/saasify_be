@@ -58,18 +58,17 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
             else:
                 db.add(new_employee)
-                db.flush()
+                db.commit()
+                db.refresh(new_employee)
                 add_employee_to_ucb(employee, new_employee, company_id, branch_id, db)
                 set_employee_details(new_employee, branch_id, db)
                 create_password_reset_code(employee.user_email, db)
-                db.commit()
 
             return ResponseDTO(200, "Invite sent Successfully", {})
         else:
             return check
 
     except Exception as exc:
-        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -132,7 +131,8 @@ def fetch_employee_salaries(user_id, company_id, branch_id, db):
                                     UserDetails.last_name, UserFinance.salary, UserFinance.deduction).select_from(
                 UserCompanyBranch).join(UserFinance, UserCompanyBranch.user_id == UserFinance.user_id).join(UserDetails,
                                                                                                             UserCompanyBranch.user_id == UserDetails.user_id).filter(
-                UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.designations != [DesignationEnum.OWNER])
+                UserCompanyBranch.branch_id == branch_id).filter(
+                UserCompanyBranch.designations != [DesignationEnum.OWNER])
 
             salaries = db.execute(salaries_query)
 
