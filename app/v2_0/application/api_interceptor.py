@@ -14,7 +14,7 @@ from app.v2_0.application.service.company_service import add_company, add_branch
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
-    fetch_pending_leaves, modify_leave_status
+    fetch_all_leaves, modify_leave_status
 from app.v2_0.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 from app.v2_0.domain.models import import_models
@@ -193,9 +193,9 @@ def get_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)
     return fetch_leaves(user_id, company_id, branch_id, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/pendingLeaveApprovals")
-def get_pendingLeaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return fetch_pending_leaves(user_id, company_id, branch_id, db)
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getAllLeaves")
+def get_all_Leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_all_leaves(user_id, company_id, branch_id, db)
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateLeaveStatus")
