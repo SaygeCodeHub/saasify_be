@@ -27,3 +27,9 @@ class InviteEmployee(Modifier):
 class UpdateEmployee(UpdateUser):
     first_name: str
     last_name: str
+
+
+class GetEmployeeSalaries(BaseModel):
+    name: str
+    designations: List[str]
+    resultant_salary: float

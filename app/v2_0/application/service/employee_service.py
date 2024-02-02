@@ -6,10 +6,13 @@ from app.v2_0.application.password_handler.reset_password import create_password
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_employee_to_ucb
 from app.v2_0.domain.models.branch_settings import BranchSettings
+from app.v2_0.domain.models.branches import Branches
+from app.v2_0.domain.models.enums import DesignationEnum
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
-from app.v2_0.domain.schemas.employee_schemas import GetEmployees
+from app.v2_0.domain.models.user_finance import UserFinance
+from app.v2_0.domain.schemas.employee_schemas import GetEmployees, GetEmployeeSalaries
 from app.v2_0.domain.schemas.user_schemas import AddUser
 
 
@@ -74,17 +77,17 @@ def fetch_employees(company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
-            stmt = select(UserDetails.first_name, UserDetails.last_name, UserDetails.user_contact,
-                          UserDetails.current_address,
-                          UserCompanyBranch.designations, UsersAuth.user_email,
-                          UsersAuth.user_id).select_from(
+            employees_query = select(UserDetails.first_name, UserDetails.last_name, UserDetails.user_contact,
+                                     UserDetails.current_address,
+                                     UserCompanyBranch.designations, UsersAuth.user_email,
+                                     UsersAuth.user_id).select_from(
                 UserDetails).join(
                 UserCompanyBranch,
                 UserDetails.user_id == UserCompanyBranch.user_id).join(
                 UsersAuth, UsersAuth.user_id == UserDetails.user_id).filter(
                 UserCompanyBranch.branch_id == branch_id)
 
-            employees = db.execute(stmt)
+            employees = db.execute(employees_query)
 
             result = [
                 GetEmployees(
@@ -101,5 +104,45 @@ def fetch_employees(company_id, branch_id, db):
         else:
             return check
 
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), [])
+
+
+def get_branch_name(branch_id, db):
+    branch = db.query(Branches).filter(Branches.branch_id == branch_id).first()
+    return branch.branch_name
+
+
+def get_designation_name(designations):
+    names = []
+    for designation in designations:
+        names.append(designation.name)
+    return names
+
+
+def fetch_employee_salaries(user_id, company_id, branch_id, db):
+    """Fetches the salaries of employees"""
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+
+        if check is None:
+            salaries_query = select(UserCompanyBranch.designations, UserDetails.first_name,
+                                    UserDetails.last_name, UserFinance.salary, UserFinance.deduction).select_from(
+                UserCompanyBranch).join(UserFinance, UserCompanyBranch.user_id == UserFinance.user_id).join(UserDetails,
+                                                                                                            UserCompanyBranch.user_id == UserDetails.user_id).filter(
+                UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.designations != [DesignationEnum.OWNER])
+
+            salaries = db.execute(salaries_query)
+
+            result = [
+                GetEmployeeSalaries(name=salary.first_name + " " + salary.last_name,
+                                    designations=get_designation_name(salary.designations),
+                                    resultant_salary=salary.salary - salary.deduction)
+                for salary in salaries
+            ]
+            return ResponseDTO(200, "Salaries fetched!", result)
+
+        else:
+            return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), [])
