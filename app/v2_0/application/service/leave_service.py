@@ -1,11 +1,11 @@
 """Service layer for Leaves"""
+from datetime import datetime
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import LeaveType, LeaveStatus
 from app.v2_0.domain.models.leaves import Leaves
-from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_finance import UserFinance
@@ -50,34 +50,38 @@ def check_remaining_leaves(user_id, leave_application, db):
 
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
+        msg = "Leave application submitted"
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
+
             message = check_remaining_leaves(user_id, leave_application, db)
+
             if message == 0:
-                return ResponseDTO(200, "You have exhausted your casual leaves!", {})
+                msg = "You have exhausted your casual leaves! Salary will be deducted on approval."
             elif message == 1:
-                return ResponseDTO(200, "You have exhausted your medical leaves!", {})
-            else:
-                leave_application.modified_by = user_id
-                leave_application.user_id = user_id
-                leave_application.company_id = company_id
-                leave_application.branch_id = branch_id
+                msg = "You have exhausted your medical leaves! Salary will be deducted on approval."
 
-                if len(leave_application.approvers) == 0:
-                    company = db.query(Companies).filter(Companies.company_id == company_id).first()
-                    leave_application.approvers = [company.owner]
+            leave_application.modified_by = user_id
+            leave_application.user_id = user_id
+            leave_application.company_id = company_id
+            leave_application.branch_id = branch_id
 
-                new_leave_application = Leaves(**leave_application.model_dump())
-                db.add(new_leave_application)
-                db.commit()
-                db.refresh(new_leave_application)
+            if len(leave_application.approvers) == 0:
+                company = db.query(Companies).filter(Companies.company_id == company_id).first()
+                leave_application.approvers = [company.owner]
 
-                return ResponseDTO(200, "Leave application submitted",
-                                   ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
-                                                      leave_status=new_leave_application.leave_status.name,
-                                                      is_leave_approved=new_leave_application.is_leave_approved,
-                                                      comment=new_leave_application.comment))
+            new_leave_application = Leaves(**leave_application.model_dump())
+            db.add(new_leave_application)
+            db.commit()
+            db.refresh(new_leave_application)
+
+            return ResponseDTO(200, msg,
+                               ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
+                                                  leave_status=new_leave_application.leave_status.name,
+                                                  is_leave_approved=new_leave_application.is_leave_approved,
+                                                  comment=new_leave_application.comment))
+
         else:
             return check
 
@@ -166,23 +170,38 @@ def fetch_pending_leaves(user_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
+def calculate_num_of_leaves(leaveObject, leaves, db):
+    """Calculates the number of leaves remaining after approval"""
+    duration = (leaveObject.end_date - leaveObject.start_date).days
+
+    for x in range(0, duration):
+        leaves = leaves - 1
+
+    if leaves < 0:
+        extra_leaves = abs(leaves)
+        deduct_salary(leaveObject, extra_leaves, db)
+        return 0
+
+    return leaves
+
+
 def update_user_leaves(leave, db):
     """Updates the number of leaves of an employee"""
-    try:
-        user_query = db.query(UserDetails).filter(UserDetails.user_id == leave.user_id)
-        user = user_query.first()
-        if leave.leave_type == LeaveType.CASUAL:
-            user.casual_leaves = user.casual_leaves - 1
-            user_query.update(casual_leaves=user.casual_leaves)
-        else:
-            user.medical_leaves = user.medical_leaves - 1
-            user_query.update(medical_leaves=user.medical_leaves)
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    user_query = db.query(UserDetails).filter(UserDetails.user_id == leave.user_id)
+    user = user_query.first()
+
+    if leave.leave_type == LeaveType.CASUAL:
+        leaves = calculate_num_of_leaves(leave, user.casual_leaves, db)
+
+        user_query.update({"casual_leaves": leaves, "modified_on": datetime.now()})
+
+    else:
+        leaves = calculate_num_of_leaves(leave, user.medical_leaves, db)
+        user_query.update({"medical_leaves": leaves, "modified_on": datetime.now()})
 
 
-def deduct_salary(leave, db):
+def deduct_salary(leave, extra_leaves, db):
     """Deducts the salary of an employee for each leave"""
     user_query = db.query(UserFinance).filter(UserFinance.user_id == leave.user_id)
     user = user_query.first()
@@ -192,10 +211,12 @@ def deduct_salary(leave, db):
 
     per_day_pay = user.salary / 30
 
-    add_deduction = user.deduction
-    add_deduction = add_deduction + per_day_pay
+    calculate_deduction = user.deduction
 
-    user_query.update({"deduction": add_deduction})
+    for x in range(0, extra_leaves):
+        calculate_deduction = calculate_deduction + per_day_pay
+
+    user_query.update({"deduction": calculate_deduction, "modified_on": datetime.now()})
 
 
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
@@ -212,10 +233,10 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             if application_response.is_leave_approved is True:
                 status = "ACCEPTED"
                 update_user_leaves(leave, db)
-                deduct_salary(leave, db)
 
             application_response.leave_status = status
             application_response.modified_by = user_id
+            application_response.modified_on = datetime.now()
             leave_query.update(application_response.__dict__)
             db.commit()
 
