@@ -245,11 +245,15 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
         if check is None:
             leave_query = db.query(Leaves).filter(Leaves.leave_id == application_response.leave_id)
             leave = leave_query.first()
-            status = "REJECTED"
+            status = LeaveStatus.REJECTED
             if leave is None:
                 return ResponseDTO(404, "Leave entry not found!", {})
+
+            if leave.is_leave_approved is True or leave.leave_status == LeaveStatus.REJECTED:
+                return ResponseDTO(200, "Leave already updated!", leave)
+
             if application_response.is_leave_approved is True:
-                status = "ACCEPTED"
+                status = LeaveStatus.ACCEPTED
                 update_user_leaves(leave, db)
 
             application_response.leave_status = status
