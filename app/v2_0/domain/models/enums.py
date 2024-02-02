@@ -38,10 +38,10 @@ class Modules(PyEnum):
 
 
 class Features(PyEnum):
-    HR_FEATURE_1 = 0
-    POS_FEATURE_1 = 1
-    INVENTORY_FEATURE_1 = 2
-    INVOICING_FEATURE_1 = 3
+    HR_FEATURE_1 = 0.1
+    POS_FEATURE_1 = 1.1
+    INVENTORY_FEATURE_1 = 2.1
+    INVOICING_FEATURE_1 = 3.1
     # HR_FEATURE_2 = 4
     # POS_FEATURE_2 = 5
     # INVENTORY_FEATURE_2 = 6

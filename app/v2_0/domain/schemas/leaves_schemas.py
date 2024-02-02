@@ -66,3 +66,8 @@ class ApplyLeave(Modifier):
     approvers: List
     leave_status: LeaveStatus = "PENDING"
     is_leave_approved: bool = False
+
+
+class FetchAllLeavesResponse(BaseModel):
+    pending_leaves: List[GetPendingLeaves]
+    my_leaves:  List[GetLeaves]

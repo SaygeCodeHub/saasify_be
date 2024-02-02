@@ -9,7 +9,7 @@ from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
-    GetPendingLeaves, ApproverData
+    GetPendingLeaves, ApproverData, FetchAllLeavesResponse
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
@@ -108,9 +108,9 @@ def fetch_leaves(user_id, company_id, branch_id, db):
                 for leave in my_leaves
             ]
             if len(my_leaves) == 0:
-                return ResponseDTO(204, "No leaves to fetch!", my_leaves)
+                return []
 
-            return ResponseDTO(200, "Leaves fetched!", result)
+            return result
         else:
             return check
 
@@ -122,7 +122,7 @@ def get_authorized_leave_requests(pending_leaves, user_id):
     try:
         filtered_leaves = []
         for x in pending_leaves:
-            if user_id in x.__dict__["approvers"]:
+            if user_id in x.approvers:
                 filtered_leaves.append(x)
         return filtered_leaves
     except Exception as exc:
@@ -136,27 +136,45 @@ def format_pending_leaves(filtered_leaves, db):
     return filtered_leaves
 
 
-def fetch_pending_leaves(user_id, company_id, branch_id, db):
+def fetch_all_leaves(user_id, company_id, branch_id, db):
+    """Fetches all the leaves applied by a user. Additionally, if the user is also an approver, pending leaves will be fetched too"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
         if check is None:
+
+            # Fetches leaves applied by the user
+            my_leaves = fetch_leaves(user_id, company_id, branch_id, db)
+
+            # Fetches the leaves that require approval of the user
             pending_leaves = db.query(Leaves).filter(Leaves.leave_status == LeaveStatus.PENDING).all()
-            if len(pending_leaves) == 0:
-                return ResponseDTO(204, "No leaves to fetch!", pending_leaves)
 
-            filter_leaves_by_approver = get_authorized_leave_requests(pending_leaves, user_id)
+            # Checks if the user is an approver or not
+            filtered_leaves = get_authorized_leave_requests(pending_leaves, user_id)
 
-            if len(filter_leaves_by_approver) == 0:
-                return ResponseDTO(204, "You are not authorized to view pending leaves", [])
-            else:
-                final_list = format_pending_leaves(filter_leaves_by_approver, db)
-                result = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
-                                           leave_type=item.leave_type.name, leave_reason=item.leave_reason,
-                                           start_date=item.start_date, end_date=item.end_date, approvers=get_approver_names(item.approvers,db))
-                          for item in final_list
-                          ]
-            return ResponseDTO(200, "Leaves fetched!", result)
+            # If the user is an approver, then show him his leaves and the leaves that require his approval, else, only show his leaves
+
+            if len(filtered_leaves) != 0:
+                final_list = format_pending_leaves(filtered_leaves, db)
+                pending_leaves = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
+                                                   leave_type=item.leave_type.name, leave_reason=item.leave_reason,
+                                                   start_date=item.start_date, end_date=item.end_date,
+                                                   approvers=get_approver_names(item.approvers, db))
+                                  for item in final_list
+                                  ]
+                if len(my_leaves) == 0 and len(pending_leaves) == 0:
+                    return ResponseDTO(200, "You have not applied for any leaves!",
+                                       FetchAllLeavesResponse(pending_leaves=pending_leaves, my_leaves=my_leaves))
+
+                return ResponseDTO(200, "All leaves fetched",
+                                   FetchAllLeavesResponse(pending_leaves=pending_leaves, my_leaves=my_leaves))
+
+            if len(my_leaves) == 0:
+                return ResponseDTO(200, "You have not applied for any leaves!",
+                                   FetchAllLeavesResponse(pending_leaves=[], my_leaves=my_leaves))
+
+            return ResponseDTO(200, "Leaves fetched!",
+                               FetchAllLeavesResponse(pending_leaves=[], my_leaves=my_leaves))
         else:
             return check
 
