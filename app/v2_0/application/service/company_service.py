@@ -26,6 +26,8 @@ def set_employee_leaves(settings, company_id, db):
     for ID in user_id_array:
         query = db.query(UserDetails).filter(UserDetails.user_id == ID)
         u = query.first()
+        if u is None:
+            return ResponseDTO(404,"User not found!",{})
         if u.medical_leaves is None and u.casual_leaves is None:
             query.update(
                 {"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})
@@ -34,24 +36,26 @@ def set_employee_leaves(settings, company_id, db):
 
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):
     """Updates the branch settings"""
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        if check is None:
-            existing_settings_query = db.query(BranchSettings).filter(
-                BranchSettings.branch_id == branch_id)
-            settings.modified_on = datetime.now()
-            settings.modified_by = user_id
-            existing_settings_query.update(settings.__dict__)
-            db.commit()
-            set_employee_leaves(settings, company_id, db)
+    check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-            return ResponseDTO(200, "Settings updated", {})
-        else:
-            return check
+    if check is None:
+        existing_settings_query = db.query(BranchSettings).filter(
+            BranchSettings.branch_id == branch_id)
+        settings.modified_on = datetime.now()
+        settings.modified_by = user_id
+        company = db.query(Companies).filter(Companies.company_id == existing_settings_query.first().company_id).first()
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+        if settings.default_approver != company.owner:
+            return ResponseDTO(400, "Default approver should be the company owner!", {})
+
+        existing_settings_query.update(settings.__dict__)
+        db.commit()
+        set_employee_leaves(settings, company_id, db)
+
+        return ResponseDTO(200, "Settings updated", {})
+    else:
+        return check
 
 
 def fetch_branch_settings(user_id, company_id, branch_id, db):
@@ -89,7 +93,8 @@ def import_hq_settings(branch_id, company_id, user_id, db):
         imported_settings = BranchSettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
                                            modified_on=datetime.now(), is_hq_settings=False,
                                            default_approver=hq_settings.default_approver,
-                                           working_days=hq_settings.working_days,
+                                           working_days=hq_settings.working_days, total_casual_leaves=3,
+                                           total_medical_leaves=12,
                                            time_in=hq_settings.time_in, time_out=hq_settings.time_out,
                                            timezone=hq_settings.timezone, currency=hq_settings.currency,
                                            overtime_rate=hq_settings.overtime_rate,
@@ -131,6 +136,7 @@ def set_branch_settings(new_branch, user_id, company_id, db):
     company_settings.branch_id = new_branch.branch_id
     company_settings.default_approver = user_id
     company_settings.company_id = company_id
+
     add_branch_settings(company_settings, user_id, db)
 
 
