@@ -95,7 +95,7 @@ def fetch_by_id(u_id, company_id, branch_id, db):
             passport = PassportDetails(**user_doc.__dict__) if user_doc else {}
             docs["passport"] = passport
             docs["aadhar"] = aadhar
-            user_details["personal_info"] = info
+            user_details = info.__dict__
             user_details["documents"] = docs
             user_details["financial"] = user_finances.__dict__ if user_finances else {}
 
