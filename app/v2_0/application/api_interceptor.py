@@ -17,7 +17,6 @@ from app.v2_0.application.service.leave_service import get_screen_apply_leave, a
     fetch_all_leaves, modify_leave_status
 from app.v2_0.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
-from app.v2_0.domain.models import import_models
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
@@ -30,10 +29,10 @@ from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject
-from app.v2_0.infrastructure.database import engine, get_db
+from app.v2_0.infrastructure.database import engine, get_db, Base
 
 router = APIRouter()
-import_models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 """----------------------------------------------User related APIs-------------------------------------------------------------------"""
 
