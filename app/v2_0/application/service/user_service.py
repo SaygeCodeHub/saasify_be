@@ -15,7 +15,7 @@ from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_documents import UserDocuments
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
-from app.v2_0.domain.schemas.user_schemas import GetUser
+from app.v2_0.domain.schemas.user_schemas import AadharDetails, PassportDetails, GetUser
 
 
 def add_user_details(user, user_id, db):
@@ -73,7 +73,7 @@ def fetch_by_id(u_id, company_id, branch_id, db):
     """Fetches a user by his id"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
-
+        user_details = {}
         if check is not None:
             return check
 
@@ -83,11 +83,23 @@ def fetch_by_id(u_id, company_id, branch_id, db):
             if user is None:
                 return ResponseDTO(404, "User not found!", {})
 
+            docs = {}
             user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
+            user_doc = db.query(UserDocuments).filter(UserDocuments.user_id == u_id).first()
+            user_finances = db.query(UserFinance).filter(UserFinance.user_id == u_id).first()
+
             user.__dict__["user_email"] = user_auth.user_email
             user.__dict__["designations"] = get_designations(u_id, db)
-            result = GetUser(**user.__dict__)
-            return ResponseDTO(200, "User fetched!", result)
+            info = GetUser(**user.__dict__)
+            aadhar = AadharDetails(**user_doc.__dict__) if user_doc else {}
+            passport = PassportDetails(**user_doc.__dict__) if user_doc else {}
+            docs["passport"] = passport
+            docs["aadhar"] = aadhar
+            user_details["personal_info"] = info
+            user_details["documents"] = docs
+            user_details["financial"] = user_finances.__dict__ if user_finances else {}
+
+            return ResponseDTO(200, "User fetched!", user_details)
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
