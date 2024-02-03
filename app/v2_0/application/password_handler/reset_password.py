@@ -1,10 +1,10 @@
 """Contains methods to reset password. Flow starts from the bottom most function of the file"""
-import string
 import random
 import smtplib
+import string
 
-from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.domain.models.user_auth import UsersAuth
 
 """-------------------------------Update password code starts below this line-----------------------------"""

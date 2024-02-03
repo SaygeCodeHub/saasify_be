@@ -27,7 +27,7 @@ def set_employee_leaves(settings, company_id, db):
         query = db.query(UserDetails).filter(UserDetails.user_id == ID)
         u = query.first()
         if u is None:
-            return ResponseDTO(404,"User not found!",{})
+            return ResponseDTO(404, "User not found!", {})
         if u.medical_leaves is None and u.casual_leaves is None:
             query.update(
                 {"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})

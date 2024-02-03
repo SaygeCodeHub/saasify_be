@@ -9,6 +9,7 @@ from app.v2_0.domain.schemas.user_schemas import UpdateUser
 
 
 class GetEmployees(BaseModel):
+    employee_id: Optional[int]
     name: str
     user_contact: Optional[int]
     designations: List[DesignationEnum]

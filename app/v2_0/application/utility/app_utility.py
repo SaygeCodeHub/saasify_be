@@ -3,7 +3,6 @@ from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import Features
-from app.v2_0.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 
 

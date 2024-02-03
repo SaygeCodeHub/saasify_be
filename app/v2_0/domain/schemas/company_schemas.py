@@ -1,12 +1,12 @@
 """Schemas for Company"""
 from datetime import date, datetime
-from typing import Optional, List
+from typing import Optional
 
 from pydantic import BaseModel
 
 from app.v2_0.domain.models.enums import ActivityStatus
-from app.v2_0.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
+from app.v2_0.domain.schemas.modifier_schemas import Modifier
 
 
 class UpdateCompany(Modifier):

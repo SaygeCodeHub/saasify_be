@@ -1,9 +1,9 @@
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from alembic import context
 from app.v2_0.domain.models.import_models import Base
 
 # this is the Alembic Config object, which provides
@@ -20,6 +20,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -39,7 +40,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("postgresql://default:hurR7WSdp6wl@ep-wild-term-46659373.us-east-1.postgres.vercel-storage.com:5432/verceldb")
+    url = config.get_main_option(
+        "postgresql://default:hurR7WSdp6wl@ep-wild-term-46659373.us-east-1.postgres.vercel-storage.com:5432/verceldb")
     context.configure(
         url=url,
         target_metadata=target_metadata,

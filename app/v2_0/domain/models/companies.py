@@ -1,9 +1,9 @@
 """Model - Companies"""
-from app.v2_0.domain.models.enums import ActivityStatus
-from app.v2_0.infrastructure.database import Base
-
 from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Enum
 from sqlalchemy.sql.expression import text
+
+from app.v2_0.domain.models.enums import ActivityStatus
+from app.v2_0.infrastructure.database import Base
 
 
 class Companies(Base):
