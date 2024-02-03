@@ -73,7 +73,7 @@ class AddUser(Modifier):
     activity_status: ActivityStatus = "ACTIVE"
 
 
-class GetUser(BaseModel):
+class GetUser(AadharDetails, PassportDetails, UserFinanceSchema):
     first_name: Optional[str] = ""
     last_name: Optional[str] = ""
     middle_name: Optional[str] = ""
@@ -83,6 +83,7 @@ class GetUser(BaseModel):
     user_image: Optional[str] = None
     user_email: str
     designations: List[DesignationEnum] = None
+    approvers: Optional[List[int]] = None
     user_birthdate: Optional[date] = None
     age: Optional[int] = None
     gender: Optional[str] = None
@@ -93,6 +94,8 @@ class GetUser(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     pincode: Optional[str] = None
+    accessible_features: List[Features] = None
+    accessible_modules: List[Modules] = None
 
 
 class UpdateUser(BaseModel):
