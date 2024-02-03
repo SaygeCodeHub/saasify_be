@@ -15,7 +15,7 @@ from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_documents import UserDocuments
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
-from app.v2_0.domain.schemas.user_schemas import  GetUser
+from app.v2_0.domain.schemas.user_schemas import GetUser
 
 
 def add_user_details(user, user_id, db):
@@ -93,6 +93,15 @@ def fetch_by_id(u_id, company_id, branch_id, db):
             user_details = user.__dict__.copy()
             user_details.update(user_doc.__dict__ if user_doc else {})
             user_details.update(user_finances.__dict__ if user_finances else {})
+            for key, value in user_details.items():
+                if value is None:
+                    user_details[key] = None
+                elif isinstance(value, str):
+                    user_details[key] = ""
+                elif isinstance(value, list):
+                    user_details[key] = []
+                elif isinstance(value, dict):
+                    user_details[key] = {}
             return ResponseDTO(200, "User fetched!", GetUser(**user_details))
 
     except Exception as exc:
