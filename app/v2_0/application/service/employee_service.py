@@ -74,39 +74,40 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
 def fetch_employees(company_id, branch_id, db):
     """Returns all the employees belonging to a particular branch"""
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+    # try:
+    check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        if check is None:
-            employees_query = select(UserDetails.first_name, UserDetails.last_name, UserDetails.user_contact,
-                                     UserDetails.current_address,
-                                     UserCompanyBranch.designations, UsersAuth.user_email,
-                                     UsersAuth.user_id).select_from(
-                UserDetails).join(
-                UserCompanyBranch,
-                UserDetails.user_id == UserCompanyBranch.user_id).join(
-                UsersAuth, UsersAuth.user_id == UserDetails.user_id).filter(
-                UserCompanyBranch.branch_id == branch_id)
+    if check is None:
+        employees_query = select(UserDetails.first_name, UserDetails.last_name, UserDetails.user_contact,
+                                 UserDetails.current_address, UserDetails.user_id,
+                                 UserCompanyBranch.designations, UsersAuth.user_email,
+                                 UsersAuth.user_id).select_from(
+            UserDetails).join(
+            UserCompanyBranch,
+            UserDetails.user_id == UserCompanyBranch.user_id).join(
+            UsersAuth, UsersAuth.user_id == UserDetails.user_id).filter(
+            UserCompanyBranch.branch_id == branch_id)
 
-            employees = db.execute(employees_query)
+        employees = db.execute(employees_query)
+        print(employees_query)
+        result = [
+            GetEmployees(
+                employee_id=employee.user_id,
+                name=employee.first_name + " " + employee.last_name,
+                user_contact=employee.user_contact,
+                designations=employee.designations,
+                user_email=employee.user_email,
+                current_address=employee.current_address)
+            for employee in employees
+        ]
 
-            result = [
-                GetEmployees(
-                    name=employee.first_name + " " + employee.last_name,
-                    user_contact=employee.user_contact,
-                    designations=employee.designations,
-                    user_email=employee.user_email,
-                    current_address=employee.current_address
-                )
-                for employee in employees
-            ]
+        return ResponseDTO(200, "Employees fetched!", result)
+    else:
+        return check
 
-            return ResponseDTO(200, "Employees fetched!", result)
-        else:
-            return check
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), [])
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), [])
 
 
 def get_branch_name(branch_id, db):
@@ -143,7 +144,7 @@ def fetch_employee_salaries(user_id, company_id, branch_id, db):
                 for salary in salaries
             ]
             if len(result) == 0:
-                return ResponseDTO(200,"There are no employees in this branch!",{})
+                return ResponseDTO(200, "There are no employees in this branch!", {})
             return ResponseDTO(200, "Salaries fetched!", result)
 
         else:

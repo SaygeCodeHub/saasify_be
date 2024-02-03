@@ -70,4 +70,4 @@ class ApplyLeave(Modifier):
 
 class FetchAllLeavesResponse(BaseModel):
     pending_leaves: List[GetPendingLeaves]
-    my_leaves:  List[GetLeaves]
+    my_leaves: List[GetLeaves]

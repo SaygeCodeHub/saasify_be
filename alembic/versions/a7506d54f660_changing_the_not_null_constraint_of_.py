@@ -8,8 +8,6 @@ Create Date: 2024-02-02 17:24:49.186374
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = 'a7506d54f660'
@@ -19,7 +17,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.alter_column('user_company_branch','user_id',nullable=False)
+    op.alter_column('user_company_branch', 'user_id', nullable=False)
 
 
 def downgrade() -> None:

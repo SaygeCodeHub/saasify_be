@@ -1,8 +1,8 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist, \
     add_owner_to_ucb
@@ -209,7 +209,7 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
                 update_user_finance(user.__dict__["financial"], u_id, user_id, db)
                 return ResponseDTO(200, "User updated successfully", {})
     except Exception as exc:
-        return ResponseDTO(204,str(exc),{})
+        return ResponseDTO(204, str(exc), {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):

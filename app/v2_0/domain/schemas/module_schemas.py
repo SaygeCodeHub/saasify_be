@@ -21,4 +21,3 @@ class GetSubscribedModules(BaseModel):
     is_subscribed: bool
     start_date: date
     end_date: date
-

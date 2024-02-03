@@ -6,7 +6,6 @@ from app.v2_0.application.utility.app_utility import check_if_company_and_branch
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import LeaveType, LeaveStatus
 from app.v2_0.domain.models.leaves import Leaves
-from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_finance import UserFinance

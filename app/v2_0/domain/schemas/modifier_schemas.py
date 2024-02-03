@@ -9,8 +9,3 @@ class Modifier(BaseModel):
     """Contains all the fields that will be inherited by other schemas """
     modified_on: Optional[date] = None
     modified_by: Optional[int] = None
-
-
-
-
-
