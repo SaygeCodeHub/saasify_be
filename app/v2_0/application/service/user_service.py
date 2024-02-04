@@ -71,45 +71,40 @@ def get_designations(user_id, db):
 
 def fetch_by_id(u_id, company_id, branch_id, db):
     """Fetches a user by his id"""
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+    # try:
+    check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        if check is not None:
-            return check
+    if check is not None:
+        return check
 
-        else:
-            user = db.query(UserDetails).filter(UserDetails.user_id == u_id).first()
+    else:
+        user = db.query(UserDetails).filter(UserDetails.user_id == u_id).first()
 
-            if user is None:
-                return ResponseDTO(404, "User not found!", {})
+        if user is None:
+            return ResponseDTO(404, "User not found!", {})
 
-            user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
-            user_doc = db.query(UserDocuments).filter(UserDocuments.user_id == u_id).first()
-            user_finances = db.query(UserFinance).filter(UserFinance.user_id == u_id).first()
+        user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
+        ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == u_id).first()
+        user_doc = db.query(UserDocuments).filter(UserDocuments.user_id == u_id).first()
+        user_finances = db.query(UserFinance).filter(UserFinance.user_id == u_id).first()
 
-            user.__dict__["user_email"] = user_auth.user_email
-            user.__dict__["designations"] = get_designations(u_id, db)
+        user_details = user.__dict__.copy()
+        user_details.update(user_auth.__dict__)
+        user_details.update(ucb.__dict__)
+        user_details.update(user_doc.__dict__ if user_doc else {})
+        user_details.update(user_finances.__dict__ if user_finances else {})
+        data = GetUser(**user_details)
 
-            user_details = user.__dict__.copy()
-            user_details.update(user_doc.__dict__ if user_doc else {})
-            user_details.update(user_finances.__dict__ if user_finances else {})
-            for key, value in user_details.items():
-                if value is None:
-                    user_details[key] = None
-                elif isinstance(value, str):
-                    user_details[key] = ""
-                elif isinstance(value, list):
-                    user_details[key] = []
-                elif isinstance(value, dict):
-                    user_details[key] = {}
-            return ResponseDTO(200, "User fetched!", GetUser(**user_details))
+        return ResponseDTO(200, "User fetched!", data)
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def update_personal_info(personal_data, user_query, user_id, db):
-    # Deleting the 'user_email' field from personal_data dictionary because the UserDetails table does not contain email column
+    """Deleting the 'user_email' field from personal_data dictionary because the UserDetails table does not contain email column"""
+
     del personal_data.__dict__["user_email"]
 
     personal_data.__dict__["modified_on"] = datetime.now()

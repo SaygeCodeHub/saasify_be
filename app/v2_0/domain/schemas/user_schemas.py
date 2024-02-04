@@ -37,19 +37,19 @@ class PersonalInfo(Modifier):
 
 class AadharDetails(BaseModel):
     aadhar_number: Optional[int] = None
-    name_as_per_aadhar: str = None
-    pan_number: str = None
+    name_as_per_aadhar: Optional[str] = None
+    pan_number: Optional[str] = None
 
 
 class PassportDetails(BaseModel):
-    passport_num: str = None
-    passport_fname: str = None
-    passport_lname: str = None
-    expiry_date: date = None
-    issue_date: date = None
+    passport_num: Optional[str] = None
+    passport_fname: Optional[str] = None
+    passport_lname: Optional[str] = None
+    expiry_date: Optional[date] = None
+    issue_date: Optional[date] = None
     mobile_number: Optional[int] = None
-    current_address: str = None
-    permanent_address: str = None
+    current_address: Optional[str] = None
+    permanent_address: Optional[str] = None
 
 
 class UserDocumentsSchema(Modifier):
@@ -83,7 +83,7 @@ class GetUser(AadharDetails, PassportDetails, UserFinanceSchema):
     user_image: Optional[str] = None
     user_email: str
     designations: List[DesignationEnum] = None
-    approvers: Optional[List[int]] = None
+    approvers: Optional[List] = None
     user_birthdate: Optional[date] = None
     age: Optional[int] = None
     gender: Optional[str] = None

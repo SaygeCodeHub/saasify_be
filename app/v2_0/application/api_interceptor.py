@@ -193,7 +193,7 @@ def get_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getAllLeaves")
-def get_all_Leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+def get_all_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_all_leaves(user_id, company_id, branch_id, db)
 
 
