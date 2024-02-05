@@ -53,6 +53,26 @@ class GetLeaves(BaseModel):
     end_date: date
     approvers: List
     leave_status: str
+    comment: Optional[str] = ""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ensure_optional_fields()
+
+    def ensure_optional_fields(self):
+        # Ensure all optional fields have default values
+        for field in self.__annotations__:
+            if field in self.__dict__ and self.__dict__[field] is None:
+                if self.__annotations__[field] == str:
+                    setattr(self, field, "")
+                if self.__annotations__[field] == Optional[str]:
+                    setattr(self, field, "")
+                elif self.__annotations__[field] == List:
+                    setattr(self, field, [])
+                elif self.__annotations__[field] == dict:
+                    setattr(self, field, {})
+                else:
+                    setattr(self, field, None)
 
 
 class ApplyLeave(Modifier):
