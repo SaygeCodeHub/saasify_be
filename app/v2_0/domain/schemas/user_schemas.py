@@ -20,6 +20,8 @@ class PersonalInfo(Modifier):
     user_email: str
     user_birthdate: date = None
     activity_status: ActivityStatus = None
+    casual_leaves: int = 3
+    medical_leaves: int = 12
     user_image: str = "Image"
     user_contact: int = None
     alternate_contact: int = None

@@ -62,11 +62,9 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             elif message == 1:
                 msg = "You have exhausted your medical leaves! Salary will be deducted on approval."
 
-            leave_application.modified_by = user_id
             leave_application.user_id = user_id
             leave_application.company_id = company_id
             leave_application.branch_id = branch_id
-
             if len(leave_application.approvers) == 0:
                 company = db.query(Companies).filter(Companies.company_id == company_id).first()
                 leave_application.approvers = [company.owner]

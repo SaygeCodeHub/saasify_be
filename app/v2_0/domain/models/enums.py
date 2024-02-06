@@ -32,17 +32,19 @@ class LeaveType(PyEnum):
 class Modules(PyEnum):
     """States the modules"""
     HR = 0
-    POS = 1
-    INVENTORY = 2
-    INVOICING = 3
+    ACCOUNTING = 1
+    INVOICE = 2
+    INVENTORY = 3
+    POS = 4
 
 
 class Features(PyEnum):
-    HR_FEATURE_1 = 0.1
-    POS_FEATURE_1 = 1.1
-    INVENTORY_FEATURE_1 = 2.1
-    INVOICING_FEATURE_1 = 3.1
-    # HR_FEATURE_2 = 0.2
-    # POS_FEATURE_2 = 1.2
-    # INVENTORY_FEATURE_2 = 2.2
-    # INVOICING_FEATURE_2 = 3.2
+    HR_MARK_ATTENDANCE = 0.0
+    HR_PENDING_APPROVAL = 0.1
+    HR_TOTAL_EMPLOYEES = 0.2
+    HR_SALARY_ROLLOUT = 0.3
+    HR_ADD_NEW_EMPLOYEE = 0.4
+    HR_VIEW_ALL_EMPLOYEES = 0.5
+    HR_APPLY_LEAVES = 0.6
+    HR_MY_LEAVES = 0.7
+    HR_TIMESHEET = 0.8

@@ -2,7 +2,7 @@
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import Features
+from app.v2_0.domain.models.enums import Features, DesignationEnum
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 
 
@@ -39,8 +39,9 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
                                          accessible_features=features_array)
 
         db.add(ucb_employee)
-        db.commit()
+
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -97,9 +98,9 @@ def add_company_to_ucb(new_company, user_id, db):
     """Adds the company to ucb table"""
     try:
         db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
-            {"company_id": new_company.company_id, "designations": ["OWNER"], "accessible_modules": [],
+            {"company_id": new_company.company_id, "designations": [DesignationEnum.OWNER], "accessible_modules": [],
              "accessible_features": []})
-        db.commit()
+
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
 
@@ -112,15 +113,16 @@ def add_branch_to_ucb(new_branch, user_id, company_id, db):
         if b.branch_id is None:
             db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
                 {"branch_id": new_branch.branch_id})
-            db.commit()
+
         elif b.branch_id != new_branch.branch_id:
             user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
             approvers_list = user.approvers
             new_branch_in_ucb = UserCompanyBranch(user_id=user_id, company_id=company_id,
                                                   branch_id=new_branch.branch_id,
-                                                  designations=["OWNER"], approvers=approvers_list,
+                                                  designations=[DesignationEnum.OWNER], approvers=approvers_list,
                                                   accessible_modules=[], accessible_features=[])
             db.add(new_branch_in_ucb)
-            db.commit()
+
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})

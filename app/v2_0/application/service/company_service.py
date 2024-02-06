@@ -1,5 +1,5 @@
 """Service layer for Companies"""
-from datetime import datetime
+from datetime import datetime, time
 
 from sqlalchemy import select
 
@@ -9,6 +9,7 @@ from app.v2_0.application.utility.app_utility import check_if_company_and_branch
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
+from app.v2_0.domain.models.enums import ActivityStatus
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
@@ -90,8 +91,8 @@ def import_hq_settings(branch_id, company_id, user_id, db):
         hq_settings = db.query(BranchSettings).filter(
             BranchSettings.company_id == company_id).filter(
             BranchSettings.is_hq_settings == "true").first()
-        imported_settings = BranchSettings(branch_id=branch_id, modified_by=user_id, company_id=company_id,
-                                           modified_on=datetime.now(), is_hq_settings=False,
+        imported_settings = BranchSettings(branch_id=branch_id, company_id=company_id,
+                                           is_hq_settings=False,
                                            default_approver=hq_settings.default_approver,
                                            working_days=hq_settings.working_days, total_casual_leaves=3,
                                            total_medical_leaves=12,
@@ -100,11 +101,11 @@ def import_hq_settings(branch_id, company_id, user_id, db):
                                            overtime_rate=hq_settings.overtime_rate,
                                            overtime_rate_per=hq_settings.overtime_rate_per)
         db.add(imported_settings)
-        db.commit()
-        db.refresh(imported_settings)
+        db.flush()
 
         return ResponseDTO(200, "Settings Imported successfully", {})
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -115,18 +116,21 @@ def add_branch_settings(company_settings, user_id, db):
 
         if get_branch.is_head_quarter is True:
             new_settings = BranchSettings(branch_id=company_settings.branch_id,
-                                          company_id=company_settings.company_id, modified_by=user_id,
-                                          modified_on=datetime.now(), is_hq_settings=True, total_casual_leaves=3,
-                                          total_medical_leaves=12,
+                                          time_in=datetime.combine(datetime.now().date(), time(9, 30)),
+                                          time_out=datetime.combine(datetime.now().date(), time(18, 30)),
+                                          company_id=company_settings.company_id,
+                                          is_hq_settings=True, total_casual_leaves=3,
+                                          total_medical_leaves=12,overtime_rate_per="HOUR",
                                           default_approver=company_settings.default_approver)
             db.add(new_settings)
-            db.commit()
-            db.refresh(new_settings)
+            db.flush()
+
         else:
             import_hq_settings(company_settings.branch_id, company_settings.company_id, user_id, db)
 
         return ResponseDTO(200, "Settings added!", {})
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -147,16 +151,16 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
         if company_exists is None:
             return ResponseDTO(404, "Company not found!", {})
 
-        new_branch = Branches(branch_name=branch.branch_name, modified_by=user_id, company_id=company_id,
-                              activity_status="ACTIVE",
-                              modified_on=datetime.now(), is_head_quarter=branch.is_head_quarter)
+        new_branch = Branches(branch_name=branch.branch_name, company_id=company_id,
+                              activity_status=ActivityStatus.ACTIVE,
+                              is_head_quarter=branch.is_head_quarter)
         db.add(new_branch)
-        db.commit()
-        db.refresh(new_branch)
+        db.flush()
 
         # Adds the branch in Users_Company_Branches table
         add_branch_to_ucb(new_branch, user_id, company_id, db)
         set_branch_settings(new_branch, user_id, company_id, db)
+        db.commit()
 
         if is_init:
             return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id, modules=[])
@@ -165,6 +169,9 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
                                CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
                                                     modules=[]))
     except Exception as exc:
+        db.rollback()
+        # if db.in_transaction:
+        #     return ResponseDTO(200, "The session was rolled back", {})
         return ResponseDTO(204, str(exc), {})
 
 
@@ -222,8 +229,7 @@ def add_company(company, user_id, db):
     new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
                             activity_status=company.activity_status)
     db.add(new_company)
-    db.commit()
-    db.refresh(new_company)
+    db.flush()
 
     add_company_to_ucb(new_company, user_id, db)
 
@@ -231,6 +237,8 @@ def add_company(company, user_id, db):
     branch.branch_name = company.branch_name
     branch.is_head_quarter = company.is_head_quarter
     init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
+
+    db.commit()
 
     return ResponseDTO(200, "Company created successfully",
                        AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
