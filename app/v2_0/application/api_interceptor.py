@@ -13,6 +13,7 @@ from app.v2_0.application.service.attendance_service import mark_attendance_func
 from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees, fetch_employee_salaries
+from app.v2_0.application.service.home_screen_service import fetch_home_screen_data
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_all_leaves, modify_leave_status
 from app.v2_0.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
@@ -283,3 +284,11 @@ def get_all_modules(user_id: int, company_id: int, branch_id: int, db=Depends(ge
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getSalaries")
 def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return fetch_employee_salaries(user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Home Screen API-------------------------------------------------------------------"""
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/initializeApi")
+def get_home_screen_data(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_home_screen_data(user_id, company_id, branch_id, db)
