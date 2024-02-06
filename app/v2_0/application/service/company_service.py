@@ -4,8 +4,8 @@ from datetime import datetime, time
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_company_to_ucb, \
-    add_branch_to_ucb
+from app.v2_0.application.service.ucb_service import add_branch_to_ucb, add_company_to_ucb
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
@@ -120,7 +120,7 @@ def add_branch_settings(company_settings, user_id, db):
                                           time_out=datetime.combine(datetime.now().date(), time(18, 30)),
                                           company_id=company_settings.company_id,
                                           is_hq_settings=True, total_casual_leaves=3,
-                                          total_medical_leaves=12,overtime_rate_per="HOUR",
+                                          total_medical_leaves=12, overtime_rate_per="HOUR",
                                           default_approver=company_settings.default_approver)
             db.add(new_settings)
             db.flush()
@@ -162,12 +162,16 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
         set_branch_settings(new_branch, user_id, company_id, db)
         db.commit()
 
+        # Fetches the ucb entry of newly stored branch
+        branch_in_ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == new_branch.branch_id).first()
+
         if is_init:
-            return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id, modules=[])
+            return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
+                                        modules=branch_in_ucb.accessible_modules)
         else:
             return ResponseDTO(200, "Branch created successfully!",
                                CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
-                                                    modules=[]))
+                                                    modules=branch_in_ucb.accessible_modules))
     except Exception as exc:
         db.rollback()
         # if db.in_transaction:
@@ -221,32 +225,31 @@ def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
 
 def add_company(company, user_id, db):
     """Creates a company and adds a branch to it"""
-    # try:
-    user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-    if user_exists is None:
-        return ResponseDTO(404, "User does not exist!", {})
+    try:
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+        if user_exists is None:
+            return ResponseDTO(404, "User does not exist!", {})
 
-    new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
-                            activity_status=company.activity_status)
-    db.add(new_company)
-    db.flush()
+        new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
+                                activity_status=company.activity_status)
+        db.add(new_company)
+        db.flush()
 
-    add_company_to_ucb(new_company, user_id, db)
+        add_company_to_ucb(new_company, user_id, db)
 
-    branch = AddBranch
-    branch.branch_name = company.branch_name
-    branch.is_head_quarter = company.is_head_quarter
-    init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
+        branch = AddBranch
+        branch.branch_name = company.branch_name
+        branch.is_head_quarter = company.is_head_quarter
+        init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
 
-    db.commit()
+        db.commit()
 
-    return ResponseDTO(200, "Company created successfully",
-                       AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
-                                          branch=init_branch))
+        return ResponseDTO(200, "Company created successfully",
+                           AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
+                                              branch=init_branch))
 
-
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
 
 
 def fetch_company(user_id, company_id, branch_id, db):
