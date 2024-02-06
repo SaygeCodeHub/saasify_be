@@ -15,7 +15,8 @@ from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_documents import UserDocuments
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
-from app.v2_0.domain.schemas.user_schemas import GetUser
+from app.v2_0.domain.schemas.user_schemas import GetAadharDetails, \
+    GetPassportDetails, GetPersonalInfo
 
 
 def add_user_details(user, user_id, db):
@@ -71,32 +72,44 @@ def get_designations(user_id, db):
 
 def fetch_by_id(u_id, company_id, branch_id, db):
     """Fetches a user by his id"""
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+    # try:
+    check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
 
-        if check is not None:
-            return check
+    if check is not None:
+        return check
 
-        else:
-            user = db.query(UserDetails).filter(UserDetails.user_id == u_id).first()
+    else:
+        user = db.query(UserDetails).filter(UserDetails.user_id == u_id).first()
 
-            if user is None:
-                return ResponseDTO(404, "User not found!", {})
+        if user is None:
+            return ResponseDTO(404, "User not found!", {})
 
-            user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
-            user_doc = db.query(UserDocuments).filter(UserDocuments.user_id == u_id).first()
-            user_finances = db.query(UserFinance).filter(UserFinance.user_id == u_id).first()
+        user_details = {}
 
-            user.__dict__["user_email"] = user_auth.user_email
-            user.__dict__["designations"] = get_designations(u_id, db)
+        user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
+        user_doc = db.query(UserDocuments).filter(UserDocuments.user_id == u_id).first()
+        user_finances = db.query(UserFinance).filter(UserFinance.user_id == u_id).first()
+        ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == u_id).first()
+        designation = ucb.designations
+        approvers = ucb.approvers
+        accessible_modules = ucb.accessible_modules
+        accessible_features = ucb.accessible_features
 
-            user_details = user.__dict__.copy()
-            user_details.update(user_doc.__dict__ if user_doc else {})
-            user_details.update(user_finances.__dict__ if user_finances else {})
-            return ResponseDTO(200, "User fetched!", GetUser(**user_details))
+        user.__dict__["user_email"] = user_auth.user_email
+        user_details["designations"] = designation
+        user_details["accessible_modules"] = accessible_modules
+        user_details["accessible_features"] = accessible_features
+        user_details["approvers"] = approvers
+        user_details["personal_info"] = GetPersonalInfo(**user.__dict__ if user else {})
+        user_details.update({"documents": {
+            "aadhar": GetAadharDetails(**user_doc.__dict__ if user_doc else {}),
+            "passport": GetPassportDetails(**user_doc.__dict__ if user_doc else {})}})
+        user_details["financial"] = user_finances.__dict__ if user_finances else {}
+        return ResponseDTO(200, "User fetched!", user_details)
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def update_personal_info(personal_data, user_query, user_id, db):
@@ -227,7 +240,7 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
 
     try:
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
 
         if check is not None:
             return check
@@ -278,7 +291,7 @@ def update_leave_approvers(approvers_list, user_id, db):
 def update_approver(approver, user_id, company_id, branch_id, db):
     """Adds an approver to the list of approvers of a user"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
         if check is None:
             flag = True
             user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id)

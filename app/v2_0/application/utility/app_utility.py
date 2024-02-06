@@ -6,7 +6,7 @@ from app.v2_0.domain.models.enums import Features, DesignationEnum
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 
 
-def check_if_company_and_branch_exist(company_id, branch_id, db):
+def check_if_company_and_branch_exist(company_id, branch_id, user_id, db):
     company = db.query(Companies).filter(Companies.company_id == company_id).first()
     if company is None:
         return ResponseDTO(404, "Company not found!", {})
@@ -14,6 +14,12 @@ def check_if_company_and_branch_exist(company_id, branch_id, db):
     branch = db.query(Branches).filter(Branches.branch_id == branch_id).first()
     if branch is None:
         return ResponseDTO(404, "Branch not found!", {})
+
+    if user_id:
+        ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.company_id == company_id).filter(
+            UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.user_id == user_id).first()
+        if ucb is None:
+            return ResponseDTO(409, "Unauthorized user!", {})
 
     return None
 

@@ -38,7 +38,7 @@ def set_employee_leaves(settings, company_id, db):
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):
     """Updates the branch settings"""
 
-    check = check_if_company_and_branch_exist(company_id, branch_id, db)
+    check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
 
     if check is None:
         existing_settings_query = db.query(BranchSettings).filter(
@@ -67,7 +67,7 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
 
         if check is None:
             settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
@@ -182,7 +182,7 @@ def fetch_branches(user_id, company_id, branch_id, db):
         if user is None:
             ResponseDTO(404, "User not found!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
 
         if check is None:
             branches = db.query(Branches).filter(Branches.company_id == company_id).all()
@@ -197,7 +197,7 @@ def fetch_branches(user_id, company_id, branch_id, db):
 def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
     """Updates a branch"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
 
         if check is None:
             branch_query = db.query(Branches).filter(Branches.branch_id == bran_id)
@@ -256,7 +256,7 @@ def fetch_company(user_id, company_id, branch_id, db):
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
 
         if check is None:
             existing_companies_query = db.query(Companies).filter(
@@ -286,7 +286,7 @@ def modify_company(company, user_id, company_id, branch_id, comp_id, db):
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
 
         if check is None:
             company_query = db.query(Companies).filter(Companies.company_id == comp_id)

@@ -118,8 +118,8 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
-def get_employees(branch_id: int, company_id: int, db=Depends(get_db)):
-    return fetch_employees(company_id, branch_id, db)
+def get_employees(branch_id: int, company_id: int, user_id: str, db=Depends(get_db)):
+    return fetch_employees(company_id, branch_id, user_id, db)
 
 
 """----------------------------------------------Company related APIs-------------------------------------------------------------------"""

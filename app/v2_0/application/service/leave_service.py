@@ -15,7 +15,7 @@ from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLe
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             user = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
@@ -51,7 +51,7 @@ def check_remaining_leaves(user_id, leave_application, db):
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
         msg = "Leave application submitted"
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
 
@@ -97,7 +97,7 @@ def get_approver_names(approver_ids, db):
 
 def fetch_leaves(user_id, company_id, branch_id, db):
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             my_leaves = db.query(Leaves).filter(Leaves.user_id == user_id).all()
@@ -142,7 +142,7 @@ def format_pending_leaves(filtered_leaves, db):
 def fetch_all_leaves(user_id, company_id, branch_id, db):
     """Fetches all the leaves applied by a user. Additionally, if the user is also an approver, pending leaves will be fetched too"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
 
@@ -219,7 +219,7 @@ def deduct_salary(leave, extra_leaves, db):
     if user is None:
         return ResponseDTO(404, "User not found!", {})
 
-    per_day_pay = user.salary / 30
+    per_day_pay = user.salary if user.salary is not None else 0 / 30
 
     calculate_deduction = user.deduction
 
@@ -232,7 +232,7 @@ def deduct_salary(leave, extra_leaves, db):
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
     """Leaves are ACCEPTED or REJECTED using this API"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             leave_query = db.query(Leaves).filter(Leaves.leave_id == application_response.leave_id)

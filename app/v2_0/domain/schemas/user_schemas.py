@@ -127,3 +127,95 @@ class UpdateUser(BaseModel):
     personal_info: PersonalInfo
     documents: UserDocumentsSchema
     financial: UserFinanceSchema
+
+
+class GetPassportDetails(BaseModel):
+    passport_num: Optional[str] = None
+    passport_fname: Optional[str] = None
+    passport_lname: Optional[str] = None
+    expiry_date: Optional[date] = None
+    issue_date: Optional[date] = None
+    mobile_number: Optional[int] = None
+    current_address: Optional[str] = None
+    permanent_address: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ensure_optional_fields()
+
+    def ensure_optional_fields(self):
+        for field in self.__annotations__:
+            if field in self.__dict__ and self.__dict__[field] is None:
+                if self.__annotations__[field] == str:
+                    setattr(self, field, "")
+                if self.__annotations__[field] == Optional[str]:
+                    setattr(self, field, "")
+                elif self.__annotations__[field] == List:
+                    setattr(self, field, [])
+                elif self.__annotations__[field] == dict:
+                    setattr(self, field, {})
+                else:
+                    setattr(self, field, None)
+
+
+class GetAadharDetails(BaseModel):
+    aadhar_number: Optional[int] = None
+    name_as_per_aadhar: Optional[str] = None
+    pan_number: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ensure_optional_fields()
+
+    def ensure_optional_fields(self):
+        for field in self.__annotations__:
+            if field in self.__dict__ and self.__dict__[field] is None:
+                if self.__annotations__[field] == str:
+                    setattr(self, field, "")
+                if self.__annotations__[field] == Optional[str]:
+                    setattr(self, field, "")
+                elif self.__annotations__[field] == List:
+                    setattr(self, field, [])
+                elif self.__annotations__[field] == dict:
+                    setattr(self, field, {})
+                else:
+                    setattr(self, field, None)
+
+
+class GetPersonalInfo(BaseModel):
+    first_name: Optional[str] = ""
+    last_name: Optional[str] = ""
+    middle_name: Optional[str] = ""
+    user_id: int
+    user_contact: Optional[int] = None
+    alternate_contact: Optional[int] = None
+    user_image: Optional[str] = None
+    user_email: str
+    user_birthdate: Optional[date] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    nationality: Optional[str] = None
+    marital_status: Optional[str] = None
+    current_address: Optional[str] = None
+    permanent_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ensure_optional_fields()
+
+    def ensure_optional_fields(self):
+        for field in self.__annotations__:
+            if field in self.__dict__ and self.__dict__[field] is None:
+                if self.__annotations__[field] == str:
+                    setattr(self, field, "")
+                if self.__annotations__[field] == Optional[str]:
+                    setattr(self, field, "")
+                elif self.__annotations__[field] == List:
+                    setattr(self, field, [])
+                elif self.__annotations__[field] == dict:
+                    setattr(self, field, {})
+                else:
+                    setattr(self, field, None)
