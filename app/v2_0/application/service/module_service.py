@@ -1,14 +1,11 @@
 """Service layer for Modules"""
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, add_module_to_ucb
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, get_all_features
 from app.v2_0.domain.models.enums import Modules
 from app.v2_0.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.domain.models.user_auth import UsersAuth
+from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.schemas.module_schemas import GetSubscribedModules, ModuleInfoResponse
-
-
-def modify_company_modules():
-    pass
 
 
 def add_module(module, user_id, branch_id, company_id, db):
@@ -32,6 +29,34 @@ def add_module(module, user_id, branch_id, company_id, db):
             return ResponseDTO(200, "Module(s) added successfully", {})
         else:
             return check
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
+
+
+def add_module_to_ucb(branch_id, user_id, module_array, db):
+    try:
+        query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
+            UserCompanyBranch.branch_id == branch_id)
+
+        user = query.first()
+
+        if len(module_array) == 0:
+            subscribed_modules_set = []
+            features_array = []
+        else:
+            # Fetches the currently subscribed modules
+            subscribed_modules_set = set(user.accessible_modules)
+
+            for module in module_array:
+                subscribed_modules_set.add(module)
+
+            features_array = get_all_features(subscribed_modules_set)
+
+        query.update(
+            {"accessible_modules": subscribed_modules_set,
+             "accessible_features": features_array})
+        db.commit()
+
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
 

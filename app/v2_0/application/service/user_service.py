@@ -4,8 +4,8 @@ from datetime import datetime
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
-from app.v2_0.application.utility.app_utility import add_employee_to_ucb, check_if_company_and_branch_exist, \
-    add_owner_to_ucb
+from app.v2_0.application.service.ucb_service import add_owner_to_ucb, add_employee_to_ucb
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.leaves import Leaves
@@ -25,17 +25,17 @@ def add_user_details(user, user_id, db):
                                    activity_status=user.activity_status, medical_leaves=user.medical_leaves,
                                    casual_leaves=user.casual_leaves)
         db.add(user_details)
-        db.commit()
+
         # Creates an entry in the documents table for the corresponding user_id
         user_docs = UserDocuments(user_id=user_id)
         db.add(user_docs)
-        db.commit()
+
         # Creates an entry in the finance table for the corresponding user_id
         user_finance = UserFinance(user_id=user_id)
         db.add(user_finance)
-        db.commit()
 
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -99,7 +99,7 @@ def fetch_by_id(u_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def update_personal_info(personal_data, user_query, user_id, db):
+def update_personal_info(personal_data, user_query, user_id):
     # Deleting the 'user_email' field from personal_data dictionary because the UserDetails table does not contain email column
     del personal_data.__dict__["user_email"]
 
@@ -120,7 +120,7 @@ def update_user_documents(docs_data, u_id, user_id, db):
     passport_query = db.query(UserDocuments).filter(UserDocuments.passport_num == new_docs_data["passport_num"]).filter(
         UserDocuments.user_id != u_id).first()
 
-    resp = validate_docs(aadhar_query, pan_query, passport_query, db)
+    resp = validate_docs(aadhar_query, pan_query, passport_query)
     if resp is not None:
         return resp
 
@@ -154,7 +154,7 @@ def store_personal_info(personal_data, user_id, branch_id, db):
     return None
 
 
-def validate_docs(aadhar_query, pan_query, passport_query, db):
+def validate_docs(aadhar_query, pan_query, passport_query):
     aadhar = aadhar_query
     pan = pan_query
     passport_num = passport_query
@@ -172,7 +172,7 @@ def store_user_documents(docs_data, user_id, db):
     aadhar_query = db.query(UserDocuments).filter(UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).first()
     pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).first()
     passport_query = db.query(UserDocuments).filter(UserDocuments.passport_num == new_docs_data["passport_num"]).first()
-    resp = validate_docs(aadhar_query, pan_query, passport_query, db)
+    resp = validate_docs(aadhar_query, pan_query, passport_query)
     if resp is not None:
         return resp
     docs = UserDocuments(**new_docs_data)
@@ -187,11 +187,11 @@ def store_user_finance(finance_data, user_id, db):
 
 
 def add_employee_manually(user, user_id, company_id, branch_id, db):
+    """Adds an employee with his details to the DB"""
     email = user.__dict__["personal_info"].user_email
-    user_exists = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
-    if user_exists:
-        return ResponseDTO(409, "User with this email already exists", user_exists)
-    else:
+    user_in_user_auth = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
+
+    if user_in_user_auth is None:
         inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         new_employee = UsersAuth(user_email=email,
                                  invited_by=inviter.user_email)
@@ -218,6 +218,17 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
         create_password_reset_code(email, db)
 
         db.commit()
+    else:
+        user_exists = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_in_user_auth.user_id).filter(
+            UserCompanyBranch.branch_id == branch_id).first()
+
+        if user_in_user_auth and user_exists:
+            return ResponseDTO(409, "User with this email already exists in this branch!", user_exists)
+
+        elif user_in_user_auth and not user_exists:
+            add_employee_to_ucb(user, user_in_user_auth, company_id, branch_id, db)
+            db.commit()
+
     return None
 
 
@@ -225,48 +236,50 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
     """Updates a User"""
     """user_id is the person who will be updating the person with u_id as the user_id"""
 
-    try:
+    # try:
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+    check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-        if check is not None:
-            return check
+    if check is not None:
+        return check
 
-        else:
-            if u_id == "":
+    else:
+        if u_id == "":
 
-                response = add_employee_manually(user, user_id, company_id, branch_id, db)
+            response = add_employee_manually(user, user_id, company_id, branch_id, db)
 
-                if response is None:
-                    return ResponseDTO(200, "User added successfully", {})
-                else:
-                    return response
+            if response is None:
+                return ResponseDTO(200, "User added successfully", {})
             else:
-                user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
-                user_exists = user_query.first()
+                return response
+        else:
+            user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
+            user_exists = user_query.first()
 
-                contact_exists = db.query(UserDetails).filter(
-                    UserDetails.user_contact == user.personal_info.user_contact).filter(
-                    UserDetails.user_id != u_id).first()
+            contact_exists = db.query(UserDetails).filter(
+                UserDetails.user_contact == user.personal_info.user_contact).filter(
+                UserDetails.user_id != u_id).first()
 
-                if not user_exists:
-                    return ResponseDTO(404, "User not found!", {})
-                if contact_exists:
-                    return ResponseDTO(409, "User with this contact already exists!", contact_exists)
+            if not user_exists:
+                return ResponseDTO(404, "User not found!", {})
+            if contact_exists:
+                return ResponseDTO(409, "User with this contact already exists!", contact_exists)
 
-                update_personal_info(user.personal_info, user_query, user_id, db)
+            update_personal_info(user.personal_info, user_query, user_id)
 
-                docs_resp = update_user_documents(user.documents, u_id, user_id, db)
-                if docs_resp is not None:
-                    return docs_resp
+            docs_resp = update_user_documents(user.documents, u_id, user_id, db)
+            if docs_resp is not None:
+                return docs_resp
 
-                update_user_finance(user.financial, u_id, user_id, db)
-                db.commit()
+            update_user_finance(user.financial, u_id, user_id, db)
+            db.commit()
 
-                return ResponseDTO(200, "User updated successfully", {})
-    except Exception as exc:
-        db.rollback()
-        return ResponseDTO(204, str(exc), {})
+            return ResponseDTO(200, "User updated successfully", {})
+
+
+# except Exception as exc:
+#     db.rollback()
+#     return ResponseDTO(204, str(exc), {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):

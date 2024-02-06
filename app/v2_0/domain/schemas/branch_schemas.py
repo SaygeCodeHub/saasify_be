@@ -4,9 +4,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import ActivityStatus
+from app.v2_0.domain.models.enums import ActivityStatus, Modules, Features
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
-from app.v2_0.domain.schemas.module_schemas import ModuleInfoResponse
 
 
 class UpdateBranch(Modifier):
@@ -31,15 +30,11 @@ class AddBranch(UpdateBranch):
 class GetBranch(BaseModel):
     branch_name: str
     branch_id: int
-    activity_status: ActivityStatus
-    branch_address: str = ""
-    is_head_quarter: bool
-    branch_contact: int
-    company_id: int
-    branch_currency: str = ""
+    accessible_modules: List[Modules]
+    accessible_features: List[Features]
 
 
 class CreateBranchResponse(BaseModel):
     branch_name: str
     branch_id: int
-    modules: List[ModuleInfoResponse]
+    modules: List[Modules]
