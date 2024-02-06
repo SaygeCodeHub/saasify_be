@@ -62,11 +62,9 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             elif message == 1:
                 msg = "You have exhausted your medical leaves! Salary will be deducted on approval."
 
-            leave_application.modified_by = user_id
             leave_application.user_id = user_id
             leave_application.company_id = company_id
             leave_application.branch_id = branch_id
-
             if len(leave_application.approvers) == 0:
                 company = db.query(Companies).filter(Companies.company_id == company_id).first()
                 leave_application.approvers = [company.owner]
@@ -108,7 +106,7 @@ def fetch_leaves(user_id, company_id, branch_id, db):
                           leave_type=leave.leave_type.name, leave_id=leave.leave_id, leave_reason=leave.leave_reason,
                           start_date=leave.start_date, end_date=leave.end_date,
                           approvers=get_approver_names(leave.approvers, db),
-                          leave_status=leave.leave_status.name)
+                          leave_status=leave.leave_status.name, comment=leave.comment)
 
                 for leave in my_leaves
             ]
@@ -153,33 +151,28 @@ def fetch_all_leaves(user_id, company_id, branch_id, db):
 
             # Fetches the leaves that require approval of the user
             pending_leaves = db.query(Leaves).filter(Leaves.leave_status == LeaveStatus.PENDING).all()
-
             # Checks if the user is an approver or not
             filtered_leaves = get_authorized_leave_requests(pending_leaves, user_id)
 
             # If the user is an approver, then show him his leaves and the leaves that require his approval, else, only show his leaves
-
+            leaves_pending = []
             if len(filtered_leaves) != 0:
                 final_list = format_pending_leaves(filtered_leaves, db)
-                pending_leaves = [GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
-                                                   leave_type=item.leave_type.name, leave_reason=item.leave_reason,
-                                                   start_date=item.start_date, end_date=item.end_date,
-                                                   approvers=get_approver_names(item.approvers, db))
-                                  for item in final_list
-                                  ]
-                if len(my_leaves) == 0 and len(pending_leaves) == 0:
-                    return ResponseDTO(200, "You have not applied for any leaves!",
-                                       FetchAllLeavesResponse(pending_leaves=pending_leaves, my_leaves=my_leaves))
-
+                for item in final_list:
+                    leaves_pending.append(GetPendingLeaves(leave_id=item.leave_id, user_id=item.user_id, name=item.name,
+                                                           leave_type=item.leave_type.name,
+                                                           leave_reason=item.leave_reason,
+                                                           start_date=item.start_date, end_date=item.end_date,
+                                                           approvers=get_approver_names(item.approvers, db)))
                 return ResponseDTO(200, "All leaves fetched",
-                                   FetchAllLeavesResponse(pending_leaves=pending_leaves, my_leaves=my_leaves))
+                                   FetchAllLeavesResponse(pending_leaves=leaves_pending, my_leaves=my_leaves))
 
             if len(my_leaves) == 0:
                 return ResponseDTO(200, "You have not applied for any leaves!",
+                                   FetchAllLeavesResponse(pending_leaves=[], my_leaves=[]))
+            else:
+                return ResponseDTO(200, "Leaves fetched!",
                                    FetchAllLeavesResponse(pending_leaves=[], my_leaves=my_leaves))
-
-            return ResponseDTO(200, "Leaves fetched!",
-                               FetchAllLeavesResponse(pending_leaves=[], my_leaves=my_leaves))
         else:
             return check
 

@@ -15,7 +15,7 @@ class UserDetails(Base):
     middle_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     user_contact = Column(BIGINT, nullable=True, unique=True)
-    alternate_contact = Column(BIGINT, nullable=True, unique=True)
+    alternate_contact = Column(BIGINT, nullable=True)
     user_birthdate = Column(Date, nullable=True)
     age = Column(Integer, nullable=True)
     gender = Column(String, nullable=True)

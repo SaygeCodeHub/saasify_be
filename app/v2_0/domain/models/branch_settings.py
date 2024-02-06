@@ -1,6 +1,6 @@
 """Model - BranchSettings"""
 
-from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Double, Boolean
+from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Double, Boolean, DateTime
 from sqlalchemy.sql.expression import text
 
 from app.v2_0.infrastructure.database import Base
@@ -14,9 +14,9 @@ class BranchSettings(Base):
     branch_id = Column(Integer, ForeignKey("branches.branch_id"), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=False)
     working_days = Column(Integer, nullable=True)
-    time_in = Column(String, nullable=True)
-    time_out = Column(String, nullable=True)
-    timezone = Column(String, nullable=True)
+    time_in = Column(DateTime(timezone=True), nullable=True)
+    time_out = Column(DateTime(timezone=True), nullable=True)
+    timezone = Column(DateTime(timezone=True), nullable=True)
     currency = Column(String, nullable=True)
     default_approver = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     total_medical_leaves = Column(Integer, nullable=True)

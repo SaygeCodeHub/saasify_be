@@ -15,7 +15,7 @@ from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_documents import UserDocuments
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
-from app.v2_0.domain.schemas.user_schemas import  GetUser
+from app.v2_0.domain.schemas.user_schemas import GetUser
 
 
 def add_user_details(user, user_id, db):
@@ -106,16 +106,28 @@ def update_personal_info(personal_data, user_query, user_id, db):
     personal_data.__dict__["modified_on"] = datetime.now()
     personal_data.__dict__["modified_by"] = user_id
     user_query.update(personal_data.__dict__)
-    db.commit()
 
 
 def update_user_documents(docs_data, u_id, user_id, db):
     # Unpacking the 2 dictionaries - aadhar and passport and storing them in a new dictionary
-    new_docs_data = {**docs_data.__dict__["aadhar"].__dict__, **docs_data.__dict__["passport"].__dict__,
+    new_docs_data = {**docs_data.aadhar.__dict__, **docs_data.passport.__dict__,
                      "modified_on": datetime.now(), "modified_by": user_id}
+
+    aadhar_query = db.query(UserDocuments).filter(UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).filter(
+        UserDocuments.user_id != u_id).first()
+    pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).filter(
+        UserDocuments.user_id != u_id).first()
+    passport_query = db.query(UserDocuments).filter(UserDocuments.passport_num == new_docs_data["passport_num"]).filter(
+        UserDocuments.user_id != u_id).first()
+
+    resp = validate_docs(aadhar_query, pan_query, passport_query, db)
+    if resp is not None:
+        return resp
+
     docs_query = db.query(UserDocuments).filter(UserDocuments.user_id == u_id)
     docs_query.update(new_docs_data)
-    db.commit()
+
+    return None
 
 
 def update_user_finance(finance_data, u_id, user_id, db):
@@ -124,32 +136,54 @@ def update_user_finance(finance_data, u_id, user_id, db):
 
     finance_query = db.query(UserFinance).filter(UserFinance.user_id == u_id)
     finance_query.update(finance_data.__dict__)
-    db.commit()
 
 
 def store_personal_info(personal_data, user_id, branch_id, db):
+    user_contact = db.query(UserDetails).filter(
+        UserDetails.user_contact == personal_data.__dict__["user_contact"]).first()
+    if user_contact is not None:
+        return ResponseDTO(409, "This contact already belongs to someone else", {})
+    del personal_data.__dict__["user_email"]
     branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
-    new_employee = UserDetails(user_id=user_id, first_name=personal_data.__dict__["first_name"],
-                               last_name=personal_data.__dict__["last_name"],
-                               activity_status=personal_data.__dict__["activity_status"],
-                               casual_leaves=branch_settings.total_casual_leaves,
-                               medical_leaves=branch_settings.total_medical_leaves)
+    personal_data.__dict__["user_id"] = user_id
+    personal_data.casual_leaves = branch_settings.total_casual_leaves
+    personal_data.medical_leaves = branch_settings.total_medical_leaves
+    new_employee = UserDetails(**personal_data.__dict__)
     db.add(new_employee)
-    db.commit()
+
+    return None
+
+
+def validate_docs(aadhar_query, pan_query, passport_query, db):
+    aadhar = aadhar_query
+    pan = pan_query
+    passport_num = passport_query
+    if aadhar is not None:
+        return ResponseDTO(409, "This aadhar number already belongs to someone else", {})
+    if pan is not None:
+        return ResponseDTO(409, "This pan number already belongs to someone else", {})
+    if passport_num is not None:
+        return ResponseDTO(409, "This passport number already belongs to someone else", {})
 
 
 def store_user_documents(docs_data, user_id, db):
-    new_docs_data = {**docs_data.__dict__["aadhar"].__dict__, **docs_data.__dict__["passport"].__dict__,
+    new_docs_data = {**docs_data.aadhar.__dict__, **docs_data.passport.__dict__,
                      "user_id": user_id}
+    aadhar_query = db.query(UserDocuments).filter(UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).first()
+    pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).first()
+    passport_query = db.query(UserDocuments).filter(UserDocuments.passport_num == new_docs_data["passport_num"]).first()
+    resp = validate_docs(aadhar_query, pan_query, passport_query, db)
+    if resp is not None:
+        return resp
     docs = UserDocuments(**new_docs_data)
     db.add(docs)
-    db.commit()
+
+    return None
 
 
 def store_user_finance(finance_data, user_id, db):
     data = UserFinance(salary=finance_data.salary, user_id=user_id)
     db.add(data)
-    db.commit()
 
 
 def add_employee_manually(user, user_id, company_id, branch_id, db):
@@ -162,8 +196,7 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
         new_employee = UsersAuth(user_email=email,
                                  invited_by=inviter.user_email)
         db.add(new_employee)
-        db.commit()
-        db.refresh(new_employee)
+        db.flush()
 
         ucb_emp = InviteEmployee
         ucb_emp.approvers = user.approvers
@@ -171,11 +204,20 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
         ucb_emp.accessible_modules = user.accessible_modules
         ucb_emp.accessible_features = user.accessible_features
         add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
+
+        info_resp = store_personal_info(user.personal_info, new_employee.user_id, branch_id, db)
+        if info_resp is not None:
+            return info_resp
+
+        docs_resp = store_user_documents(user.documents, new_employee.user_id, db)
+        if docs_resp is not None:
+            return docs_resp
+
+        store_user_finance(user.financial, new_employee.user_id, db)
+
         create_password_reset_code(email, db)
 
-        store_personal_info(user.__dict__["personal_info"], new_employee.user_id, branch_id, db)
-        store_user_documents(user.__dict__["documents"], new_employee.user_id, db)
-        store_user_finance(user.__dict__["financial"], new_employee.user_id, db)
+        db.commit()
     return None
 
 
@@ -202,19 +244,28 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
             else:
                 user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
                 user_exists = user_query.first()
-                # contact_exists = db.query(models.UserDetails).filter(
-                #     models.UserDetails.user_contact == user.__dict__["personal_info"].user_contact).first()
+
+                contact_exists = db.query(UserDetails).filter(
+                    UserDetails.user_contact == user.personal_info.user_contact).filter(
+                    UserDetails.user_id != u_id).first()
 
                 if not user_exists:
                     return ResponseDTO(404, "User not found!", {})
-                # if contact_exists:
-                #     return ResponseDTO(403, "User with this contact already exists!", {})
+                if contact_exists:
+                    return ResponseDTO(409, "User with this contact already exists!", contact_exists)
 
-                update_personal_info(user.__dict__["personal_info"], user_query, user_id, db)
-                update_user_documents(user.__dict__["documents"], u_id, user_id, db)
-                update_user_finance(user.__dict__["financial"], u_id, user_id, db)
+                update_personal_info(user.personal_info, user_query, user_id, db)
+
+                docs_resp = update_user_documents(user.documents, u_id, user_id, db)
+                if docs_resp is not None:
+                    return docs_resp
+
+                update_user_finance(user.financial, u_id, user_id, db)
+                db.commit()
+
                 return ResponseDTO(200, "User updated successfully", {})
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 

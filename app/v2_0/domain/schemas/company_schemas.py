@@ -16,7 +16,7 @@ class UpdateCompany(Modifier):
     company_email: str = None
     services: str = None
     owner: int = None
-    activity_status: ActivityStatus = "ACTIVE"
+    activity_status: ActivityStatus = ActivityStatus.ACTIVE
 
 
 class AddCompany(AddBranch, UpdateCompany):

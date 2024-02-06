@@ -20,6 +20,8 @@ class PersonalInfo(Modifier):
     user_email: str
     user_birthdate: date = None
     activity_status: ActivityStatus = None
+    casual_leaves: int = 3
+    medical_leaves: int = 12
     user_image: str = "Image"
     user_contact: int = None
     alternate_contact: int = None
@@ -96,6 +98,25 @@ class GetUser(AadharDetails, PassportDetails, UserFinanceSchema):
     pincode: Optional[str] = None
     accessible_features: List[Features] = None
     accessible_modules: List[Modules] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ensure_optional_fields()
+
+    def ensure_optional_fields(self):
+        # Ensure all optional fields have default values
+        for field in self.__annotations__:
+            if field in self.__dict__ and self.__dict__[field] is None:
+                if self.__annotations__[field] == str:
+                    setattr(self, field, "")
+                if self.__annotations__[field] == Optional[str]:
+                    setattr(self, field, "")
+                elif self.__annotations__[field] == List:
+                    setattr(self, field, [])
+                elif self.__annotations__[field] == dict:
+                    setattr(self, field, {})
+                else:
+                    setattr(self, field, None)
 
 
 class UpdateUser(BaseModel):

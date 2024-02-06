@@ -72,7 +72,7 @@ def temporarily_add_token(reset_code, fetched_email, db):
         user_query = db.query(UsersAuth).filter(UsersAuth.user_email == fetched_email)
 
         user_query.update({"change_password_token": reset_code})
-        db.commit()
+
         create_smtp_session(fetched_email, reset_code)
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
