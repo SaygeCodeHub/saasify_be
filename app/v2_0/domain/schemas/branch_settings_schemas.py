@@ -12,11 +12,12 @@ class GetBranchSettings(BaseModel):
     time_out: Optional[datetime]
     timezone: Optional[datetime]
     currency: Optional[str]
-    default_approver: Optional[int]
+    default_approver: Optional[str]
     overtime_rate: Optional[float]
     overtime_rate_per: Optional[str]
     total_medical_leaves: Optional[int]
     total_casual_leaves: Optional[int]
+    geo_fencing: bool
 
 
 class UpdateBranchSettings(Modifier):

@@ -1,7 +1,10 @@
 """Service layer for Leaves"""
+import asyncio
 from datetime import datetime
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.service.push_notification_service import send_leave_notification, \
+    send_leave_status_notification
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import LeaveType, LeaveStatus
@@ -73,6 +76,10 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             db.add(new_leave_application)
             db.commit()
             db.refresh(new_leave_application)
+
+            asyncio.run(
+                send_leave_notification(leave_application, leave_application.approvers, user_id, company_id, branch_id,
+                                        db))
 
             return ResponseDTO(200, msg,
                                ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
@@ -253,6 +260,8 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             application_response.modified_on = datetime.now()
             leave_query.update(application_response.__dict__)
             db.commit()
+
+            asyncio.run(send_leave_status_notification(application_response, user_id, company_id, branch_id, db))
 
             return ResponseDTO(200, "Leave status updated!", {})
         else:

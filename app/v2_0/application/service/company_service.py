@@ -61,6 +61,11 @@ def modify_branch_settings(settings, user_id, company_id, branch_id, db):
         return check
 
 
+def get_approver_name(default_approver, db):
+    approver = db.query(UserDetails).filter(UserDetails.user_id == default_approver).first()
+    return approver.first_name + " " + approver.last_name
+
+
 def fetch_branch_settings(user_id, company_id, branch_id, db):
     """Fetches the branch settings"""
     try:
@@ -73,9 +78,10 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
 
         if check is None:
             settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
-
             if settings is None:
                 return ResponseDTO(404, "Settings do not exist!", {})
+
+            settings.default_approver = get_approver_name(settings.default_approver, db)
 
             result = GetBranchSettings(**settings.__dict__)
 

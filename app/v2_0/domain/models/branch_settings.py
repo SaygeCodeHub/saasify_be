@@ -16,7 +16,7 @@ class BranchSettings(Base):
     working_days = Column(Integer, nullable=True)
     time_in = Column(DateTime(timezone=True), nullable=True)
     time_out = Column(DateTime(timezone=True), nullable=True)
-    timezone = Column(DateTime(timezone=True), nullable=True)
+    timezone = Column(DateTime(timezone=True), nullable=True,server_default=text("(now() at time zone 'IST')"))
     currency = Column(String, nullable=True)
     default_approver = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     total_medical_leaves = Column(Integer, nullable=True)
@@ -27,3 +27,4 @@ class BranchSettings(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
+    geo_fencing = Column(Boolean,nullable=True,server_default=text('true'))

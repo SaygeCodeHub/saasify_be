@@ -6,6 +6,10 @@ from pydantic import BaseModel
 from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
 
 
+class DeviceToken(BaseModel):
+    device_token: str
+
+
 class Credentials(BaseModel):
     """Used to get the credentials of an individual"""
     email: str
@@ -30,9 +34,3 @@ class GetUserDataResponse(BaseModel):
     company_id: int
     company_name: str
     branches: List
-
-
-class FirebasePushNotificationJson(BaseModel):
-    device_token: str
-    title: str
-    body: str

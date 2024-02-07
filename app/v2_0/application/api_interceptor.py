@@ -1,8 +1,7 @@
 """Apis are intercepted in this file"""
 from typing import Optional
 
-import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi import Depends
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
@@ -29,7 +28,7 @@ from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
-from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, FirebasePushNotificationJson
+from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
 from app.v2_0.infrastructure.database import engine, get_db, Base
 
 router = APIRouter()
@@ -212,36 +211,6 @@ def add_approver(approver: AddApprover, user_id: int, company_id: int, branch_id
     return update_approver(approver, user_id, company_id, branch_id, db)
 
 
-"""----------------------------------------------Push notification APIs-------------------------------------------------------------------"""
-
-
-@router.post('/v2.0/{company_id}/{branch_id}/{user_id}/sendPushNotification')
-def send_notification(parameter: FirebasePushNotificationJson):
-    server_key = 'AAAAMh0B0ok:APA91bHtNakNYQgnn9uvHfcAMVrQORfb7zLjbeY-VnC6R8e832rld_6OztK2hhMvGQC0gHjvwIr-B5w8t1dTqiE7j7NqGlejQiO7X72Ol-KwzbSN9rWgE8MM3RGlcgDSEjzpmZrXFmKy'
-    fcm_endpoint = 'https://fcm.googleapis.com/fcm/send'
-
-    message = {
-        'to': FirebasePushNotificationJson.device_token,
-        'notification': {
-            'title': FirebasePushNotificationJson.title,
-            'body': FirebasePushNotificationJson.body,
-        },
-    }
-
-    headers = {
-        'Authorization': f'key={server_key}',
-        'Content-Type': 'application/json',
-    }
-
-    with httpx.AsyncClient() as client:
-        response = client.post(fcm_endpoint, json=message, headers=headers)
-
-        if response.status_code == 200:
-            return ResponseDTO(200, "Notification sent successfully", {})
-        else:
-            return ResponseDTO(204, "Exception!", HTTPException(status_code=response.status_code, detail=response.text))
-
-
 """----------------------------------------------Attendance related APIs-------------------------------------------------------------------"""
 
 
@@ -289,6 +258,7 @@ def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depe
 """----------------------------------------------Home Screen API-------------------------------------------------------------------"""
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/initializeApi")
-def get_home_screen_data(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return fetch_home_screen_data(user_id, company_id, branch_id, db)
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/initializeApi")
+def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id: int, branch_id: int,
+                         db=Depends(get_db)):
+    return fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
