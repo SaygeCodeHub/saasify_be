@@ -4,18 +4,20 @@ from datetime import datetime, time
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.ucb_service import add_branch_to_ucb, add_company_to_ucb
+from app.v2_0.application.service.module_service import add_module
+from app.v2_0.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, add_new_branch_to_ucb
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import ActivityStatus
+from app.v2_0.domain.models.enums import ActivityStatus, Modules
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
 from app.v2_0.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
+from app.v2_0.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
 
 
@@ -91,6 +93,7 @@ def import_hq_settings(branch_id, company_id, user_id, db):
         hq_settings = db.query(BranchSettings).filter(
             BranchSettings.company_id == company_id).filter(
             BranchSettings.is_hq_settings == "true").first()
+
         imported_settings = BranchSettings(branch_id=branch_id, company_id=company_id,
                                            is_hq_settings=False,
                                            default_approver=hq_settings.default_approver,
@@ -101,7 +104,6 @@ def import_hq_settings(branch_id, company_id, user_id, db):
                                            overtime_rate=hq_settings.overtime_rate,
                                            overtime_rate_per=hq_settings.overtime_rate_per)
         db.add(imported_settings)
-        db.flush()
 
         return ResponseDTO(200, "Settings Imported successfully", {})
     except Exception as exc:
@@ -123,7 +125,6 @@ def add_branch_settings(company_settings, user_id, db):
                                           total_medical_leaves=12, overtime_rate_per="HOUR",
                                           default_approver=company_settings.default_approver)
             db.add(new_settings)
-            db.flush()
 
         else:
             import_hq_settings(company_settings.branch_id, company_settings.company_id, user_id, db)
@@ -144,7 +145,32 @@ def set_branch_settings(new_branch, user_id, company_id, db):
     add_branch_settings(company_settings, user_id, db)
 
 
-def add_branch(branch, user_id, company_id, db, is_init: bool):
+def add_new_branch(branch, user_id, company_id, db):
+    company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
+    if company_exists is None:
+        return ResponseDTO(404, "Company not found!", {})
+
+    new_branch = Branches(branch_name=branch.branch_name, company_id=company_id,
+                          activity_status=ActivityStatus.ACTIVE,
+                          is_head_quarter=branch.is_head_quarter)
+    db.add(new_branch)
+    db.flush()
+    add_new_branch_to_ucb(new_branch, user_id, company_id, db)
+    set_branch_settings(new_branch, user_id, company_id, db)
+
+    db.commit()
+
+    return ResponseDTO(200, "Branch created successfully!",
+                       CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id))
+
+
+def get_accessible_modules(new_branch, db):
+    # Fetches the ucb entry of newly stored branch
+    branch_in_ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == new_branch.branch_id).first()
+    return branch_in_ucb.accessible_modules
+
+
+def add_init_branch(branch, user_id, company_id, db):
     """Creates a branch for a company"""
     try:
         company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
@@ -158,24 +184,20 @@ def add_branch(branch, user_id, company_id, db, is_init: bool):
         db.flush()
 
         # Adds the branch in Users_Company_Branches table
-        add_branch_to_ucb(new_branch, user_id, company_id, db)
+        add_init_branch_to_ucb(new_branch, user_id, company_id, db)
+
         set_branch_settings(new_branch, user_id, company_id, db)
+
+        # Adds HR module by default to the branch
+        # module = ModuleSchema
+        # module.modules = [Modules.HR]
+        # add_module(module, user_id, new_branch.branch_id, company_id, db)
+
         db.commit()
+        return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id)
 
-        # Fetches the ucb entry of newly stored branch
-        branch_in_ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == new_branch.branch_id).first()
-
-        if is_init:
-            return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
-                                        modules=branch_in_ucb.accessible_modules)
-        else:
-            return ResponseDTO(200, "Branch created successfully!",
-                               CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id,
-                                                    modules=branch_in_ucb.accessible_modules))
     except Exception as exc:
         db.rollback()
-        # if db.in_transaction:
-        #     return ResponseDTO(200, "The session was rolled back", {})
         return ResponseDTO(204, str(exc), {})
 
 
@@ -240,7 +262,7 @@ def add_company(company, user_id, db):
         branch = AddBranch
         branch.branch_name = company.branch_name
         branch.is_head_quarter = company.is_head_quarter
-        init_branch = add_branch(branch, user_id, new_company.company_id, db, True)
+        init_branch = add_init_branch(branch, user_id, new_company.company_id, db)
 
         db.commit()
 

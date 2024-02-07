@@ -30,3 +30,9 @@ class GetUserDataResponse(BaseModel):
     company_id: int
     company_name: str
     branches: List
+
+
+class FirebasePushNotificationJson(BaseModel):
+    device_token: str
+    title: str
+    body: str
