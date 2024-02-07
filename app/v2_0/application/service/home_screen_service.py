@@ -4,16 +4,15 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.leave_service import get_authorized_leave_requests, format_pending_leaves
+from app.v2_0.application.service.leave_service import get_authorized_leave_requests
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branches import Branches
-from app.v2_0.domain.models.enums import LeaveStatus, Features, DesignationEnum
+from app.v2_0.domain.models.enums import LeaveStatus, Features
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.domain.schemas.home_screen_schemas import HomeScreenAPI, Salaries
-from app.v2_0.domain.schemas.leaves_schemas import GetPendingLeaves
 
 
 def get_home_screen_branches(user_id, db):
