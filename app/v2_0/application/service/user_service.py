@@ -236,50 +236,48 @@ def modify_user(user, user_id, company_id, branch_id, u_id, db):
     """Updates a User"""
     """user_id is the person who will be updating the person with u_id as the user_id"""
 
-    # try:
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, db)
 
-    check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        if check is not None:
+            return check
 
-    if check is not None:
-        return check
-
-    else:
-        if u_id == "":
-
-            response = add_employee_manually(user, user_id, company_id, branch_id, db)
-
-            if response is None:
-                return ResponseDTO(200, "User added successfully", {})
-            else:
-                return response
         else:
-            user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
-            user_exists = user_query.first()
+            if u_id == "":
 
-            contact_exists = db.query(UserDetails).filter(
-                UserDetails.user_contact == user.personal_info.user_contact).filter(
-                UserDetails.user_id != u_id).first()
+                response = add_employee_manually(user, user_id, company_id, branch_id, db)
 
-            if not user_exists:
-                return ResponseDTO(404, "User not found!", {})
-            if contact_exists:
-                return ResponseDTO(409, "User with this contact already exists!", contact_exists)
+                if response is None:
+                    return ResponseDTO(200, "User added successfully", {})
+                else:
+                    return response
+            else:
+                user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
+                user_exists = user_query.first()
 
-            update_personal_info(user.personal_info, user_query, user_id)
+                contact_exists = db.query(UserDetails).filter(
+                    UserDetails.user_contact == user.personal_info.user_contact).filter(
+                    UserDetails.user_id != u_id).first()
 
-            docs_resp = update_user_documents(user.documents, u_id, user_id, db)
-            if docs_resp is not None:
-                return docs_resp
+                if not user_exists:
+                    return ResponseDTO(404, "User not found!", {})
+                if contact_exists:
+                    return ResponseDTO(409, "User with this contact already exists!", contact_exists)
 
-            update_user_finance(user.financial, u_id, user_id, db)
-            db.commit()
+                update_personal_info(user.personal_info, user_query, user_id)
 
-            return ResponseDTO(200, "User updated successfully", {})
+                docs_resp = update_user_documents(user.documents, u_id, user_id, db)
+                if docs_resp is not None:
+                    return docs_resp
 
+                update_user_finance(user.financial, u_id, user_id, db)
+                db.commit()
 
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
+                return ResponseDTO(200, "User updated successfully", {})
+
+    except Exception as exc:
+        db.rollback()
+        return ResponseDTO(204, str(exc), {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):

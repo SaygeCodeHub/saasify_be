@@ -5,7 +5,7 @@ from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.ucb_service import add_employee_to_ucb
 from app.v2_0.application.service.user_service import add_user_details
-from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist, get_all_features
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.enums import DesignationEnum, ActivityStatus
