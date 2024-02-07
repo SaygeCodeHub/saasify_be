@@ -49,7 +49,8 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
 def add_company_to_ucb(new_company, user_id, db):
     """Adds the company to ucb table"""
     try:
-        db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
+        ucb_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id)
+        ucb_query.update(
             {"company_id": new_company.company_id, "designations": [DesignationEnum.OWNER], "accessible_modules": [],
              "accessible_features": []})
 
@@ -57,28 +58,18 @@ def add_company_to_ucb(new_company, user_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def add_branch_to_ucb(new_branch, user_id, company_id, db):
+def add_init_branch_to_ucb(new_branch, user_id, company_id, db):
     """Adds the branch to Users company branch table"""
-    try:
-        b = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
+    ucb_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id)
+    ucb_query.update({"branch_id": new_branch.branch_id})
 
-        if b.branch_id is None:
-            db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).update(
-                {"branch_id": new_branch.branch_id})
 
-        elif b.branch_id != new_branch.branch_id:
-            user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
-            approvers_list = user.approvers
-            new_branch_in_ucb = UserCompanyBranch(user_id=user_id, company_id=company_id,
-                                                  branch_id=new_branch.branch_id,
-                                                  designations=[DesignationEnum.OWNER], approvers=approvers_list,
-                                                  accessible_modules=[], accessible_features=[])
-            db.add(new_branch_in_ucb)
-
-        module = ModuleSchema
-        module.modules = [Modules.HR]
-        add_module(module, user_id, new_branch.branch_id, company_id, db)
-
-    except Exception as exc:
-        db.rollback()
-        return ResponseDTO(204, str(exc), {})
+def add_new_branch_to_ucb(new_branch, user_id, company_id, db):
+    """Adds a new branch to an existing company"""
+    b = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).first()
+    approvers_list = b.approvers
+    new_branch_in_ucb = UserCompanyBranch(user_id=user_id, company_id=company_id,
+                                          branch_id=new_branch.branch_id,
+                                          designations=[DesignationEnum.OWNER], approvers=approvers_list,
+                                          accessible_modules=[], accessible_features=[])
+    db.add(new_branch_in_ucb)

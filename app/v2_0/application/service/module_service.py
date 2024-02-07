@@ -22,9 +22,10 @@ def add_module(module, user_id, branch_id, company_id, db):
             for m in module.modules:
                 new_module = ModuleSubscriptions(company_id=company_id, branch_id=branch_id, module_name=m)
                 db.add(new_module)
-                db.commit()
 
             add_module_to_ucb(branch_id, user_id, module.modules, db)
+
+            db.commit()
 
             return ResponseDTO(200, "Module(s) added successfully", {})
         else:
@@ -55,7 +56,7 @@ def add_module_to_ucb(branch_id, user_id, module_array, db):
         query.update(
             {"accessible_modules": subscribed_modules_set,
              "accessible_features": features_array})
-        db.commit()
+        print("modules in ucb:", query.first().__dict__)
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})

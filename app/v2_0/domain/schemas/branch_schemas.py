@@ -1,6 +1,6 @@
 """Schemas for Branches"""
 from datetime import date, datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -37,4 +37,4 @@ class GetBranch(BaseModel):
 class CreateBranchResponse(BaseModel):
     branch_name: str
     branch_id: int
-    modules: List[Modules]
+    # modules: Optional[List[Modules]]
