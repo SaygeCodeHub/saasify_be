@@ -144,9 +144,9 @@ def update_company(company: UpdateCompany, user_id: int, company_id: int, branch
 """----------------------------------------------Branch related APIs-------------------------------------------------------------------"""
 
 
-@router.post("/v2.0/{company_id}/{user_id}/createBranch")
-def create_branch(branch: AddBranch, user_id: int, company_id: int, db=Depends(get_db)):
-    return add_new_branch(branch, user_id, company_id, db)
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/createBranch")
+def create_branch(branch: AddBranch, user_id: int, branch_id: int, company_id: int, db=Depends(get_db)):
+    return add_new_branch(branch, user_id, branch_id, company_id, db)
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch/{bran_id}")

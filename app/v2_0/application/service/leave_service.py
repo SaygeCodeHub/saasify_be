@@ -3,6 +3,7 @@ import asyncio
 from datetime import datetime
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.service.company_service import get_approver_data
 from app.v2_0.application.service.push_notification_service import send_leave_notification, \
     send_leave_status_notification
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
@@ -13,7 +14,7 @@ from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
-    GetPendingLeaves, ApproverData, FetchAllLeavesResponse
+    GetPendingLeaves, FetchAllLeavesResponse
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
@@ -27,9 +28,7 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
             approver_data = []
 
             for a in ucb_user.approvers:
-                approver = db.query(UserDetails).filter(UserDetails.user_id == a).first()
-
-                data = ApproverData(id=a, approver_name=approver.first_name + " " + approver.last_name)
+                data = get_approver_data(a, db)
                 approver_data.append(data)
 
             result = LoadApplyLeaveScreen(casual_leaves=user.casual_leaves, medical_leaves=user.medical_leaves,

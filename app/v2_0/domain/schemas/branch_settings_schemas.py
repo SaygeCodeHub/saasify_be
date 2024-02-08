@@ -4,6 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from app.v2_0.domain.schemas.leaves_schemas import ApproverData
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
 
 
@@ -12,7 +13,7 @@ class GetBranchSettings(BaseModel):
     time_out: Optional[datetime]
     timezone: Optional[datetime]
     currency: Optional[str]
-    default_approver: Optional[str]
+    default_approver: Optional[ApproverData]
     overtime_rate: Optional[float]
     overtime_rate_per: Optional[str]
     total_medical_leaves: Optional[int]
