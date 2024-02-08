@@ -4,20 +4,18 @@ from datetime import datetime, time
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.module_service import add_module
 from app.v2_0.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, add_new_branch_to_ucb
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import ActivityStatus, Modules
+from app.v2_0.domain.models.enums import ActivityStatus
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
 from app.v2_0.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
-from app.v2_0.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
 
 
@@ -40,7 +38,7 @@ def set_employee_leaves(settings, company_id, db):
 def modify_branch_settings(settings, user_id, company_id, branch_id, db):
     """Updates the branch settings"""
 
-    check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
     if check is None:
         existing_settings_query = db.query(BranchSettings).filter(
@@ -74,7 +72,7 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
@@ -214,7 +212,7 @@ def fetch_branches(user_id, company_id, branch_id, db):
         if user is None:
             ResponseDTO(404, "User not found!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             branches = db.query(Branches).filter(Branches.company_id == company_id).all()
@@ -229,7 +227,7 @@ def fetch_branches(user_id, company_id, branch_id, db):
 def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
     """Updates a branch"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             branch_query = db.query(Branches).filter(Branches.branch_id == bran_id)
@@ -287,7 +285,7 @@ def fetch_company(user_id, company_id, branch_id, db):
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             existing_companies_query = db.query(Companies).filter(
@@ -317,7 +315,7 @@ def modify_company(company, user_id, company_id, branch_id, comp_id, db):
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             company_query = db.query(Companies).filter(Companies.company_id == comp_id)

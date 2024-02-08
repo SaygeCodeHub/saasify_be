@@ -1,8 +1,11 @@
 """Contains the code that acts as a utility to various files"""
+from typing import Optional, List
+
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import Features
+from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 
 
 def check_if_company_and_branch_exist(company_id, branch_id, user_id, db):
@@ -30,3 +33,20 @@ def get_all_features(module_array):
             if feature.startswith(module.name):
                 features.append(feature)
     return features
+
+
+def ensure_optional_fields(self):
+    for field in self.__annotations__:
+        if field in self.__dict__ and self.__dict__[field] is None:
+            if self.__annotations__[field] == str:
+                setattr(self, field, "")
+            if self.__annotations__[field] == Optional[str]:
+                setattr(self, field, "")
+            elif self.__annotations__[field] == List:
+                setattr(self, field, [])
+            elif self.__annotations__[field] == Optional[List]:
+                setattr(self, field, [])
+            elif self.__annotations__[field] == dict:
+                setattr(self, field, {})
+            else:
+                setattr(self, field, None)

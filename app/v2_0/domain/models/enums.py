@@ -49,4 +49,3 @@ class Features(PyEnum):
     HR_MY_LEAVES = 0.7
     HR_TIMESHEET = 0.8
     HR_FEATURE_1 = 0.9
-

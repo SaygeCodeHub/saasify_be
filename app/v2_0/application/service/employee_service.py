@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
-from app.v2_0.application.service.ucb_service import add_employee_to_ucb
+from app.v2_0.application.service.ucb_service import add_owner_to_ucb
 from app.v2_0.application.service.user_service import add_user_details
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
@@ -35,27 +35,27 @@ def set_employee_details(new_employee, branch_id, db):
 
 def assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db):
     """Adds the same employee to a different branch of the company"""
-    add_employee_to_ucb(employee, user, company_id, branch_id, db)
+    add_owner_to_ucb(employee, user, company_id, branch_id, db)
 
 
 def invite_employee(employee, user_id, company_id, branch_id, db):
     """Adds an employee in the db"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id,user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
 
         if check is None:
             user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
             inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+            ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).first()
 
-            new_employee = UsersAuth(user_email=employee.user_email,
-                                     invited_by=inviter.user_email)
-            if user:
+            if user and ucb_user:
                 assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)
 
             else:
+                new_employee = UsersAuth(user_email=employee.user_email, invited_by=inviter.user_email)
                 db.add(new_employee)
                 db.flush()
-                add_employee_to_ucb(employee, new_employee, company_id, branch_id, db)
+                add_owner_to_ucb(employee, new_employee, company_id, branch_id, db)
                 set_employee_details(new_employee, branch_id, db)
                 create_password_reset_code(employee.user_email, db)
                 db.commit()
