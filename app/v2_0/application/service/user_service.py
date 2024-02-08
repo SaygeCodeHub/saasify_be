@@ -4,7 +4,7 @@ from datetime import datetime
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
-from app.v2_0.application.service.ucb_service import add_user_to_ucb, add_owner_to_ucb
+from app.v2_0.application.service.ucb_service import add_user_to_ucb, add_employee_to_ucb
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.companies import Companies
@@ -318,7 +318,7 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
         ucb_emp.designations = user.official.designations
         ucb_emp.accessible_modules = user.official.accessible_modules
         ucb_emp.accessible_features = user.official.accessible_features
-        add_owner_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
+        add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
 
         info_resp = store_personal_info(user.personal_info, new_employee.user_id, branch_id, db)
         if info_resp is not None:
@@ -350,7 +350,7 @@ def add_employee_manually(user, user_id, company_id, branch_id, db):
             ucb_emp.designations = user.official.designations
             ucb_emp.accessible_modules = user.official.accessible_modules
             ucb_emp.accessible_features = user.official.accessible_features
-            add_owner_to_ucb(ucb_emp, user_in_user_auth, company_id, branch_id, db)
+            add_employee_to_ucb(ucb_emp, user_in_user_auth, company_id, branch_id, db)
 
     db.commit()
 
@@ -395,7 +395,7 @@ def modify_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db):
                 ucb_emp.designations = user.official.designations
                 ucb_emp.accessible_modules = user.official.accessible_modules
                 ucb_emp.accessible_features = user.official.accessible_features
-                add_owner_to_ucb(ucb_emp, user_exists, company_id, branch_id, db)
+                add_employee_to_ucb(ucb_emp, user_exists, company_id, branch_id, db)
 
             update_personal_info(user.personal_info, user_query, user_id)
 

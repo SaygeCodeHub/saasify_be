@@ -19,10 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('user_company_branch', sa.Column('module', Enum('Modules', name='modules')))
-    op.add_column('user_company_branch', sa.Column('feature', Enum('Features', name='features')))
+    op.add_column('user_company_branch',
+                  sa.Column('accessible_modules', sa.ARRAY(Enum('Modules', name='modules')), nullable=True))
+    op.add_column('user_company_branch',
+                  sa.Column('accessible_features', sa.ARRAY(Enum('Features', name='features')), nullable=True))
 
 
 def downgrade() -> None:
-    op.drop_column('user_company_branch', 'module')
-    op.drop_column('user_company_branch', 'feature')
+    op.drop_column('user_company_branch', 'accessible_modules')
+    op.drop_column('user_company_branch', 'accessible_features')
