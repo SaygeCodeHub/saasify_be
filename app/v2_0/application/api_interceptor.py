@@ -1,8 +1,7 @@
 """Apis are intercepted in this file"""
 from typing import Optional
 
-import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi import Depends
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
@@ -10,8 +9,8 @@ from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, change_password, check_token
 from app.v2_0.application.service.attendance_service import mark_attendance_func, get_todays_attendance, \
     attendance_history_func
-from app.v2_0.application.service.company_service import add_company, add_branch, fetch_company, modify_company, \
-    modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings
+from app.v2_0.application.service.company_service import add_company, fetch_company, modify_company, \
+    modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings, add_new_branch
 from app.v2_0.application.service.employee_service import invite_employee, fetch_employees, fetch_employee_salaries
 from app.v2_0.application.service.home_screen_service import fetch_home_screen_data
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
@@ -29,7 +28,7 @@ from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
-from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject
+from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
 from app.v2_0.infrastructure.database import engine, get_db, Base
 
 router = APIRouter()
@@ -147,7 +146,7 @@ def update_company(company: UpdateCompany, user_id: int, company_id: int, branch
 
 @router.post("/v2.0/{company_id}/{user_id}/createBranch")
 def create_branch(branch: AddBranch, user_id: int, company_id: int, db=Depends(get_db)):
-    return add_branch(branch, user_id, company_id, db, False)
+    return add_new_branch(branch, user_id, company_id, db)
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch/{bran_id}")
@@ -212,36 +211,6 @@ def add_approver(approver: AddApprover, user_id: int, company_id: int, branch_id
     return update_approver(approver, user_id, company_id, branch_id, db)
 
 
-"""----------------------------------------------Push notification APIs-------------------------------------------------------------------"""
-
-
-@router.post('/v2.0/sendPushNotification')
-def send_notification(device_token: str, title: str, body: str):
-    server_key = 'AAAAMh0B0ok:APA91bHtNakNYQgnn9uvHfcAMVrQORfb7zLjbeY-VnC6R8e832rld_6OztK2hhMvGQC0gHjvwIr-B5w8t1dTqiE7j7NqGlejQiO7X72Ol-KwzbSN9rWgE8MM3RGlcgDSEjzpmZrXFmKy'
-    fcm_endpoint = 'https://fcm.googleapis.com/fcm/send'
-
-    message = {
-        'to': device_token,
-        'notification': {
-            'title': title,
-            'body': body,
-        },
-    }
-
-    headers = {
-        'Authorization': f'key={server_key}',
-        'Content-Type': 'application/json',
-    }
-
-    with httpx.AsyncClient() as client:
-        response = client.post(fcm_endpoint, json=message, headers=headers)
-
-        if response.status_code == 200:
-            return {'message': 'Notification sent successfully'}
-        else:
-            raise HTTPException(status_code=response.status_code, detail=response.text)
-
-
 """----------------------------------------------Attendance related APIs-------------------------------------------------------------------"""
 
 
@@ -289,6 +258,7 @@ def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depe
 """----------------------------------------------Home Screen API-------------------------------------------------------------------"""
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/initializeApi")
-def get_home_screen_data(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return fetch_home_screen_data(user_id, company_id, branch_id, db)
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/initializeApi")
+def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id: int, branch_id: int,
+                         db=Depends(get_db)):
+    return fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)

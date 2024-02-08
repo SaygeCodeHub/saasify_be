@@ -98,6 +98,7 @@ def initiate_pwd_reset(email, db):
         if fetched_user:
             fetched_email = fetched_user.user_email
             create_password_reset_code(fetched_email, db)
+            db.commit()
         else:
             return ResponseDTO(404, "User not found", {})
         return ResponseDTO(200, "Email sent successfully", {})

@@ -1,6 +1,6 @@
 """Model - UserCompanyBranch"""
 
-from sqlalchemy import Column, Integer, ForeignKey, Enum, ARRAY
+from sqlalchemy import Column, Integer, ForeignKey, Enum, ARRAY, String
 
 from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
 from app.v2_0.infrastructure.database import Base
@@ -18,3 +18,4 @@ class UserCompanyBranch(Base):
     approvers = Column(ARRAY(Integer), nullable=False)
     accessible_modules = Column(ARRAY(Enum(Modules)), nullable=True)
     accessible_features = Column(ARRAY(Enum(Features)), nullable=True)
+    device_token = Column(String,nullable=True)

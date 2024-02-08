@@ -6,6 +6,10 @@ from pydantic import BaseModel
 from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
 
 
+class DeviceToken(BaseModel):
+    device_token: str
+
+
 class Credentials(BaseModel):
     """Used to get the credentials of an individual"""
     email: str

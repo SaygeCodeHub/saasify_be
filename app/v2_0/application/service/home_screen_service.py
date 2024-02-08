@@ -66,7 +66,7 @@ def get_monthly_salary_rollout(user_id, branch_id, db):
     return 0
 
 
-def fetch_home_screen_data(user_id, company_id, branch_id, db):
+def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db):
     """Fetches data to be shown on the home screen"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, db)
@@ -76,6 +76,13 @@ def fetch_home_screen_data(user_id, company_id, branch_id, db):
             branches = get_home_screen_branches(user_id, db)
             num_of_pending_leaves = get_home_screen_pending_leaves(user_id, db)
             salary_rollout = get_monthly_salary_rollout(user_id, branch_id, db)
+
+            # Adds the device token of the user with id user_id belonging to branch_id and company_id
+            user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(UserCompanyBranch.company_id == company_id).filter(
+                UserCompanyBranch.branch_id == branch_id)
+            user_query.update({"device_token": device_token_obj.device_token})
+            db.commit()
+
             return ResponseDTO(200, "Data fetched!",
                                HomeScreenAPI(branches=branches, pending_leaves=num_of_pending_leaves,
                                              monthly_salary_rollout=salary_rollout))
