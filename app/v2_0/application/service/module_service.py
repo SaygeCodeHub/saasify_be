@@ -16,7 +16,7 @@ def add_module(module, user_id, branch_id, company_id, db):
         if user is None:
             return ResponseDTO(404, f"User with user id: {user_id} not found", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             for m in module.modules:
@@ -69,7 +69,7 @@ def fetch_subscribed_modules(user_id, company_id, branch_id, db):
         if user is None:
             return ResponseDTO(404, f"User with user id: {user_id} not found", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
             modules = db.query(ModuleSubscriptions).filter(ModuleSubscriptions.branch_id == branch_id).all()
@@ -97,7 +97,7 @@ def fetch_all_modules(user_id, company_id, branch_id, db):
         if user is None:
             return ResponseDTO(404, f"User with user id: {user_id} not found", {})
 
-        check = check_if_company_and_branch_exist(company_id, branch_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
 

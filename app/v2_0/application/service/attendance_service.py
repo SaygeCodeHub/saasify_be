@@ -5,8 +5,8 @@ import pytz
 from fastapi import Depends
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.attendance import Attendance
-from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.infrastructure.database import get_db
 
 
@@ -77,8 +77,8 @@ def check_out(attendance, db=Depends(get_db)):
 
 def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     try:
-        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-        if user:
+        user = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+        if user is None:
             attendance = fetch_attendance_today(company_id, branch_id, user_id, db)
 
             if attendance:
@@ -94,9 +94,9 @@ def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depen
 
 def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     try:
-        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+        user = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-        if user:
+        if user is None:
             attendance = fetch_attendance_today(company_id, branch_id, user_id, db)
 
             attendance_today = {"check_in": attendance.check_in if attendance else None,
@@ -113,8 +113,8 @@ def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depe
 def attendance_history_func(user_id: int, company_id: int, branch_id: int, db=Depends(get_db),
                             u_id: Optional[str] = None):
     try:
-        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-        if user:
+        user = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+        if user is None:
             attendance = (
                 db.query(Attendance).filter(Attendance.user_id == (u_id if u_id else user_id)).filter(
                     Attendance.company_id == company_id).filter(Attendance.branch_id == branch_id).all())
