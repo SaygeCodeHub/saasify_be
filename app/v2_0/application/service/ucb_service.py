@@ -17,35 +17,38 @@ def add_user_to_ucb(new_user, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def add_owner_to_ucb(employee, new_employee, company_id, branch_id, db):
+def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
     """Adds employee to the ucb table"""
     company = db.query(Companies).filter(Companies.company_id == company_id).first()
     approvers_list = [company.owner]
     if employee.accessible_modules is None:
         employee.accessible_modules = [0]
     features_array = employee.accessible_features
-    try:
-        if len(employee.approvers) != 0:
-            approvers_set = set(employee.approvers)
-            approvers_set.add(company.owner)
-            approvers_list = list(approvers_set)
+    # try:
+    if len(employee.approvers) != 0:
+        approvers_set = set(employee.approvers)
+        approvers_set.add(company.owner)
+        approvers_list = list(approvers_set)
 
-        if len(employee.accessible_features) == 0:
-            features_array = get_all_features(employee.accessible_modules)
+    if len(employee.accessible_features) == 0:
+        features_array = get_all_features(employee.accessible_modules)
 
-        ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
-                                         branch_id=branch_id,
-                                         designations=employee.designations, approvers=approvers_list,
-                                         accessible_modules=employee.accessible_modules,
-                                         accessible_features=features_array)
+    print(new_employee)
+    print(employee.__dict__)
+    ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
+                                     branch_id=branch_id,
+                                     designations=employee.designations, approvers=approvers_list,
+                                     accessible_modules=employee.accessible_modules,
+                                     accessible_features=features_array)
 
-        db.add(ucb_employee)
-        db.commit()
-        db.refresh(ucb_employee)
+    db.add(ucb_employee)
+    db.commit()
+    db.refresh(ucb_employee)
+    print(f"after commit {ucb_employee.ucb_id}")
 
-    except Exception as exc:
-        db.rollback()
-        return ResponseDTO(204, str(exc), {})
+# except Exception as exc:
+#     db.rollback()
+#     return ResponseDTO(204, str(exc), {})
 
 
 def add_company_to_ucb(new_company, user_id, db):
