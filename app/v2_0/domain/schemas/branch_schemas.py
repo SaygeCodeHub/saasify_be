@@ -32,6 +32,7 @@ class GetBranch(BaseModel):
     branch_id: int
     accessible_modules: List[Modules]
     accessible_features: List[Features]
+    geo_fencing: bool
 
 
 class CreateBranchResponse(BaseModel):

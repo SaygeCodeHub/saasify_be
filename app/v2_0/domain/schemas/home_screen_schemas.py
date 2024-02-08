@@ -8,10 +8,11 @@ from app.v2_0.domain.schemas.branch_schemas import GetBranch
 
 class HomeScreenAPI(BaseModel):
     branches: List[GetBranch]
+    total_employees: int
     pending_leaves: int
     monthly_salary_rollout: float
 
 
 class Salaries(BaseModel):
-    salary: float
+    basic_salary: float
     deduction: float
