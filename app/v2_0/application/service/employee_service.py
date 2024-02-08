@@ -40,32 +40,32 @@ def assign_new_branch_to_existing_employee(employee, user, company_id, branch_id
 
 def invite_employee(employee, user_id, company_id, branch_id, db):
     """Adds an employee in the db"""
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
+    # try:
+    check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
 
-        if check is None:
-            user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
-            inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-            ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).first()
+    if check is None:
+        user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
+        inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+        # ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).first()
 
-            if user and ucb_user:
-                assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)
+        if user:
+            assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)
 
-            else:
-                new_employee = UsersAuth(user_email=employee.user_email, invited_by=inviter.user_email)
-                db.add(new_employee)
-                db.flush()
-                add_owner_to_ucb(employee, new_employee, company_id, branch_id, db)
-                set_employee_details(new_employee, branch_id, db)
-                create_password_reset_code(employee.user_email, db)
-                db.commit()
-
-            return ResponseDTO(200, "Invite sent Successfully", {})
         else:
-            return check
+            new_employee = UsersAuth(user_email=employee.user_email, invited_by=inviter.user_email)
+            db.add(new_employee)
+            db.flush()
+            add_owner_to_ucb(employee, new_employee, company_id, branch_id, db)
+            set_employee_details(new_employee, branch_id, db)
+            create_password_reset_code(employee.user_email, db)
+            db.commit()
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+        return ResponseDTO(200, "Invite sent Successfully", {})
+    else:
+        return check
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def fetch_employees(company_id, branch_id, user_id, db):
@@ -85,7 +85,7 @@ def fetch_employees(company_id, branch_id, user_id, db):
                 result = [GetEmployees(employee_id=auth.user_id,
                                        name=details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
                                        user_contact=details.user_contact,
-                                       designations=ucb.designations,
+                                       designations=get_designation_name(ucb.designations),
                                        user_email=auth.user_email,
                                        current_address=details.
                                        current_address)]

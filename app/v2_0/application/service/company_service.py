@@ -337,6 +337,13 @@ def modify_company(company, user_id, company_id, branch_id, comp_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
+def get_designation_names(designations):
+    designation_names = []
+    for designation in designations:
+        designation_names.append(designation.name)
+    return designation_names
+
+
 def get_all_user_data(ucb, db):
     try:
         company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
@@ -353,7 +360,7 @@ def get_all_user_data(ucb, db):
             UserDataResponse(
                 branch_id=branch.branch_id,
                 branch_name=branch.branch_name,
-                designations=branch.designations,
+                designations=get_designation_names(branch.designations),
                 accessible_modules=branch.accessible_modules,
                 accessible_features=branch.accessible_features
             )

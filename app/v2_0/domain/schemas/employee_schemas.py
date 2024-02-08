@@ -12,7 +12,7 @@ class GetEmployees(BaseModel):
     employee_id: Optional[int] = None
     name: str
     user_contact: Optional[int]
-    designations: List[DesignationEnum]
+    designations: List[str]
     user_email: str
     current_address: Optional[str]
 
