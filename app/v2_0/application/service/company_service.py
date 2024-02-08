@@ -16,6 +16,7 @@ from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
 from app.v2_0.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
+from app.v2_0.domain.schemas.leaves_schemas import ApproverData
 from app.v2_0.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
 
 
@@ -59,9 +60,9 @@ def modify_branch_settings(settings, user_id, company_id, branch_id, db):
         return check
 
 
-def get_approver_name(default_approver, db):
-    approver = db.query(UserDetails).filter(UserDetails.user_id == default_approver).first()
-    return approver.first_name + " " + approver.last_name
+def get_approver_data(approver_id, db):
+    approver = db.query(UserDetails).filter(UserDetails.user_id == approver_id).first()
+    return ApproverData(id=approver_id, approver_name=approver.first_name + " " + approver.last_name)
 
 
 def fetch_branch_settings(user_id, company_id, branch_id, db):
@@ -79,7 +80,7 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
             if settings is None:
                 return ResponseDTO(404, "Settings do not exist!", {})
 
-            settings.default_approver = get_approver_name(settings.default_approver, db)
+            settings.default_approver = get_approver_data(settings.default_approver, db)
 
             result = GetBranchSettings(**settings.__dict__)
 
@@ -149,7 +150,7 @@ def set_branch_settings(new_branch, user_id, company_id, db):
     add_branch_settings(company_settings, user_id, db)
 
 
-def add_new_branch(branch, user_id, company_id, db):
+def add_new_branch(branch, user_id, branch_id, company_id, db):
     company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
     if company_exists is None:
         return ResponseDTO(404, "Company not found!", {})
