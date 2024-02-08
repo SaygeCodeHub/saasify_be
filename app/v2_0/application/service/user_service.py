@@ -390,7 +390,6 @@ def modify_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db):
                 return ResponseDTO(409, "User with this contact already exists!", contact_exists)
 
             if ucb_user is None:
-                print("here")
                 ucb_emp = InviteEmployee
                 ucb_emp.approvers = user.official.approvers
                 ucb_emp.designations = user.official.designations

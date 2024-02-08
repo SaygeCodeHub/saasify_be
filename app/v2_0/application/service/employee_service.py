@@ -46,9 +46,8 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         if check is None:
             user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
             inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-            ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).first()
 
-            if user and ucb_user:
+            if user:
                 assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)
 
             else:
@@ -85,7 +84,7 @@ def fetch_employees(company_id, branch_id, user_id, db):
                 result = [GetEmployees(employee_id=auth.user_id,
                                        name=details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
                                        user_contact=details.user_contact,
-                                       designations=ucb.designations,
+                                       designations=get_designation_name(ucb.designations),
                                        user_email=auth.user_email,
                                        current_address=details.
                                        current_address)]

@@ -25,7 +25,7 @@ class JsonObject(BaseModel):
 class UserDataResponse(BaseModel):
     branch_id: int
     branch_name: str
-    designations: List[DesignationEnum]
+    designations: List[str]
     accessible_modules: List[Modules]
     accessible_features: List[Features]
 

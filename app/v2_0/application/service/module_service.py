@@ -17,7 +17,6 @@ def add_module(module, user_id, branch_id, company_id, db):
             return ResponseDTO(404, f"User with user id: {user_id} not found", {})
 
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-
         if check is None:
             for m in module.modules:
                 new_module = ModuleSubscriptions(company_id=company_id, branch_id=branch_id, module_name=m)
@@ -35,31 +34,26 @@ def add_module(module, user_id, branch_id, company_id, db):
 
 
 def add_module_to_ucb(branch_id, user_id, module_array, db):
-    try:
-        query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
-            UserCompanyBranch.branch_id == branch_id)
+    query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
+        UserCompanyBranch.branch_id == branch_id)
 
-        user = query.first()
+    user = query.first()
 
-        if len(module_array) == 0:
-            subscribed_modules_set = []
-            features_array = []
-        else:
-            # Fetches the currently subscribed modules
-            subscribed_modules_set = set(user.accessible_modules)
+    if len(module_array) == 0:
+        subscribed_modules_set = []
+        features_array = []
+    else:
+        # Fetches the currently subscribed modules
+        subscribed_modules_set = set(user.accessible_modules)
 
-            for module in module_array:
-                subscribed_modules_set.add(module)
+        for module in module_array:
+            subscribed_modules_set.add(module)
 
-            features_array = get_all_features(subscribed_modules_set)
+        features_array = get_all_features(subscribed_modules_set)
 
-        query.update(
-            {"accessible_modules": subscribed_modules_set,
-             "accessible_features": features_array})
-        print("modules in ucb:", query.first().__dict__)
-
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    query.update(
+        {"accessible_modules": subscribed_modules_set,
+         "accessible_features": features_array})
 
 
 def fetch_subscribed_modules(user_id, company_id, branch_id, db):
