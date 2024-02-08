@@ -18,4 +18,4 @@ class UserCompanyBranch(Base):
     approvers = Column(ARRAY(Integer), nullable=False)
     accessible_modules = Column(ARRAY(Enum(Modules)), nullable=True)
     accessible_features = Column(ARRAY(Enum(Features)), nullable=True)
-    device_token = Column(String,nullable=True)
+    device_token = Column(String, nullable=True)

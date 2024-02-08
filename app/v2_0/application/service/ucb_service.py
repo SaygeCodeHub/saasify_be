@@ -1,14 +1,12 @@
 """Service layer for UserCompanyBranch"""
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.module_service import add_module
 from app.v2_0.application.utility.app_utility import get_all_features
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import DesignationEnum, Modules
+from app.v2_0.domain.models.enums import DesignationEnum
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
-from app.v2_0.domain.schemas.module_schemas import ModuleSchema
 
 
-def add_owner_to_ucb(new_user, db):
+def add_user_to_ucb(new_user, db):
     """Adds the data mapped to a user into db"""
     try:
         approver_list = [new_user.user_id]
@@ -19,10 +17,12 @@ def add_owner_to_ucb(new_user, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
+def add_owner_to_ucb(employee, new_employee, company_id, branch_id, db):
     """Adds employee to the ucb table"""
     company = db.query(Companies).filter(Companies.company_id == company_id).first()
     approvers_list = [company.owner]
+    if employee.accessible_modules is None:
+        employee.accessible_modules = [0]
     features_array = employee.accessible_features
     try:
         if len(employee.approvers) != 0:
@@ -40,6 +40,8 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
                                          accessible_features=features_array)
 
         db.add(ucb_employee)
+        db.commit()
+        db.refresh(ucb_employee)
 
     except Exception as exc:
         db.rollback()
