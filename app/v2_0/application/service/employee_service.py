@@ -81,13 +81,13 @@ def fetch_employees(company_id, branch_id, user_id, db):
 
             result = []
             for details, auth, ucb in employees_query:
-                result = [GetEmployees(employee_id=auth.user_id,
-                                       name=details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
-                                       user_contact=details.user_contact,
-                                       designations=get_designation_name(ucb.designations),
-                                       user_email=auth.user_email,
-                                       current_address=details.
-                                       current_address)]
+                result.append(GetEmployees(employee_id=auth.user_id,
+                                           name=details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
+                                           user_contact=details.user_contact,
+                                           designations=get_designation_name(ucb.designations),
+                                           user_email=auth.user_email,
+                                           current_address=details.
+                                           current_address))
 
             return ResponseDTO(200, "Employees fetched!", result)
         else:
