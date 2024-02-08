@@ -64,3 +64,14 @@ async def send_leave_status_notification(application_response, user_id, company_
 
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
+
+
+async def send_task_assigned_notification(assigned_task, user_id, company_id, branch_id, db):
+    """Sends a notification - Task assigned, to the assignee """
+    ucb_entry = db.query(UserCompanyBranch).filter(UserCompanyBranch.company_id == company_id).filter(
+        UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.user_id == assigned_task.assigned_to).first()
+    monitor = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
+    title = f"New task assigned! - {assigned_task.title}"
+    body = f"Description: {assigned_task.task_description}. Priority: {assigned_task.priority.name} Assigned by: {monitor.first_name} {monitor.last_name}"
+    result = await send_notification(ucb_entry.device_token, title, body)
+    print(result.__dict__)

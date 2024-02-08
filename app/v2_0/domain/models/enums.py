@@ -48,3 +48,14 @@ class Features(PyEnum):
     HR_APPLY_LEAVES = 0.6
     HR_MY_LEAVES = 0.7
     HR_TIMESHEET = 0.8
+
+
+class TaskPriority(PyEnum):
+    LOW = 0
+    MEDIUM = 1
+    HIGH = 2
+
+
+class TaskStatus(PyEnum):
+    PENDING = 0
+    DONE = 1
