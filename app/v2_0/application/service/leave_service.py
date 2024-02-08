@@ -26,10 +26,10 @@ def get_screen_apply_leave(user_id, company_id, branch_id, db):
 
             approver_data = []
 
-            for approver in ucb_user.approvers:
-                user = db.query(UserDetails).filter(UserDetails.user_id == approver).first()
+            for a in ucb_user.approvers:
+                approver = db.query(UserDetails).filter(UserDetails.user_id == a).first()
 
-                data = ApproverData(id=approver, approver_name=user.first_name + " " + user.last_name)
+                data = ApproverData(id=a, approver_name=approver.first_name + " " + approver.last_name)
                 approver_data.append(data)
 
             result = LoadApplyLeaveScreen(casual_leaves=user.casual_leaves, medical_leaves=user.medical_leaves,
