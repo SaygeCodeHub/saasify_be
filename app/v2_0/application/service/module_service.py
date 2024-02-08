@@ -10,45 +10,41 @@ from app.v2_0.domain.schemas.module_schemas import GetSubscribedModules, ModuleI
 
 def add_module(module, user_id, branch_id, company_id, db):
     """Adds modules to a company"""
-    # try:
-    user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+    try:
+        user = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
 
-    if user is None:
-        return ResponseDTO(404, f"User with user id: {user_id} not found", {})
+        if user is None:
+            return ResponseDTO(404, f"User with user id: {user_id} not found", {})
 
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-    print(module.modules)
-    if check is None:
-        for m in module.modules:
-            new_module = ModuleSubscriptions(company_id=company_id, branch_id=branch_id, module_name=m)
-            db.add(new_module)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+        if check is None:
+            for m in module.modules:
+                new_module = ModuleSubscriptions(company_id=company_id, branch_id=branch_id, module_name=m)
+                db.add(new_module)
 
-        add_module_to_ucb(branch_id, user_id, module.modules, db)
+            add_module_to_ucb(branch_id, user_id, module.modules, db)
 
-        db.commit()
+            db.commit()
 
-        return ResponseDTO(200, "Module(s) added successfully", {})
-    else:
-        return check
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+            return ResponseDTO(200, "Module(s) added successfully", {})
+        else:
+            return check
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
 
 
 def add_module_to_ucb(branch_id, user_id, module_array, db):
-    print("In module ucb")
     query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
         UserCompanyBranch.branch_id == branch_id)
 
     user = query.first()
 
     if len(module_array) == 0:
-        print("module array is empty")
         subscribed_modules_set = []
         features_array = []
     else:
         # Fetches the currently subscribed modules
         subscribed_modules_set = set(user.accessible_modules)
-        print("set", subscribed_modules_set)
 
         for module in module_array:
             subscribed_modules_set.add(module)
@@ -58,7 +54,6 @@ def add_module_to_ucb(branch_id, user_id, module_array, db):
     query.update(
         {"accessible_modules": subscribed_modules_set,
          "accessible_features": features_array})
-    print("modules in ucb:", query.first().__dict__)
 
 
 def fetch_subscribed_modules(user_id, company_id, branch_id, db):
