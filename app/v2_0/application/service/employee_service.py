@@ -13,7 +13,7 @@ from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_finance import UserFinance
-from app.v2_0.domain.schemas.employee_schemas import GetEmployeeSalaries, GetEmployees
+from app.v2_0.domain.schemas.employee_schemas import GetEmployeeSalaries
 from app.v2_0.domain.schemas.user_schemas import AddUser
 
 
@@ -91,6 +91,7 @@ def fetch_employees(company_id, branch_id, user_id, db):
         return ResponseDTO(200, "Employees fetched!", result)
     else:
         return check
+
 
 # except Exception as exc:
 #     return ResponseDTO(204, str(exc), [])

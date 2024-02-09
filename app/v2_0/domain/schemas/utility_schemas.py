@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
+from app.v2_0.domain.models.enums import Modules, Features
 
 
 class DeviceToken(BaseModel):
