@@ -3,14 +3,22 @@ from typing import List
 
 from pydantic import BaseModel
 
+from app.v2_0.domain.models.enums import Features, Modules
 from app.v2_0.domain.schemas.branch_schemas import GetBranch
+from app.v2_0.domain.schemas.module_schemas import ModulesMap, FeaturesMap
 
 
-class HomeScreenAPI(BaseModel):
+class HomeScreenApiResponse(BaseModel):
     branches: List[GetBranch]
-    total_employees: int
-    pending_leaves: int
-    monthly_salary_rollout: float
+    accessible_modules: List[ModulesMap]
+    accessible_features: List[FeaturesMap]
+    geo_fencing: bool
+
+
+class IteratedBranchSettings(BaseModel):
+    accessible_features:List[Features]
+    accessible_modules: List[Modules]
+    geo_fencing: bool
 
 
 class Salaries(BaseModel):

@@ -1,15 +1,18 @@
 """Service layer for - Task Management"""
 import asyncio
+from datetime import datetime
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.push_notification_service import send_task_assigned_notification
+from app.v2_0.application.service.push_notification_service import send_task_assigned_notification, \
+    send_task_updated_notification
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.tasks import Tasks
 from app.v2_0.domain.models.user_details import UserDetails
-from app.v2_0.domain.schemas.task_schemas import GetMyTasks, AssignerData
+from app.v2_0.domain.schemas.task_schemas import GetTasksAssignedToMe, Data, GetTasksAssignedByMe
 
 
 def assign_task(assigned_task, user_id, company_id, branch_id, db):
+    """Assigns a task to an individual"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
@@ -33,24 +36,61 @@ def assign_task(assigned_task, user_id, company_id, branch_id, db):
 def get_assigner_name(monitored_by, db):
     assigner = db.query(UserDetails).filter(UserDetails.user_id == monitored_by).first()
 
-    return AssignerData(id=monitored_by, name=assigner.first_name + " " + assigner.last_name)
+    return Data(id=monitored_by, name=assigner.first_name + " " + assigner.last_name)
 
 
 def fetch_my_tasks(user_id, company_id, branch_id, db):
+    """Fetches tasks assigned to me and assigned by me"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-            my_tasks = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
+            tasks_assigned_to_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
                 Tasks.branch_id == branch_id).filter(Tasks.assigned_to == user_id).all()
 
-            result = [GetMyTasks(title=task.title, task_description=task.task_description, due_date=task.due_date,
-                                 priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
-                                 task_status=task.task_status.name)
-                      for task in my_tasks
-                      ]
-            return ResponseDTO(200, "Tasks fetched!", result)
+            array_of_tasks_assigned_to_me = [
+                GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                     due_date=task.due_date,
+                                     priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
+                                     task_status=task.task_status.name)
+                for task in tasks_assigned_to_me
+            ]
+
+            tasks_assigned_by_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
+                Tasks.branch_id == branch_id).filter(Tasks.monitored_by == user_id).all()
+
+            array_of_tasks_assigned_by_me = [
+                GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                     due_date=task.due_date,
+                                     priority=task.priority, assigned_to=get_assigner_name(task.assigned_to, db),
+                                     task_status=task.task_status.name)
+                for task in tasks_assigned_by_me]
+
+            return ResponseDTO(200, "Tasks fetched!", {"tasks_assigned_to_me": array_of_tasks_assigned_to_me,
+                                                       "tasks_assigned_by_me": array_of_tasks_assigned_by_me})
         else:
             return check
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
+
+
+def change_task_status(updated_task, user_id, company_id, branch_id, db):
+    """Updates the status of the task - DONE"""
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+
+        if check is None:
+
+            query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
+            query.update({"completion_date": updated_task.completion_date, "task_status": updated_task.task_status,
+                          "modified_by": user_id, "modified_on": datetime.now()})
+            asyncio.run(send_task_updated_notification(updated_task, user_id, company_id, branch_id, db))
+            db.commit()
+
+            return ResponseDTO(200, "Task updated!", {})
+
+        else:
+            return check
+
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
