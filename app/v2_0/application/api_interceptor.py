@@ -16,6 +16,7 @@ from app.v2_0.application.service.home_screen_service import fetch_home_screen_d
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_all_leaves, modify_leave_status
 from app.v2_0.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
+from app.v2_0.application.service.task_service import assign_task, fetch_my_tasks, change_task_status
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
@@ -27,6 +28,7 @@ from app.v2_0.domain.schemas.company_schemas import AddCompany, UpdateCompany
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.module_schemas import ModuleSchema
+from app.v2_0.domain.schemas.task_schemas import AssignTask, UpdateTask
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
 from app.v2_0.infrastructure.database import engine, get_db, Base
@@ -262,3 +264,21 @@ def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depe
 def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id: int, branch_id: int,
                          db=Depends(get_db)):
     return fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Task related APIs-------------------------------------------------------------------"""
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/assignTask")
+def create_task(assigned_task: AssignTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return assign_task(assigned_task, user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getTasks")
+def get_my_tasks(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return fetch_my_tasks(user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateTaskStatus")
+def update_task(updated_task: UpdateTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return change_task_status(updated_task, user_id, company_id, branch_id, db)

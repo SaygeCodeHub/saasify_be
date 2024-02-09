@@ -8,7 +8,7 @@ from app.v2_0.application.service.push_notification_service import send_leave_no
     send_leave_status_notification
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import LeaveType, LeaveStatus
+from app.v2_0.domain.models.enums import LeaveType, LeaveStatus, Features
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
@@ -133,6 +133,7 @@ def get_authorized_leave_requests(pending_leaves, user_id):
         for x in pending_leaves:
             if user_id in x.approvers:
                 filtered_leaves.append(x)
+
         return filtered_leaves
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
@@ -225,7 +226,7 @@ def deduct_salary(leave, extra_leaves, db):
     if user is None:
         return ResponseDTO(404, "User not found!", {})
 
-    per_day_pay = user.salary if user.salary is not None else 0 / 30
+    per_day_pay = user.basic_salary if user.basic_salary is not None else 0 / 30
 
     calculate_deduction = user.deduction
 

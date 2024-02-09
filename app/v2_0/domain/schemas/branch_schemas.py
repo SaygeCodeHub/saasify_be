@@ -30,12 +30,16 @@ class AddBranch(UpdateBranch):
 class GetBranch(BaseModel):
     branch_name: str
     branch_id: int
-    accessible_modules: List[Modules]
-    accessible_features: List[Features]
-    geo_fencing: bool
+
 
 
 class CreateBranchResponse(BaseModel):
     branch_name: str
     branch_id: int
     # modules: Optional[List[Modules]]
+
+
+
+ # accessible_modules: List[Modules]
+ #    accessible_features: List[Features]
+ #    geo_fencing: bool

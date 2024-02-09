@@ -21,3 +21,19 @@ class GetSubscribedModules(BaseModel):
     is_subscribed: bool
     start_date: date
     end_date: date
+
+
+class ModulesMap(BaseModel):
+    module_key: str
+    module_id: int
+    title: str
+    icon: str
+
+
+class FeaturesMap(BaseModel):
+    feature_key: str
+    feature_id: float
+    is_statistics: bool
+    title: str
+    icon: str
+    value:  str
