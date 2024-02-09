@@ -41,10 +41,20 @@ class Modules(PyEnum):
 class Features(PyEnum):
     HR_MARK_ATTENDANCE = 0.0
     HR_PENDING_APPROVAL = 0.1
-    HR_TOTAL_EMPLOYEES = 0.2
-    HR_SALARY_ROLLOUT = 0.3
-    HR_ADD_NEW_EMPLOYEE = 0.4
-    HR_VIEW_ALL_EMPLOYEES = 0.5
-    HR_APPLY_LEAVES = 0.6
-    HR_MY_LEAVES = 0.7
-    HR_TIMESHEET = 0.8
+    HR_SALARY_ROLLOUT = 0.2
+    HR_ADD_NEW_EMPLOYEE = 0.3
+    HR_VIEW_ALL_EMPLOYEES = 0.4
+    HR_APPLY_LEAVES = 0.5
+    HR_MY_LEAVES = 0.6
+    HR_TIMESHEET = 0.7
+
+
+class TaskPriority(PyEnum):
+    LOW = 0
+    MEDIUM = 1
+    HIGH = 2
+
+
+class TaskStatus(PyEnum):
+    PENDING = 0
+    DONE = 1

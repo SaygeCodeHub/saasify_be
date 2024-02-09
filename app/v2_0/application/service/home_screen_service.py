@@ -13,27 +13,25 @@ from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.branch_schemas import GetBranch
-from app.v2_0.domain.schemas.home_screen_schemas import HomeScreenAPI, Salaries
+from app.v2_0.domain.schemas.home_screen_schemas import HomeScreenApiResponse, Salaries, IteratedBranchSettings
+from app.v2_0.domain.schemas.module_schemas import ModulesMap, FeaturesMap
 
 
 def get_home_screen_branches(user_id, db):
-    branches_query = (select(UserCompanyBranch.branch_id, UserCompanyBranch.accessible_features,
-                             UserCompanyBranch.accessible_modules, Branches.branch_name,
+    branches_query = (select(UserCompanyBranch.branch_id, Branches.branch_name,
                              BranchSettings.geo_fencing).select_from(
         UserCompanyBranch).join(Branches, UserCompanyBranch.branch_id == Branches.branch_id).join(BranchSettings,
                                                                                                   UserCompanyBranch.branch_id == BranchSettings.branch_id).filter(
         UserCompanyBranch.user_id == user_id))
     branches = db.execute(branches_query)
 
-    branches_resp = [GetBranch(branch_name=branch.branch_name, branch_id=branch.branch_id,
-                               accessible_modules=branch.accessible_modules,
-                               accessible_features=branch.accessible_features, geo_fencing=branch.geo_fencing)
+    branches_resp = [GetBranch(branch_name=branch.branch_name, branch_id=branch.branch_id)
                      for branch in branches
                      ]
     return branches_resp
 
 
-def get_home_screen_pending_leaves(user_id, db):
+def get_home_screen_pending_leaves(user_id, company_id, branch_id, db):
     pending_leaves = db.query(Leaves).filter(Leaves.leave_status == LeaveStatus.PENDING).all()
     filtered_leaves = get_authorized_leave_requests(pending_leaves, user_id)
     if len(filtered_leaves) != 0:
@@ -69,18 +67,48 @@ def get_monthly_salary_rollout(user_id, branch_id, db):
     return 0
 
 
+def is_authorized_for_salary_rollout(ucb_entry):
+    if Features.HR_SALARY_ROLLOUT in ucb_entry.accessible_features:
+        return True
+    return False
+
+
+def check_if_statistics(feature_name):
+    if feature_name == Features.HR_PENDING_APPROVAL.name or feature_name == Features.HR_SALARY_ROLLOUT.name or feature_name == Features.HR_VIEW_ALL_EMPLOYEES.name:
+        return True
+    return False
+
+
+def calculate_value(feature_name, user_id, company_id, branch_id, db):
+    flag = check_if_statistics(feature_name)
+
+    if flag:
+        if feature_name == Features.HR_PENDING_APPROVAL.name:
+            num_of_pending_leaves = get_home_screen_pending_leaves(user_id, company_id, branch_id, db)
+            return str(num_of_pending_leaves)
+        elif feature_name == Features.HR_SALARY_ROLLOUT.name:
+            salary_rollout = get_monthly_salary_rollout(user_id, branch_id, db)
+            return str(salary_rollout)
+        elif feature_name == Features.HR_VIEW_ALL_EMPLOYEES.name:
+            total_employees = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == branch_id).count()
+            return str(total_employees)
+
+    else:
+        return ""
+
+
+def get_title(name):
+    substring_before_underscore = name.split('_', 1)[0]
+    result = "HR" if "HR" in substring_before_underscore else ""
+    return result
+
+
 def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db):
     """Fetches data to be shown on the home screen"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-
-            branches = get_home_screen_branches(user_id, db)
-            num_of_pending_leaves = get_home_screen_pending_leaves(user_id, db)
-            salary_rollout = get_monthly_salary_rollout(user_id, branch_id, db)
-            total_employees = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == branch_id).count()
-
             # Adds the device token of the user with id user_id belonging to branch_id and company_id
             user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
                 UserCompanyBranch.company_id == company_id).filter(
@@ -88,10 +116,35 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
             user_query.update({"device_token": device_token_obj.device_token})
             db.commit()
 
-            return ResponseDTO(200, "Data fetched!",
-                               HomeScreenAPI(branches=branches, total_employees=total_employees,
-                                             pending_leaves=num_of_pending_leaves,
-                                             monthly_salary_rollout=salary_rollout))
+            branches = get_home_screen_branches(user_id, db)
+
+            ucb_entry = db.query(UserCompanyBranch).filter(
+                UserCompanyBranch.user_id == user_id).filter(UserCompanyBranch.company_id == company_id).filter(
+                UserCompanyBranch.branch_id == branch_id).first()
+
+            branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
+
+            iterated_result = IteratedBranchSettings(
+                accessible_features=ucb_entry.accessible_features,
+                accessible_modules=ucb_entry.accessible_modules,
+                geo_fencing=branch_settings.geo_fencing)
+
+            accessible_modules = [ModulesMap(module_key=am.name, module_id=am.value, title=am.name, icon="")
+                                  for am in iterated_result.accessible_modules
+                                  ]
+            accessible_features = [
+                FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
+                            value=calculate_value(
+                                af.name, user_id, company_id, branch_id, db),
+                            is_statistics=check_if_statistics(af.name))
+                for af in iterated_result.accessible_features
+            ]
+
+            result = [HomeScreenApiResponse(branches=branches, accessible_modules=accessible_modules,
+                                            accessible_features=accessible_features,
+                                            geo_fencing=iterated_result.geo_fencing)]
+
+            return ResponseDTO(200, "Data fetched!", result)
 
         else:
             return check
