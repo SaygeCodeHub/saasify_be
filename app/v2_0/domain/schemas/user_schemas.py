@@ -19,45 +19,45 @@ class PersonalInfo(Modifier):
     first_name: str = ""
     last_name: str = ""
     user_email: str
-    user_birthdate: date = None
+    user_birthdate: Optional[date] = None
     activity_status: ActivityStatus = None
-    casual_leaves: int = 3
-    medical_leaves: int = 12
+    casual_leaves: Optional[int] = 3
+    medical_leaves: Optional[int] = 12
     user_image: str = "Image"
-    user_contact: int = None
-    alternate_contact: int = None
+    user_contact: Optional[int] = None
+    alternate_contact: Optional[int] = None
     age: int = None
     middle_name: str = ""
-    gender: str = None
-    nationality: str = None
-    marital_status: str = None
-    current_address: str = None
-    permanent_address: str = None
-    city: str = None
-    state: str = None
+    gender: Optional[str] = None
+    nationality: Optional[str] = None
+    marital_status: Optional[str] = None
+    current_address: Optional[str] = None
+    permanent_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
     pincode: Optional[int] = None
 
 
 class AadharDetails(BaseModel):
     aadhar_number: Optional[int] = None
-    name_as_per_aadhar: str = None
-    pan_number: str = None
+    name_as_per_aadhar: Optional[str] = None
+    pan_number: Optional[str] = None
 
 
 class PassportDetails(BaseModel):
-    passport_num: str = None
-    passport_fname: str = None
-    passport_lname: str = None
-    expiry_date: date = None
-    issue_date: date = None
+    passport_num: Optional[str] = None
+    passport_fname: Optional[str] = None
+    passport_lname: Optional[str] = None
+    expiry_date: Optional[date] = None
+    issue_date: Optional[date] = None
     mobile_number: Optional[int] = None
-    current_address: str = None
-    permanent_address: str = None
+    current_address: Optional[str] = None
+    permanent_address: Optional[str] = None
 
 
 class UserDocumentsSchema(Modifier):
-    aadhar: AadharDetails
-    passport: PassportDetails
+    aadhar: Optional[AadharDetails]
+    passport: Optional[PassportDetails]
 
 
 class UserFinanceSchema(Modifier):
@@ -127,8 +127,8 @@ class GetUser(AadharDetails, PassportDetails, UserFinanceSchema):
 
 
 class Financials(BaseModel):
-    finances: UserFinanceSchema
-    bank_details: UserBankDetailsSchema
+    finances: Optional[UserFinanceSchema]
+    bank_details: Optional[UserBankDetailsSchema]
 
 
 class UserOfficialSchema(Modifier):
@@ -164,9 +164,9 @@ class GetUserOfficialSchema(Modifier):
 
 class UpdateUser(BaseModel):
     personal_info: PersonalInfo
-    documents: UserDocumentsSchema
-    financial: Financials
-    official: UserOfficialSchema
+    documents: Optional[UserDocumentsSchema]
+    financial: Optional[Financials]
+    official: Optional[UserOfficialSchema]
 
 
 class GetPassportDetails(BaseModel):

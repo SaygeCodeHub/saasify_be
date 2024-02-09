@@ -46,6 +46,7 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
     db.refresh(ucb_employee)
     print(f"after commit {ucb_employee.ucb_id}")
 
+
 # except Exception as exc:
 #     db.rollback()
 #     return ResponseDTO(204, str(exc), {})

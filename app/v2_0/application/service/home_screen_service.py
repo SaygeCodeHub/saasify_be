@@ -8,7 +8,7 @@ from app.v2_0.application.service.leave_service import get_authorized_leave_requ
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
-from app.v2_0.domain.models.enums import LeaveStatus, Features, DesignationEnum
+from app.v2_0.domain.models.enums import LeaveStatus, Features
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_finance import UserFinance

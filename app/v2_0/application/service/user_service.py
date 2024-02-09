@@ -19,7 +19,7 @@ from app.v2_0.domain.models.user_official_details import UserOfficialDetails
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.user_schemas import GetAadharDetails, \
     GetPassportDetails, GetPersonalInfo, UpdateUser, UserBankDetailsSchema, UserOfficialSchema, GetUserOfficialSchema, \
-    GetUserFinanceSchema, GetUserBankDetailsSchema
+    GetUserFinanceSchema, GetUserBankDetailsSchema, PersonalInfo
 
 
 def add_user_details(user, user_id, db):
@@ -135,17 +135,25 @@ def update_user_documents(docs_data, u_id, user_id, db):
     # Unpacking the 2 dictionaries - aadhar and passport and storing them in a new dictionary
     new_docs_data = {**docs_data.aadhar.__dict__, **docs_data.passport.__dict__,
                      "modified_on": datetime.now(), "modified_by": user_id}
+    aadhar_query = None
+    pan_query = None
+    passport_query = None
+    if new_docs_data["aadhar_number"] is not None:
+        aadhar_query = db.query(UserDocuments).filter(
+            UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).filter(
+            UserDocuments.user_id != u_id).first()
+    if new_docs_data["pan_number"] is not None:
+        pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).filter(
+            UserDocuments.user_id != u_id).first()
+    if new_docs_data["passport_num"] is not None:
+        passport_query = db.query(UserDocuments).filter(
+            UserDocuments.passport_num == new_docs_data["passport_num"]).filter(
+            UserDocuments.user_id != u_id).first()
 
-    aadhar_query = db.query(UserDocuments).filter(UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).filter(
-        UserDocuments.user_id != u_id).first()
-    pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).filter(
-        UserDocuments.user_id != u_id).first()
-    passport_query = db.query(UserDocuments).filter(UserDocuments.passport_num == new_docs_data["passport_num"]).filter(
-        UserDocuments.user_id != u_id).first()
-
-    resp = validate_docs(aadhar_query, pan_query, passport_query)
-    if resp is not None:
-        return resp
+    if aadhar_query and pan_query and passport_query is not None:
+        resp = validate_docs(aadhar_query, pan_query, passport_query)
+        if resp is not None:
+            return resp
 
     docs_query = db.query(UserDocuments).filter(UserDocuments.user_id == u_id)
     docs_query.update(new_docs_data)
@@ -223,11 +231,12 @@ def update_user_finance(finance_data, u_id, user_id, db):
     db.commit()
 
 
-def store_personal_info(personal_data, user_id, branch_id, db):
-    user_contact = db.query(UserDetails).filter(
-        UserDetails.user_contact == personal_data.__dict__["user_contact"]).first()
-    if user_contact is not None:
-        return ResponseDTO(409, "This contact already belongs to someone else", {})
+def store_personal_info(personal_data: PersonalInfo, user_id, branch_id, db):
+    if personal_data.user_contact is not None:
+        user_contact = db.query(UserDetails).filter(
+            UserDetails.user_contact == personal_data.user_contact).first()
+        if user_contact is not None:
+            return ResponseDTO(409, "This contact already belongs to someone else", {})
     del personal_data.__dict__["user_email"]
     branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
     personal_data.__dict__["user_id"] = user_id
@@ -254,12 +263,22 @@ def validate_docs(aadhar_query, pan_query, passport_query):
 def store_user_documents(docs_data, user_id, db):
     new_docs_data = {**docs_data.aadhar.__dict__, **docs_data.passport.__dict__,
                      "user_id": user_id}
-    aadhar_query = db.query(UserDocuments).filter(UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).first()
-    pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).first()
-    passport_query = db.query(UserDocuments).filter(UserDocuments.passport_num == new_docs_data["passport_num"]).first()
-    resp = validate_docs(aadhar_query, pan_query, passport_query)
-    if resp is not None:
-        return resp
+    aadhar_query = None
+    pan_query = None
+    passport_query = None
+    if new_docs_data["aadhar_number"] is not None:
+        aadhar_query = db.query(UserDocuments).filter(
+            UserDocuments.aadhar_number == new_docs_data["aadhar_number"]).first()
+    if new_docs_data["pan_number"] is not None:
+        pan_query = db.query(UserDocuments).filter(UserDocuments.pan_number == new_docs_data["pan_number"]).first()
+    if new_docs_data["passport_num"] is not None:
+        passport_query = db.query(UserDocuments).filter(
+            UserDocuments.passport_num == new_docs_data["passport_num"]).first()
+
+    if aadhar_query and pan_query and passport_query is not None:
+        resp = validate_docs(aadhar_query, pan_query, passport_query)
+        if resp is not None:
+            return resp
     docs = UserDocuments(**new_docs_data)
     db.add(docs)
 
@@ -302,9 +321,9 @@ def store_user_finance(finance_data, user_id, db):
     db.add(data)
 
 
-def add_employee_manually(user, user_id, company_id, branch_id, db):
+def add_employee_manually(user: UpdateUser, user_id, company_id, branch_id, db):
     """Adds an employee with his details to the DB"""
-    email = user.__dict__["personal_info"].user_email
+    email = user.personal_info.user_email
     user_in_user_auth = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
 
     if user_in_user_auth is None:
