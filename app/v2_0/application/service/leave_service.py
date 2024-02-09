@@ -226,7 +226,7 @@ def deduct_salary(leave, extra_leaves, db):
     if user is None:
         return ResponseDTO(404, "User not found!", {})
 
-    per_day_pay = user.basic_salary if user.basic_salary is not None else 0 / 30
+    per_day_pay = user.basic_salary / 30 if user.basic_salary is not None else 0 / 30
 
     calculate_deduction = user.deduction
 
