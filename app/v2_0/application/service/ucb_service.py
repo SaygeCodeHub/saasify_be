@@ -25,12 +25,16 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
         employee.accessible_modules = [0]
     features_array = employee.accessible_features
     # try:
-    if len(employee.approvers) != 0:
+    if employee.approvers is None:
+        approvers = [company.owner]
+        approvers_list = list(approvers)
+    elif len(employee.approvers) != 0:
         approvers_set = set(employee.approvers)
         approvers_set.add(company.owner)
         approvers_list = list(approvers_set)
-
-    if len(employee.accessible_features) == 0:
+    if employee.accessible_features is None:
+        features_array = get_all_features(employee.accessible_modules)
+    elif len(employee.accessible_features) == 0:
         features_array = get_all_features(employee.accessible_modules)
 
     print(new_employee)
