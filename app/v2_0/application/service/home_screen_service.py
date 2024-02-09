@@ -31,7 +31,7 @@ def get_home_screen_branches(user_id, db):
     return branches_resp
 
 
-def get_home_screen_pending_leaves(user_id, company_id, branch_id, db):
+def get_home_screen_pending_leaves(user_id, db):
     pending_leaves = db.query(Leaves).filter(Leaves.leave_status == LeaveStatus.PENDING).all()
     filtered_leaves = get_authorized_leave_requests(pending_leaves, user_id)
     if len(filtered_leaves) != 0:
@@ -84,7 +84,7 @@ def calculate_value(feature_name, user_id, company_id, branch_id, db):
 
     if flag:
         if feature_name == Features.HR_PENDING_APPROVAL.name:
-            num_of_pending_leaves = get_home_screen_pending_leaves(user_id, company_id, branch_id, db)
+            num_of_pending_leaves = get_home_screen_pending_leaves(user_id,db)
             return str(num_of_pending_leaves)
         elif feature_name == Features.HR_SALARY_ROLLOUT.name:
             salary_rollout = get_monthly_salary_rollout(user_id, branch_id, db)

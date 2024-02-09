@@ -32,9 +32,6 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
 
     if len(employee.accessible_features) == 0:
         features_array = get_all_features(employee.accessible_modules)
-
-    print(new_employee)
-    print(employee.__dict__)
     ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
                                      branch_id=branch_id,
                                      designations=employee.designations, approvers=approvers_list,
@@ -44,7 +41,6 @@ def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
     db.add(ucb_employee)
     db.commit()
     db.refresh(ucb_employee)
-    print(f"after commit {ucb_employee.ucb_id}")
 
 
 # except Exception as exc:
