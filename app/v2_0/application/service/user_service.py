@@ -1,6 +1,8 @@
 """Service layer for Users"""
 from datetime import datetime
 
+from fastapi import Depends
+
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
@@ -20,6 +22,7 @@ from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.user_schemas import GetAadharDetails, \
     GetPassportDetails, GetPersonalInfo, UpdateUser, UserBankDetailsSchema, UserOfficialSchema, GetUserOfficialSchema, \
     GetUserFinanceSchema, GetUserBankDetailsSchema, PersonalInfo
+from app.v2_0.infrastructure.database import get_db
 
 
 def add_user_details(user, user_id, db):
@@ -357,13 +360,13 @@ def add_employee_manually(user: UpdateUser, user_id, company_id, branch_id, db):
         create_password_reset_code(email, db)
 
     else:
-        user_exists = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_in_user_auth.user_id).filter(
-            UserCompanyBranch.branch_id == branch_id).first()
+        user_exists = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_in_user_auth.user_id).first()
 
         if user_in_user_auth and user_exists:
             return ResponseDTO(409, "User with this email already exists in this branch!", user_exists)
 
         elif user_in_user_auth and not user_exists:
+            print("here elif user_in_user_auth and not user_exists")
             ucb_emp = InviteEmployee
             ucb_emp.approvers = user.official.approvers
             ucb_emp.designations = user.official.designations
@@ -380,62 +383,63 @@ def modify_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db):
     """Updates a User"""
     """user_id is the person who will be updating the person with u_id as the user_id"""
 
-    try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
+    # try:
+    check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
 
-        if check is not None:
-            return check
+    if check is not None:
+        return check
 
-        else:
-            if u_id == "":
-                response = add_employee_manually(user, user_id, company_id, branch_id, db)
+    else:
+        if u_id == "":
+            response = add_employee_manually(user, user_id, company_id, branch_id, db)
 
-                if response is None:
-                    return ResponseDTO(200, "User added successfully", {})
-                else:
-                    return response
+            if response is None:
+                return ResponseDTO(200, "User added successfully", {})
             else:
-                user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
-                user_exists = user_query.first()
-                ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == int(u_id)).first()
-                if user.personal_info.user_contact is not None:
-                    contact_exists = db.query(UserDetails).filter(
-                        UserDetails.user_contact == user.personal_info.user_contact).filter(
-                        UserDetails.user_id != u_id).first()
-                    if contact_exists:
-                        return ResponseDTO(409, "User with this contact already exists!", contact_exists)
+                return response
+        else:
+            user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
+            user_exists = user_query.first()
+            ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == int(u_id)).first()
+            if user.personal_info.user_contact is not None:
+                contact_exists = db.query(UserDetails).filter(
+                    UserDetails.user_contact == user.personal_info.user_contact).filter(
+                    UserDetails.user_id != u_id).first()
+                if contact_exists:
+                    return ResponseDTO(409, "User with this contact already exists!", contact_exists)
 
-                if not user_exists:
-                    return ResponseDTO(404, "User not found!", {})
+            if not user_exists:
+                return ResponseDTO(404, "User not found!", {})
 
-                if ucb_user is None:
-                    ucb_emp = InviteEmployee
-                    ucb_emp.approvers = user.official.approvers
-                    ucb_emp.designations = user.official.designations
-                    ucb_emp.accessible_modules = user.official.accessible_modules
-                    ucb_emp.accessible_features = user.official.accessible_features
-                    add_employee_to_ucb(ucb_emp, user_exists, company_id, branch_id, db)
+            if ucb_user is None:
+                ucb_emp = InviteEmployee
+                ucb_emp.approvers = user.official.approvers
+                ucb_emp.designations = user.official.designations
+                ucb_emp.accessible_modules = user.official.accessible_modules
+                ucb_emp.accessible_features = user.official.accessible_features
+                add_employee_to_ucb(ucb_emp, user_exists, company_id, branch_id, db)
 
-                update_personal_info(user.personal_info, user_query, user_id)
+            update_personal_info(user.personal_info, user_query, user_id)
 
-                docs_resp = update_user_documents(user.documents, u_id, user_id, db)
-                if docs_resp is not None:
-                    return docs_resp
+            docs_resp = update_user_documents(user.documents, u_id, user_id, db)
+            if docs_resp is not None:
+                return docs_resp
 
-                bank_resp = update_user_bank_info(user.financial.bank_details, u_id, db)
-                if bank_resp is not None:
-                    return bank_resp
+            bank_resp = update_user_bank_info(user.financial.bank_details, u_id, db)
+            if bank_resp is not None:
+                return bank_resp
 
-                update_user_finance(user.financial.finances, u_id, user_id, db)
-                update_user_official_info(user.official, u_id, user_id, db)
+            update_user_finance(user.financial.finances, u_id, user_id, db)
+            update_user_official_info(user.official, u_id, user_id, db)
 
-                db.commit()
+            db.commit()
 
-                return ResponseDTO(200, "User updated successfully", {})
+            return ResponseDTO(200, "User updated successfully", {})
 
-    except Exception as exc:
-        db.rollback()
-        return ResponseDTO(204, str(exc), {})
+
+# except Exception as exc:
+#     db.rollback()
+#     return ResponseDTO(204, str(exc), {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):
