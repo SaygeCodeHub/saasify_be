@@ -99,8 +99,8 @@ def calculate_value(feature_name, user_id, company_id, branch_id, db):
 
 
 def get_title(name):
-    substring_before_underscore = name.split('_', 1)[0]
-    result = "HR" if "HR" in substring_before_underscore else ""
+    split_string = name.split("_", 1)
+    result = split_string[1] if split_string[1] else ""
     return result
 
 
