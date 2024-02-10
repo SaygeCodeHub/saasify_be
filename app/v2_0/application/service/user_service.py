@@ -441,24 +441,6 @@ def modify_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db):
 #     db.rollback()
 #     return ResponseDTO(204, str(exc), {})
 
-def user_update_func(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depends(get_db)):
-    """Updates a User"""
-
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-    print(check)
-    if u_id == "" or user_id is None:
-        """Add employee"""
-        if user.personal_info.user_email is None:
-            return ResponseDTO(400, "Email is required!", {})
-        else:
-            email_exist = db.query(UsersAuth).filter(UsersAuth.user_email == user.personal_info.user_email).first()
-
-    else:
-        """update Existing user"""
-
-    if check is not None:
-        return check
-
 
 def update_leave_approvers(approvers_list, user_id, db):
     leave_query = db.query(Leaves).filter(Leaves.user_id == user_id)
