@@ -470,7 +470,7 @@ def update_approver(approver, user_id, company_id, branch_id, db):
                 else:
                     flag = True
 
-            if not flag or len(approvers_list) == 0:
+            if flag is False or len(approvers_list) == 0:
                 approvers_list.append(company.owner)
 
             approver.approvers = approvers_list
