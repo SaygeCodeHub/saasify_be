@@ -100,7 +100,8 @@ def calculate_value(feature_name, user_id, company_id, branch_id, db):
 
 def get_title(name):
     split_string = name.split("_", 1)
-    result = split_string[1] if split_string[1] else ""
+    parts = split_string[1].lower().split('_')
+    result = ' '.join(x.capitalize() for x in parts)
     return result
 
 
@@ -149,18 +150,15 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
                 available_features = []
                 for features in Features:
                     if features.name.startswith(avm.name):
-                        print("features.name", features.name)
                         available_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
                                                               title=get_title(features.name),
                                                               icon="",
                                                               value=calculate_value(
                                                                   features.name, user_id, company_id, branch_id, db),
                                                               is_statistics=check_if_statistics(features.name)))
-                print("available_features", available_features)
                 available_module.append(
                     AvailableModulesMap(module_key=avm.name, module_id=avm.value, title=avm.name, icon="",
                                         available_features=available_features))
-                print("available_module", available_module)
 
             result = HomeScreenApiResponse(branches=branches, accessible_modules=accessible_modules,
                                            available_modules=available_module,
