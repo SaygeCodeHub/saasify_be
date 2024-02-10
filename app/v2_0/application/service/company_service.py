@@ -1,6 +1,7 @@
 """Service layer for Companies"""
 from datetime import datetime, time
 
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
@@ -9,7 +10,8 @@ from app.v2_0.application.utility.app_utility import check_if_company_and_branch
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.companies import Companies
-from app.v2_0.domain.models.enums import ActivityStatus
+from app.v2_0.domain.models.enums import ActivityStatus, Modules
+from app.v2_0.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
@@ -151,32 +153,6 @@ def set_branch_settings(new_branch, user_id, company_id, db):
 
 
 def add_new_branch(branch, user_id, branch_id, company_id, db):
-    company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
-    if company_exists is None:
-        return ResponseDTO(404, "Company not found!", {})
-
-    new_branch = Branches(branch_name=branch.branch_name, company_id=company_id,
-                          activity_status=ActivityStatus.ACTIVE,
-                          is_head_quarter=branch.is_head_quarter)
-    db.add(new_branch)
-    db.flush()
-    add_new_branch_to_ucb(new_branch, user_id, company_id, db)
-    set_branch_settings(new_branch, user_id, company_id, db)
-
-    db.commit()
-
-    return ResponseDTO(200, "Branch created successfully!",
-                       CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id))
-
-
-def get_accessible_modules(new_branch, db):
-    # Fetches the ucb entry of newly stored branch
-    branch_in_ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == new_branch.branch_id).first()
-    return branch_in_ucb.accessible_modules
-
-
-def add_init_branch(branch, user_id, company_id, db):
-    """Creates a branch for a company"""
     try:
         company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
         if company_exists is None:
@@ -187,23 +163,58 @@ def add_init_branch(branch, user_id, company_id, db):
                               is_head_quarter=branch.is_head_quarter)
         db.add(new_branch)
         db.flush()
-
-        # Adds the branch in Users_Company_Branches table
-        add_init_branch_to_ucb(new_branch, user_id, company_id, db)
-
+        add_new_branch_to_ucb(new_branch, user_id, company_id, db)
         set_branch_settings(new_branch, user_id, company_id, db)
 
-        # Adds HR module by default to the branch
-        # module = ModuleSchema
-        # module.modules = [Modules.HR]
-        # add_module(module, user_id, new_branch.branch_id, company_id, db)
+        module_start_date = datetime.now().date()
+        module_end_date = module_start_date + relativedelta(months=6)
+        new_module_subscription = ModuleSubscriptions(branch_id=new_branch.branch_id,
+                                                      company_id=company_id,
+                                                      module_name=[Modules.HR],
+                                                      start_date=module_start_date,
+                                                      end_date=module_end_date)
+        db.add(new_module_subscription)
 
         db.commit()
-        return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id)
 
+        return ResponseDTO(200, "Branch created successfully!",
+                           CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id))
     except Exception as exc:
         db.rollback()
         return ResponseDTO(204, str(exc), {})
+
+
+def get_accessible_modules(new_branch, db):
+    # Fetches the ucb entry of newly stored branch
+    branch_in_ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == new_branch.branch_id).first()
+    return branch_in_ucb.accessible_modules
+
+
+def add_init_branch(branch, user_id, company_id, db):
+    """Creates a branch for a company"""
+
+    company_exists = db.query(Companies).filter(Companies.company_id == company_id).first()
+    if company_exists is None:
+        return ResponseDTO(404, "Company not found!", {})
+
+    new_branch = Branches(branch_name=branch.branch_name, company_id=company_id,
+                          activity_status=ActivityStatus.ACTIVE,
+                          is_head_quarter=branch.is_head_quarter)
+    db.add(new_branch)
+    db.flush()
+
+    # Adds the branch in Users_Company_Branches table
+    add_init_branch_to_ucb(new_branch, user_id, company_id, db)
+
+    set_branch_settings(new_branch, user_id, company_id, db)
+    new_module_subscription = ModuleSubscriptions(branch_id=new_branch.branch_id, company_id=company_id,
+                                                  module_name=Modules.HR)
+
+    # Adds HR module by default to the branch
+    # module = ModuleSchema
+    # module.modules = [Modules.HR]
+    # add_module(module, user_id, new_branch.branch_id, company_id, db)
+    return CreateBranchResponse(branch_name=new_branch.branch_name, branch_id=new_branch.branch_id)
 
 
 def fetch_branches(user_id, company_id, branch_id, db):
@@ -268,6 +279,15 @@ def add_company(company, user_id, db):
         branch.branch_name = company.branch_name
         branch.is_head_quarter = company.is_head_quarter
         init_branch = add_init_branch(branch, user_id, new_company.company_id, db)
+
+        module_start_date = datetime.now().date()
+        module_end_date = module_start_date + relativedelta(months=6)
+        new_module_subscription = ModuleSubscriptions(branch_id=init_branch.branch_id,
+                                                      company_id=new_company.company_id,
+                                                      module_name=[Modules.HR],
+                                                      start_date=module_start_date,
+                                                      end_date=module_end_date)
+        db.add(new_module_subscription)
 
         db.commit()
 

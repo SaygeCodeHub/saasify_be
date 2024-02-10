@@ -141,7 +141,7 @@ class UserOfficialSchema(Modifier):
     designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
     accessible_features: List[Features] = None
-    accessible_modules: List[Modules] = None
+    accessible_modules: List[Modules] = [0]
 
 
 class GetUserOfficialSchema(Modifier):
