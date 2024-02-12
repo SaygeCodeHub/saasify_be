@@ -11,7 +11,7 @@ from app.v2_0.domain.models.user_details import UserDetails
 
 async def send_notification(device_token: str, title: str, body: str):
     """Communicates with Firebase and sends a notification using FCM"""
-    server_key = 'AAAAMh0B0ok:APA91bHtNakNYQgnn9uvHfcAMVrQORfb7zLjbeY-VnC6R8e832rld_6OztK2hhMvGQC0gHjvwIr-B5w8t1dTqiE7j7NqGlejQiO7X72Ol-KwzbSN9rWgE8MM3RGlcgDSEjzpmZrXFmKy'
+    server_key = 'AAAA4RuOIHM:APA91bGckhCuti3anDnZZUawXAvgCaNndTMk_BBGclPf68VEd93u4SnvfPorOveAYzcJ5kBmHuqbMryag-R6kTqZAUTIG17p_sY7RROhJeqEw2EPUkOfrqBtFbJxW9WacCI1FSz0Jh06'
     fcm_endpoint = 'https://fcm.googleapis.com/fcm/send'
 
     message = {
