@@ -4,18 +4,24 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.service.announcement_service import fetch_announcements
 from app.v2_0.application.service.leave_service import get_authorized_leave_requests
+from app.v2_0.application.service.task_service import fetch_my_tasks, get_assigner_name
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
+from app.v2_0.domain.models.announcements import Announcements
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.branches import Branches
 from app.v2_0.domain.models.enums import LeaveStatus, Features
 from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.module_subscriptions import ModuleSubscriptions
+from app.v2_0.domain.models.tasks import Tasks
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_finance import UserFinance
+from app.v2_0.domain.schemas.announcement_schemas import GetAnnouncements
 from app.v2_0.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.domain.schemas.home_screen_schemas import HomeScreenApiResponse, Salaries, IteratedBranchSettings
 from app.v2_0.domain.schemas.module_schemas import ModulesMap, FeaturesMap, AvailableModulesMap
+from app.v2_0.domain.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
 
 
 def get_home_screen_branches(user_id, db):
@@ -105,6 +111,22 @@ def get_title(name):
     return result
 
 
+def get_tasks_assigned_to_me(user_id, db):
+    tasks_assigned_to_me = db.query(Tasks).filter(Tasks.assigned_to == user_id).limit(10).all()
+    return tasks_assigned_to_me
+
+
+def get_tasks_assigned_by_me(user_id, db):
+    tasks_assigned_by_me = db.query(Tasks).filter(Tasks.monitored_by == user_id).limit(10).all()
+    return tasks_assigned_by_me
+
+
+def fetch_active_announcements(company_id, db):
+    active_announcements = db.query(Announcements).filter(Announcements.company_id == company_id).filter(
+        Announcements.is_active == "true").all()
+    return active_announcements
+
+
 def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db):
     """Fetches data to be shown on the home screen"""
     try:
@@ -115,7 +137,8 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
             user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
                 UserCompanyBranch.company_id == company_id).filter(
                 UserCompanyBranch.branch_id == branch_id)
-            user_query.update({"device_token": device_token_obj.device_token})
+            user_query.update(
+                {"device_token": device_token_obj.device_token, "modified_by": user_id, "modified_on": datetime.now()})
             db.commit()
 
             branches = get_home_screen_branches(user_id, db)
@@ -160,13 +183,38 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
                     AvailableModulesMap(module_key=avm.name, module_id=avm.value, title=avm.name, icon="",
                                         available_features=available_features))
 
+            my_tasks = get_tasks_assigned_to_me(user_id, db)
+            tasks_assigned_to_me = [
+                GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                     due_date=task.due_date,
+                                     priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
+                                     task_status=task.task_status.name) for task in my_tasks]
+            tasks_by_me = get_tasks_assigned_by_me(user_id, db)
+            tasks_assigned_by_me = [
+                GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                     due_date=task.due_date,
+                                     priority=task.priority, assigned_to=get_assigner_name(task.assigned_to, db),
+                                     task_status=task.task_status.name)
+                for task in tasks_by_me]
+
+            announcements = fetch_active_announcements(company_id, db)
+            active_announcements = [GetAnnouncements(id=announcement.announcement_id, due_date=announcement.due_date,
+                                                     description=announcement.description,
+                                                     is_active=announcement.is_active)
+                                    for announcement in announcements
+                                    ]
+
             result = HomeScreenApiResponse(branches=branches, accessible_modules=accessible_modules,
                                            available_modules=available_module,
-                                           geo_fencing=iterated_result.geo_fencing)
+                                           geo_fencing=iterated_result.geo_fencing,
+                                           tasks_assigned_to_me=tasks_assigned_to_me,
+                                           tasks_assigned_by_me=tasks_assigned_by_me,
+                                           announcements=active_announcements)
 
             return ResponseDTO(200, "Data fetched!", result)
 
         else:
             return check
+
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})

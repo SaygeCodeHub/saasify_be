@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from app.v2_0.infrastructure.database import Base
+from app.v2_0.application.db_config import DATABASE_URL_LOCAL_JAYRAJ, DATABASE_URL_PROD, DATABASE_URL_LOCAL_ADITI
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -41,7 +42,7 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option(
-        "postgresql://default:hurR7WSdp6wl@ep-wild-term-46659373.us-east-1.postgres.vercel-storage.com:5432/verceldb")
+        DATABASE_URL_PROD)
     context.configure(
         url=url,
         target_metadata=target_metadata,

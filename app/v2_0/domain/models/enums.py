@@ -20,7 +20,7 @@ class LeaveStatus(PyEnum):
     """States the current status of an applied leave"""
     REJECTED = 0
     PENDING = 1
-    ACCEPTED = 2
+    APPROVED = 2
 
 
 class LeaveType(PyEnum):
