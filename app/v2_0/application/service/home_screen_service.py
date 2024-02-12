@@ -121,86 +121,87 @@ def get_tasks_assigned_by_me(user_id, db):
 
 def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db):
     """Fetches data to be shown on the home screen"""
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
-        # Adds the device token of the user with id user_id belonging to branch_id and company_id
-        user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
-            UserCompanyBranch.company_id == company_id).filter(
-            UserCompanyBranch.branch_id == branch_id)
-        user_query.update(
-            {"device_token": device_token_obj.device_token, "modified_by": user_id, "modified_on": datetime.now()})
-        db.commit()
+        if check is None:
+            # Adds the device token of the user with id user_id belonging to branch_id and company_id
+            user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
+                UserCompanyBranch.company_id == company_id).filter(
+                UserCompanyBranch.branch_id == branch_id)
+            user_query.update(
+                {"device_token": device_token_obj.device_token, "modified_by": user_id, "modified_on": datetime.now()})
+            db.commit()
 
-        branches = get_home_screen_branches(user_id, db)
+            branches = get_home_screen_branches(user_id, db)
 
-        ucb_entry = db.query(UserCompanyBranch).filter(
-            UserCompanyBranch.user_id == user_id).filter(UserCompanyBranch.company_id == company_id).filter(
-            UserCompanyBranch.branch_id == branch_id).first()
+            ucb_entry = db.query(UserCompanyBranch).filter(
+                UserCompanyBranch.user_id == user_id).filter(UserCompanyBranch.company_id == company_id).filter(
+                UserCompanyBranch.branch_id == branch_id).first()
 
-        branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
+            branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
 
-        iterated_result = IteratedBranchSettings(
-            accessible_features=ucb_entry.accessible_features,
-            accessible_modules=ucb_entry.accessible_modules,
-            geo_fencing=branch_settings.geo_fencing)
+            iterated_result = IteratedBranchSettings(
+                accessible_features=ucb_entry.accessible_features,
+                accessible_modules=ucb_entry.accessible_modules,
+                geo_fencing=branch_settings.geo_fencing)
 
-        module_subscription = db.query(ModuleSubscriptions).filter(
-            ModuleSubscriptions.company_id == company_id).filter(ModuleSubscriptions.branch_id == branch_id).first()
+            module_subscription = db.query(ModuleSubscriptions).filter(
+                ModuleSubscriptions.company_id == company_id).filter(ModuleSubscriptions.branch_id == branch_id).first()
 
-        accessible_modules = []
+            accessible_modules = []
 
-        for acm in iterated_result.accessible_modules:
-            accessible_modules.append(
-                ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
-                    FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
-                                value=calculate_value(
-                                    af.name, user_id, company_id, branch_id, db),
-                                is_statistics=check_if_statistics(af.name))
-                    for af in iterated_result.accessible_features]))
+            for acm in iterated_result.accessible_modules:
+                accessible_modules.append(
+                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
+                        FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
+                                    value=calculate_value(
+                                        af.name, user_id, company_id, branch_id, db),
+                                    is_statistics=check_if_statistics(af.name))
+                        for af in iterated_result.accessible_features]))
 
-        available_module = []
-        for avm in module_subscription.module_name:
-            available_features = []
-            for features in Features:
-                if features.name.startswith(avm.name):
-                    available_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
-                                                          title=get_title(features.name),
-                                                          icon="",
-                                                          value=calculate_value(
-                                                              features.name, user_id, company_id, branch_id, db),
-                                                          is_statistics=check_if_statistics(features.name)))
-            available_module.append(
-                AvailableModulesMap(module_key=avm.name, module_id=avm.value, title=avm.name, icon="",
-                                    available_features=available_features))
+            available_module = []
+            for avm in module_subscription.module_name:
+                available_features = []
+                for features in Features:
+                    if features.name.startswith(avm.name):
+                        available_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
+                                                              title=get_title(features.name),
+                                                              icon="",
+                                                              value=calculate_value(
+                                                                  features.name, user_id, company_id, branch_id, db),
+                                                              is_statistics=check_if_statistics(features.name)))
+                available_module.append(
+                    AvailableModulesMap(module_key=avm.name, module_id=avm.value, title=avm.name, icon="",
+                                        available_features=available_features))
 
-        my_tasks = get_tasks_assigned_to_me(user_id, db)
-        tasks_assigned_to_me = [
-            GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
-                                 due_date=task.due_date,
-                                 priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
-                                 task_status=task.task_status.name) for task in my_tasks]
-        tasks_by_me = get_tasks_assigned_by_me(user_id, db)
-        tasks_assigned_by_me = [
-            GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
-                                 due_date=task.due_date,
-                                 priority=task.priority, assigned_to=get_assigner_name(task.assigned_to, db),
-                                 task_status=task.task_status.name)
-            for task in tasks_by_me]
+            my_tasks = get_tasks_assigned_to_me(user_id, db)
+            tasks_assigned_to_me = [
+                GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                     due_date=task.due_date,
+                                     priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
+                                     task_status=task.task_status.name) for task in my_tasks]
+            tasks_by_me = get_tasks_assigned_by_me(user_id, db)
+            tasks_assigned_by_me = [
+                GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                     due_date=task.due_date,
+                                     priority=task.priority, assigned_to=get_assigner_name(task.assigned_to, db),
+                                     task_status=task.task_status.name)
+                for task in tasks_by_me]
 
-        announcements = fetch_announcements(user_id, company_id, branch_id, db)
+            announcements = fetch_announcements(user_id, company_id, branch_id, db)
 
-        result = HomeScreenApiResponse(branches=branches, accessible_modules=accessible_modules,
-                                       available_modules=available_module,
-                                       geo_fencing=iterated_result.geo_fencing,
-                                       tasks_assigned_to_me=tasks_assigned_to_me,
-                                       tasks_assigned_by_me=tasks_assigned_by_me,
-                                       announcements=announcements.data)
+            result = HomeScreenApiResponse(branches=branches, accessible_modules=accessible_modules,
+                                           available_modules=available_module,
+                                           geo_fencing=iterated_result.geo_fencing,
+                                           tasks_assigned_to_me=tasks_assigned_to_me,
+                                           tasks_assigned_by_me=tasks_assigned_by_me,
+                                           announcements=announcements.data)
 
-        return ResponseDTO(200, "Data fetched!", result)
+            return ResponseDTO(200, "Data fetched!", result)
 
-    else:
-        return check
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+        else:
+            return check
+
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
