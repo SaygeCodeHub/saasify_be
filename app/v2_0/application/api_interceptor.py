@@ -7,6 +7,8 @@ from fastapi import Depends
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.application.password_handler.reset_password import initiate_pwd_reset, change_password, check_token
+from app.v2_0.application.service.announcement_service import add_announcements, fetch_announcements, \
+    change_announcement_data, remove_announcement
 from app.v2_0.application.service.attendance_service import mark_attendance_func, get_todays_attendance, \
     attendance_history_func
 from app.v2_0.application.service.company_service import add_company, fetch_company, modify_company, \
@@ -21,6 +23,7 @@ from app.v2_0.application.service.user_service import add_user, modify_user, fet
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
+from app.v2_0.domain.schemas.announcement_schemas import AddAnnouncement, UpdateAnnouncement
 from app.v2_0.domain.schemas.approver_schemas import AddApprover
 from app.v2_0.domain.schemas.branch_schemas import AddBranch, UpdateBranch
 from app.v2_0.domain.schemas.branch_settings_schemas import UpdateBranchSettings
@@ -282,3 +285,30 @@ def get_my_tasks(user_id: int, company_id: int, branch_id: int, db=Depends(get_d
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateTaskStatus")
 def update_task(updated_task: UpdateTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return change_task_status(updated_task, user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Announcement related APIs-------------------------------------------------------------------"""
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/addAnnouncements")
+def create_announcements(announcement: AddAnnouncement, user_id: int, company_id: int, branch_id: int,
+                         db=Depends(get_db)):
+    return add_announcements(announcement, user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getAnnouncements")
+def get_all_announcements(user_id: int, company_id: int, branch_id: int,
+                          db=Depends(get_db)):
+    return fetch_announcements(user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateAnnouncements")
+def update_announcements(announcement: UpdateAnnouncement, user_id: int, company_id: int, branch_id: int,
+                         db=Depends(get_db)):
+    return change_announcement_data(announcement, user_id, company_id, branch_id, db)
+
+
+@router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteAnnouncements/{announcement_id}")
+def delete_announcement(announcement_id: int, user_id: int, company_id: int, branch_id: int,
+                        db=Depends(get_db)):
+    return remove_announcement(announcement_id, user_id, company_id, branch_id, db)
