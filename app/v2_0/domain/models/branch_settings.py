@@ -27,4 +27,4 @@ class BranchSettings(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
-    geo_fencing = Column(Boolean, nullable=True, server_default=text('true'))
+    geo_fencing = Column(Boolean, nullable=True, server_default=text('false'))
