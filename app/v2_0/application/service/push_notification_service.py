@@ -61,7 +61,7 @@ async def send_leave_status_notification(application_response, user_id, company_
         UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.company_id == company_id).first()
     approver = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"Leave {application_response.leave_status.name}!"
-    body = f"{application_response.comment}. Regards, {approver.first_name.title()} {approver.last_name.title()}. "
+    body = f"{application_response.comment}. \n Regards, {approver.first_name.title()} {approver.last_name.title()}. "
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
 
@@ -72,7 +72,7 @@ async def send_task_assigned_notification(assigned_task, user_id, company_id, br
         UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.user_id == assigned_task.assigned_to).first()
     monitor = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"New task assigned! - {assigned_task.title}"
-    body = f"Description: {assigned_task.task_description}. Priority: {assigned_task.priority.name} Assigned by: {monitor.first_name} {monitor.last_name}"
+    body = f"Description: {assigned_task.task_description}. \n Priority: {assigned_task.priority.name.title()} \n Assigned by: {monitor.first_name} {monitor.last_name}"
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
 
