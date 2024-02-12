@@ -44,7 +44,7 @@ async def send_leave_notification(leave_application, approvers, applicant_id, co
 
         applicant = db.query(UserDetails).filter(UserDetails.user_id == applicant_id).first()
         title = "New leave application!"
-        body = f"{applicant.first_name} {applicant.last_name} has applied for a {leave_application.leave_type.name} leave"
+        body = f"{applicant.first_name.title()} {applicant.last_name.title()} has applied for a {leave_application.leave_type.name.title()} leave"
         result = await send_notification(user.device_token, title, body)
         print(result.__dict__)
 
@@ -61,7 +61,7 @@ async def send_leave_status_notification(application_response, user_id, company_
         UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.company_id == company_id).first()
     approver = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"Leave {application_response.leave_status.name}!"
-    body = f"{application_response.comment}. Regards, {approver.first_name} {approver.last_name}. "
+    body = f"{application_response.comment}. Regards, {approver.first_name.title()} {approver.last_name.title()}. "
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
 

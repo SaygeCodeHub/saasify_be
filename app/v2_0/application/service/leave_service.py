@@ -52,7 +52,7 @@ def check_remaining_leaves(user_id, leave_application, db):
 
 def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
-        msg = "Leave application submitted"
+        msg = "Leave application submitted. Change in the number of leaves will be reflected after approval."
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
@@ -237,7 +237,7 @@ def deduct_salary(leave, extra_leaves, db):
 
 
 def modify_leave_status(application_response, user_id, company_id, branch_id, db):
-    """Leaves are ACCEPTED or REJECTED using this API"""
+    """Leaves are APPROVED or REJECTED using this API"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
@@ -252,7 +252,7 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
                 return ResponseDTO(200, "Leave already updated!", leave)
 
             if application_response.is_leave_approved is True:
-                status = LeaveStatus.ACCEPTED
+                status = LeaveStatus.APPROVED
                 update_user_leaves(leave, db)
 
             application_response.leave_status = status

@@ -17,7 +17,6 @@ def assign_task(assigned_task, user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-            assigned_task.monitored_by = user_id
             assigned_task.branch_id = branch_id
             assigned_task.company_id = company_id
             new_task = Tasks(**assigned_task.model_dump())
