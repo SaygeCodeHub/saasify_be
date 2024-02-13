@@ -43,10 +43,6 @@ def change_password(obj, db):
     db.commit()
 
     return ResponseDTO(200, "Password updated successfully!", {})
-    # try:
-    #
-    # except Exception as exc:
-    #     return ExceptionDTO("change_password", exc)
 
 
 """-------------------------------Code below this line sends the change_password_token to an individual-----------------------------"""
@@ -90,7 +86,6 @@ def temporarily_add_token(reset_code, fetched_email, db):
 
 def create_password_reset_code(fetched_email, db):
     """Creates a 6 digit reset code"""
-    # try:
     code_length = 6
     reset_code = ''.join(random.choices(string.ascii_uppercase +
                                         string.digits, k=code_length))
@@ -99,21 +94,17 @@ def create_password_reset_code(fetched_email, db):
     return reset_code
 
 
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
-
-
 def initiate_pwd_reset(email, db):
     """Fetches the user who has requested for password reset and calls a method to create a smtp session"""
-    # try:
-    fetched_user = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
-    if fetched_user:
-        fetched_email = fetched_user.user_email
-        create_password_reset_code(fetched_email, db)
-        db.commit()
-    else:
-        return ResponseDTO(404, "User not found", {})
-    return ResponseDTO(200, "Email sent successfully", {})
+    try:
+        fetched_user = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
+        if fetched_user:
+            fetched_email = fetched_user.user_email
+            create_password_reset_code(fetched_email, db)
+            db.commit()
+        else:
+            return ResponseDTO(404, "User not found", {})
+        return ResponseDTO(200, "Email sent successfully", {})
 
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
