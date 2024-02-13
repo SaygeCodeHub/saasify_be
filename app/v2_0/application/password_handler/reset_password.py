@@ -54,13 +54,13 @@ def change_password(obj, db):
 
 def create_smtp_session(fetched_email, reset_code):
     """Creates a smtp session and sends an email. The exception handling is done by the library itself"""
-    # try:
     tada = '\U0001F389'
     rocket = '\U0001F680'
-    confetti_ball = '\U0001F38A'
-
-    subject = f"Welcome to the Saasify! {rocket}"
-    body = f"Hey!\nWoohoo! {tada} You've officially joined the coolest saas in town – welcome to Saasify!\n\nWe're stoked to have you onboard and can't wait to show you all the awesome stuff we've got lined up. But first things first, let's get you all set up!\n\nTo kickstart your journey, we've sent a super-secret code, aka your one-time password (OTP), to your inbox.\nJust use this OTP - {reset_code} to login in our app, and boom – you're in! Let's get this party started! {confetti_ball}\n\nGot questions or just wanna say hi? We're all ears! Shoot us a message anytime at saasify.sayge@gmail.com and our squad will hook you up.\n\nThanks for choosing Saasify – get ready for some serious fun ahead! {rocket}\n\nCatch you on the flip side!\nPeace, love, and pixels."
+    raised_hands = '\U0001F64C'
+    # confetti_ball = '\U0001F38A'
+    heart = '\u2764'
+    subject = f"Welcome to Saasify! {rocket}"
+    body = f"Hey!\nWelcome to SaaSify!  {tada} You are one step away to start your journey {raised_hands}\n\nHere is your One Time Password (OTP) -{reset_code}\n\nHave questions or need assistance?\nReach out anytime at saasify@sayge.in\n\nWe're here to ensure your experience is nothing short of exceptional.\n\nThank you for joining SaaSify {heart}\n\nBest regards,\nSaasify Support Team"
     msg = MIMEMultipart()
     msg['From'] = "jayraj.manoj@gmail.com"
     msg['To'] = fetched_email
@@ -76,10 +76,6 @@ def create_smtp_session(fetched_email, reset_code):
     s.sendmail("jayraj.manoj@gmail.com", fetched_email, msg.as_string())
 
     s.quit()
-
-
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
 
 
 def temporarily_add_token(reset_code, fetched_email, db):
