@@ -19,7 +19,7 @@ class UserCompanyBranch(Base):
     accessible_modules = Column(ARRAY(Enum(Modules)), nullable=True)
     accessible_features = Column(ARRAY(Enum(Features)), nullable=True)
     device_token = Column(String, nullable=True)
+    shift_id = Column(Integer, ForeignKey("shifts.shift_id"), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
-
