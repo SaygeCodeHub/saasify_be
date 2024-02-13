@@ -2,6 +2,8 @@
 import random
 import smtplib
 import string
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
@@ -50,58 +52,72 @@ def change_password(obj, db):
 """-------------------------------Code below this line sends the change_password_token to an individual-----------------------------"""
 
 
-def create_smtp_session(fetched_email, msg):
+def create_smtp_session(fetched_email, reset_code):
     """Creates a smtp session and sends an email. The exception handling is done by the library itself"""
-    try:
-        s = smtplib.SMTP('smtp.gmail.com', 587)
-        s.starttls()
+    # try:
+    tada = '\U0001F389'
+    rocket = '\U0001F680'
+    confetti_ball = '\U0001F38A'
 
-        # Authentication
-        s.login("jayraj.manoj@gmail.com", "odxfrxoyfcgzwsks")
+    subject = f"Welcome to the Saasify! {rocket}"
+    body = f"Hey!\nWoohoo! {tada} You've officially joined the coolest saas in town – welcome to Saasify!\n\nWe're stoked to have you onboard and can't wait to show you all the awesome stuff we've got lined up. But first things first, let's get you all set up!\n\nTo kickstart your journey, we've sent a super-secret code, aka your one-time password (OTP), to your inbox.\nJust use this OTP - {reset_code} to login in our app, and boom – you're in! Let's get this party started! {confetti_ball}\n\nGot questions or just wanna say hi? We're all ears! Shoot us a message anytime at saasify.sayge@gmail.com and our squad will hook you up.\n\nThanks for choosing Saasify – get ready for some serious fun ahead! {rocket}\n\nCatch you on the flip side!\nPeace, love, and pixels."
+    msg = MIMEMultipart()
+    msg['From'] = "jayraj.manoj@gmail.com"
+    msg['To'] = fetched_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
 
-        s.sendmail("jayraj.manoj@gmail.com", fetched_email, msg)
+    # Authentication
+    s.login("jayraj.manoj@gmail.com", "odxfrxoyfcgzwsks")
+    print(msg.as_string())
 
-        s.quit()
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    s.sendmail("jayraj.manoj@gmail.com", fetched_email, msg.as_string())
+
+    s.quit()
+
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def temporarily_add_token(reset_code, fetched_email, db):
     """Temporarily stores the reset code in DB"""
-    try:
-        user_query = db.query(UsersAuth).filter(UsersAuth.user_email == fetched_email)
 
-        user_query.update({"change_password_token": reset_code})
+    user_query = db.query(UsersAuth).filter(UsersAuth.user_email == fetched_email)
 
-        create_smtp_session(fetched_email, reset_code)
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    user_query.update({"change_password_token": reset_code})
+
+    create_smtp_session(fetched_email, reset_code)
 
 
 def create_password_reset_code(fetched_email, db):
     """Creates a 6 digit reset code"""
-    try:
-        code_length = 6
-        reset_code = ''.join(random.choices(string.ascii_uppercase +
-                                            string.digits, k=code_length))
+    # try:
+    code_length = 6
+    reset_code = ''.join(random.choices(string.ascii_uppercase +
+                                        string.digits, k=code_length))
 
-        temporarily_add_token(reset_code, fetched_email, db)
-        return reset_code
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    temporarily_add_token(reset_code, fetched_email, db)
+    return reset_code
+
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def initiate_pwd_reset(email, db):
     """Fetches the user who has requested for password reset and calls a method to create a smtp session"""
-    try:
-        fetched_user = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
-        if fetched_user:
-            fetched_email = fetched_user.user_email
-            create_password_reset_code(fetched_email, db)
-            db.commit()
-        else:
-            return ResponseDTO(404, "User not found", {})
-        return ResponseDTO(200, "Email sent successfully", {})
+    # try:
+    fetched_user = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
+    if fetched_user:
+        fetched_email = fetched_user.user_email
+        create_password_reset_code(fetched_email, db)
+        db.commit()
+    else:
+        return ResponseDTO(404, "User not found", {})
+    return ResponseDTO(200, "Email sent successfully", {})
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
