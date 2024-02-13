@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.v2_0.application.utility.app_utility import ensure_optional_fields
 from app.v2_0.domain.models.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
+from app.v2_0.domain.schemas.module_schemas import ModulesMap
 
 
 class LoginResponse(BaseModel):
@@ -20,7 +21,7 @@ class PersonalInfo(Modifier):
     last_name: str = ""
     user_email: str
     user_birthdate: Optional[date] = None
-    activity_status: ActivityStatus = None
+    active_status: ActivityStatus = None
     casual_leaves: Optional[int] = 3
     medical_leaves: Optional[int] = 12
     user_image: str = "Image"
@@ -136,12 +137,11 @@ class UserOfficialSchema(Modifier):
     doj: Optional[date] = None
     job_confirmation: Optional[bool] = None
     current_location: Optional[str] = None
-    department_head: Optional[str] = None
-    reporting_manager: Optional[str] = None
+    department_head: Optional[int] = None
+    reporting_manager: Optional[int] = None
     designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
-    accessible_features: List[Features] = None
-    accessible_modules: List[Modules] = [0]
+    accessible_modules: Optional[List[ModulesMap]] = None
 
 
 class GetUserOfficialSchema(Modifier):
@@ -153,8 +153,7 @@ class GetUserOfficialSchema(Modifier):
     reporting_manager: Optional[str] = None
     designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
-    accessible_features: List[Features] = None
-    accessible_modules: List[Modules] = None
+    accessible_modules: Optional[List[ModulesMap]] = None
     can_edit: Optional[bool] = False
 
     def __init__(self, *args, **kwargs):

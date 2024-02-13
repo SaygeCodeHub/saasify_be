@@ -4,6 +4,7 @@ from app.v2_0.application.utility.app_utility import get_all_features
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
+from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 
 
 def add_user_to_ucb(new_user, db):
@@ -18,39 +19,42 @@ def add_user_to_ucb(new_user, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def add_employee_to_ucb(employee, new_employee, company_id, branch_id, db):
+def add_employee_to_ucb(employee: InviteEmployee, new_employee, company_id, branch_id, db):
     """Adds employee to the ucb table"""
     company = db.query(Companies).filter(Companies.company_id == company_id).first()
-    approvers_list = [company.owner]
+    approvers_list = []
+    features_array = []
+    modules_array = []
     if employee.accessible_modules is None:
-        employee.accessible_modules = [0]
-    features_array = employee.accessible_features
-    # try:
+        modules_array = [Modules.HR]
+        features_array = get_all_features(modules_array)
+    else:
+        for module in employee.accessible_modules:
+            for modules in Modules:
+                if modules.value == module.module_id:
+                    modules_array.append(modules)
+            for feature in module.accessible_features:
+                for features in Features:
+                    if features.value == feature.feature_id:
+                        features_array.append(features)
     if employee.approvers is None:
         approvers = [company.owner]
         approvers_list = list(approvers)
     elif len(employee.approvers) != 0:
         approvers_set = set(employee.approvers)
-        approvers_set.add(company.owner)
+        if approvers_set.__contains__(company.owner) is False:
+            approvers_set.add(company.owner)
         approvers_list = list(approvers_set)
-    if employee.accessible_features is None:
-        features_array = get_all_features(employee.accessible_modules)
-    elif len(employee.accessible_features) == 0:
-        features_array = get_all_features(employee.accessible_modules)
+
     ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
                                      branch_id=branch_id,
                                      designations=employee.designations, approvers=approvers_list,
-                                     accessible_modules=employee.accessible_modules,
+                                     accessible_modules=modules_array,
                                      accessible_features=features_array)
 
     db.add(ucb_employee)
     db.commit()
     db.refresh(ucb_employee)
-
-
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
 
 
 def add_company_to_ucb(new_company, user_id, db):
