@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
+from app.v2_0.domain.schemas.module_schemas import ModulesMap
 from app.v2_0.domain.schemas.user_schemas import UpdateUser
 
 
@@ -21,8 +22,7 @@ class InviteEmployee(Modifier):
     user_email: Optional[str] = None
     designations: List[DesignationEnum]
     approvers: List = None
-    accessible_features: List[Features] = None
-    accessible_modules: List[Modules] = None
+    accessible_modules: Optional[List[ModulesMap]] = None
 
 
 class UpdateEmployee(UpdateUser):

@@ -1,11 +1,10 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from fastapi import Depends
-
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.application.password_handler.reset_password import create_password_reset_code
+from app.v2_0.application.service.home_screen_service import calculate_value, check_if_statistics, get_title
 from app.v2_0.application.service.ucb_service import add_user_to_ucb, add_employee_to_ucb
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
@@ -19,10 +18,10 @@ from app.v2_0.domain.models.user_documents import UserDocuments
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.models.user_official_details import UserOfficialDetails
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
+from app.v2_0.domain.schemas.module_schemas import ModulesMap, FeaturesMap
 from app.v2_0.domain.schemas.user_schemas import GetAadharDetails, \
-    GetPassportDetails, GetPersonalInfo, UpdateUser, UserBankDetailsSchema, UserOfficialSchema, GetUserOfficialSchema, \
-    GetUserFinanceSchema, GetUserBankDetailsSchema, PersonalInfo
-from app.v2_0.infrastructure.database import get_db
+    GetPassportDetails, GetPersonalInfo, GetUserOfficialSchema, \
+    GetUserFinanceSchema, GetUserBankDetailsSchema, UserBankDetailsSchema, UserOfficialSchema, PersonalInfo, UpdateUser
 
 
 def add_user_details(user, user_id, db):
@@ -107,19 +106,33 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
             user_details["accessible_features"] = ucb.accessible_features if ucb else []
             user_details["approvers"] = ucb.approvers if ucb else []
             user_details["personal_info"] = GetPersonalInfo(**user.__dict__ if user else {})
+            official = user_official.__dict__ if user_official else {}
 
+            accessible_modules = []
+
+            for acm in ucb.accessible_modules:
+                accessible_modules.append(
+                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
+                        FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
+                                    value=calculate_value(
+                                        af.name, user_id, company_id, branch_id, db),
+                                    is_statistics=check_if_statistics(af.name))
+                        for af in ucb.accessible_features]))
+            official.update(
+                {"accessible_modules": accessible_modules if ucb else [], "approvers": ucb.approvers if ucb else [],
+                 "designations": ucb.designations if ucb else []})
             user_details.update({"documents": {
                 "aadhar": GetAadharDetails(**user_doc.__dict__ if user_doc else {}),
                 "passport": GetPassportDetails(**user_doc.__dict__ if user_doc else {})}})
             user_details.update(
                 {"financial": {"finances": GetUserFinanceSchema(**user_finances.__dict__ if user_finances else {}),
                                "bank_details": GetUserBankDetailsSchema(**user_bank.__dict__ if user_bank else {})}})
-            user_details["official"] = GetUserOfficialSchema(**user_official.__dict__ if user_official else {})
+            user_details["official"] = GetUserOfficialSchema(**official.__dict__ if official else {})
             user_details["official"].__dict__.update({"can_edit": True if user_id == company.owner else False})
             user_details["financial"]["finances"].__dict__.update(
                 {"can_edit": True if user_id == company.owner else False})
 
-            return ResponseDTO(200, "User fetched!", user_details)
+        return ResponseDTO(200, "User fetched!", user_details)
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
@@ -322,124 +335,6 @@ def store_user_finance(finance_data, user_id, db):
                        deduction=finance_data.deduction, fixed_monthly_gross=finance_data.fixed_monthly_gross,
                        total_annual_gross=finance_data.total_annual_gross, modified_on=datetime.now(), )
     db.add(data)
-
-
-def add_employee_manually(user: UpdateUser, user_id, company_id, branch_id, db):
-    """Adds an employee with his details to the DB"""
-    email = user.personal_info.user_email
-    user_in_user_auth = db.query(UsersAuth).filter(UsersAuth.user_email == email).first()
-
-    if user_in_user_auth is None:
-        inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-        new_employee = UsersAuth(user_email=email, invited_by=inviter.user_email)
-        db.add(new_employee)
-        db.commit()
-
-        ucb_emp = InviteEmployee
-        ucb_emp.approvers = user.official.approvers
-        ucb_emp.designations = user.official.designations
-        ucb_emp.accessible_modules = user.official.accessible_modules
-        ucb_emp.accessible_features = user.official.accessible_features
-        add_employee_to_ucb(ucb_emp, new_employee, company_id, branch_id, db)
-
-        info_resp = store_personal_info(user.personal_info, new_employee.user_id, branch_id, db)
-        if info_resp is not None:
-            return info_resp
-
-        docs_resp = store_user_documents(user.documents, new_employee.user_id, db)
-        if docs_resp is not None:
-            return docs_resp
-
-        bank_response = store_user_bank_data(user.financial.bank_details, new_employee.user_id, db)
-        if bank_response is not None:
-            return bank_response
-
-        store_user_finance(user.financial.finances, new_employee.user_id, db)
-        store_user_official_info(user.official, new_employee.user_id, user_id, db)
-
-        create_password_reset_code(email, db)
-
-    else:
-        user_exists = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_in_user_auth.user_id).first()
-
-        if user_in_user_auth and user_exists:
-            return ResponseDTO(409, "User with this email already exists in this branch!", user_exists)
-
-        elif user_in_user_auth and not user_exists:
-            print("here elif user_in_user_auth and not user_exists")
-            ucb_emp = InviteEmployee
-            ucb_emp.approvers = user.official.approvers
-            ucb_emp.designations = user.official.designations
-            ucb_emp.accessible_modules = user.official.accessible_modules
-            ucb_emp.accessible_features = user.official.accessible_features
-            add_employee_to_ucb(ucb_emp, user_in_user_auth, company_id, branch_id, db)
-
-    db.commit()
-
-    return None
-
-
-def modify_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db):
-    """Updates a User"""
-    """user_id is the person who will be updating the person with u_id as the user_id"""
-
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
-
-    if check is not None:
-        return check
-
-    else:
-        if u_id == "":
-            response = add_employee_manually(user, user_id, company_id, branch_id, db)
-
-            if response is None:
-                return ResponseDTO(200, "User added successfully", {})
-            else:
-                return response
-        else:
-            user_query = db.query(UserDetails).filter(UserDetails.user_id == int(u_id))
-            user_exists = user_query.first()
-            ucb_user = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == int(u_id)).first()
-            if user.personal_info.user_contact is not None:
-                contact_exists = db.query(UserDetails).filter(
-                    UserDetails.user_contact == user.personal_info.user_contact).filter(
-                    UserDetails.user_id != u_id).first()
-                if contact_exists:
-                    return ResponseDTO(409, "User with this contact already exists!", contact_exists)
-
-            if not user_exists:
-                return ResponseDTO(404, "User not found!", {})
-
-            if ucb_user is None:
-                ucb_emp = InviteEmployee
-                ucb_emp.approvers = user.official.approvers
-                ucb_emp.designations = user.official.designations
-                ucb_emp.accessible_modules = user.official.accessible_modules
-                ucb_emp.accessible_features = user.official.accessible_features
-                add_employee_to_ucb(ucb_emp, user_exists, company_id, branch_id, db)
-
-            update_personal_info(user.personal_info, user_query, user_id)
-
-            docs_resp = update_user_documents(user.documents, u_id, user_id, db)
-            if docs_resp is not None:
-                return docs_resp
-
-            bank_resp = update_user_bank_info(user.financial.bank_details, u_id, db)
-            if bank_resp is not None:
-                return bank_resp
-
-            update_user_finance(user.financial.finances, u_id, user_id, db)
-            update_user_official_info(user.official, u_id, user_id, db)
-
-            db.commit()
-
-            return ResponseDTO(200, "User updated successfully", {})
-
-
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
 
 
 def update_leave_approvers(approvers_list, user_id, db):

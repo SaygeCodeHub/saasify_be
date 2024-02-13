@@ -21,7 +21,8 @@ from app.v2_0.application.service.module_service import add_module, fetch_subscr
 from app.v2_0.application.service.shift_service import add_shift, fetch_all_shifts, change_shift_info, remove_shift, \
     assign_shift_to_employee
 from app.v2_0.application.service.task_service import assign_task, fetch_my_tasks, change_task_status
-from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
+from app.v2_0.application.service.update_user_service import user_update_func
+from app.v2_0.application.service.user_service import add_user, fetch_by_id, update_approver
 from app.v2_0.domain.models.user_auth import UsersAuth
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.domain.models.user_details import UserDetails
@@ -61,7 +62,7 @@ def get_user_by_id(u_id: int, company_id: int, branch_id: int, user_id: int, db=
 def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int, u_id: Optional[str] = None,
                 db=Depends(get_db)):
     """Calls service layer to update user"""
-    return modify_user(user, user_id, company_id, branch_id, u_id, db)
+    return user_update_func(user, user_id, company_id, branch_id, u_id, db)
 
 
 @router.post("/v2.0/authenticateUser")
