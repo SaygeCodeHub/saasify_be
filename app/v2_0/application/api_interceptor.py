@@ -18,6 +18,8 @@ from app.v2_0.application.service.home_screen_service import fetch_home_screen_d
 from app.v2_0.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_all_leaves, modify_leave_status
 from app.v2_0.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
+from app.v2_0.application.service.shift_service import add_shift, fetch_all_shifts, change_shift_info, remove_shift, \
+    assign_shift_to_employee
 from app.v2_0.application.service.task_service import assign_task, fetch_my_tasks, change_task_status
 from app.v2_0.application.service.user_service import add_user, modify_user, fetch_by_id, update_approver
 from app.v2_0.domain.models.user_auth import UsersAuth
@@ -31,6 +33,7 @@ from app.v2_0.domain.schemas.company_schemas import AddCompany, UpdateCompany
 from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.domain.schemas.module_schemas import ModuleSchema
+from app.v2_0.domain.schemas.shifts_schemas import AddShift, UpdateShift
 from app.v2_0.domain.schemas.task_schemas import AssignTask, UpdateTask
 from app.v2_0.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
@@ -312,3 +315,36 @@ def update_announcements(announcement: UpdateAnnouncement, user_id: int, company
 def delete_announcement(announcement_id: int, user_id: int, company_id: int, branch_id: int,
                         db=Depends(get_db)):
     return remove_announcement(announcement_id, user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Shift related APIs-------------------------------------------------------------------"""
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/createShift")
+def create_shift(shift: AddShift, user_id: int, company_id: int, branch_id: int,
+                 db=Depends(get_db)):
+    return add_shift(shift, user_id, company_id, branch_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getAllShifts")
+def get_all_shifts(user_id: int, company_id: int, branch_id: int,
+                   db=Depends(get_db)):
+    return fetch_all_shifts(user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateShift/{shift_id}")
+def update_shift(new_shift_info: UpdateShift, user_id: int, company_id: int, branch_id: int, shift_id: int,
+                 db=Depends(get_db)):
+    return change_shift_info(new_shift_info, user_id, company_id, branch_id, shift_id, db)
+
+
+@router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteShift/{shift_id}")
+def delete_shift(user_id: int, company_id: int, branch_id: int, shift_id: int,
+                 db=Depends(get_db)):
+    return remove_shift(user_id, company_id, branch_id, shift_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/assignShift/{u_id}/{shift_id}")
+def assign_shift(user_id: int, company_id: int, branch_id: int, u_id: int, shift_id: int,
+                 db=Depends(get_db)):
+    return assign_shift_to_employee(user_id, company_id, branch_id, u_id, shift_id, db)

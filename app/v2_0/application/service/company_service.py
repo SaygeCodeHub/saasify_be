@@ -366,29 +366,25 @@ def get_designation_names(designations):
 
 
 def get_all_user_data(ucb, db):
-    try:
-        company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
+    company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
 
-        stmt = select(UserCompanyBranch.branch_id, UserCompanyBranch.designations,
-                      UserCompanyBranch.accessible_features,
-                      UserCompanyBranch.accessible_modules,
-                      Branches.branch_name).select_from(UserCompanyBranch).join(
-            Branches, UserCompanyBranch.branch_id == Branches.branch_id).filter(
-            UserCompanyBranch.user_id == ucb.user_id)
+    stmt = select(UserCompanyBranch.branch_id, UserCompanyBranch.designations,
+                  UserCompanyBranch.accessible_features,
+                  UserCompanyBranch.accessible_modules,
+                  Branches.branch_name).select_from(UserCompanyBranch).join(
+        Branches, UserCompanyBranch.branch_id == Branches.branch_id).filter(
+        UserCompanyBranch.user_id == ucb.user_id)
 
-        branches = db.execute(stmt)
-        result = [
-            UserDataResponse(
-                branch_id=branch.branch_id,
-                branch_name=branch.branch_name,
-                designations=get_designation_names(branch.designations),
-                accessible_modules=branch.accessible_modules,
-                accessible_features=branch.accessible_features
-            )
-            for branch in branches
-        ]
+    branches = db.execute(stmt)
+    result = [
+        UserDataResponse(
+            branch_id=branch.branch_id,
+            branch_name=branch.branch_name,
+            designations=get_designation_names(branch.designations),
+            accessible_modules=branch.accessible_modules,
+            accessible_features=branch.accessible_features
+        )
+        for branch in branches
+    ]
 
-        return GetUserDataResponse(company_id=company.company_id, company_name=company.company_name, branches=result)
-
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+    return GetUserDataResponse(company_id=company.company_id, company_name=company.company_name, branches=result)
