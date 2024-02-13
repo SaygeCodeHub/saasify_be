@@ -61,6 +61,7 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
             return ResponseDTO(200, "Invite sent Successfully", {})
         else:
+            db.rollback()
             return check
 
     except Exception as exc:
@@ -69,32 +70,31 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
 def fetch_employees(company_id, branch_id, user_id, db):
     """Returns all the employees belonging to a particular branch"""
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
-        employees_query = (
-            db.query(UserDetails, UsersAuth, UserCompanyBranch)
-            .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
-            .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
-            .filter(UserCompanyBranch.branch_id == branch_id))
+        if check is None:
+            employees_query = (
+                db.query(UserDetails, UsersAuth, UserCompanyBranch)
+                .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
+                .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
+                .filter(UserCompanyBranch.branch_id == branch_id))
 
-        result = []
-        for details, auth, ucb in employees_query:
-            result.append({"employee_id": auth.user_id,
-                           "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
-                           "user_contact": details.user_contact,
-                           "designations": get_designation_name(ucb.designations),
-                           "user_email": auth.user_email,
-                           "current_address": details.current_address})
+            result = []
+            for details, auth, ucb in employees_query:
+                result.append({"employee_id": auth.user_id,
+                               "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
+                               "user_contact": details.user_contact,
+                               "designations": get_designation_name(ucb.designations),
+                               "user_email": auth.user_email,
+                               "current_address": details.current_address})
 
-        return ResponseDTO(200, "Employees fetched!", result)
-    else:
-        return check
+            return ResponseDTO(200, "Employees fetched!", result)
+        else:
+            return check
 
-
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), [])
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), [])
 
 
 def get_branch_name(branch_id, db):
