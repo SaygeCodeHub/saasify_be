@@ -296,7 +296,7 @@ def withdraw_leave_func(leave_id: int, user_id: int, company_id: int, branch_id:
         leave_query.update(leave_response)
         db.commit()
 
-        return ResponseDTO(200, "Leave withdrawn successfully",{})
+        return ResponseDTO(200, "Leave withdrawn successfully", {})
     else:
         return check
 

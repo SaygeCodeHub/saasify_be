@@ -1,10 +1,9 @@
 """Schemas for Branches"""
 from datetime import date, datetime
-from typing import List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import ActivityStatus, Modules, Features
+from app.v2_0.domain.models.enums import ActivityStatus
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
 
 
@@ -32,14 +31,11 @@ class GetBranch(BaseModel):
     branch_id: int
 
 
-
 class CreateBranchResponse(BaseModel):
     branch_name: str
     branch_id: int
     # modules: Optional[List[Modules]]
 
-
-
- # accessible_modules: List[Modules]
- #    accessible_features: List[Features]
- #    geo_fencing: bool
+# accessible_modules: List[Modules]
+#    accessible_features: List[Features]
+#    geo_fencing: bool
