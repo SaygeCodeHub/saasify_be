@@ -1,9 +1,10 @@
 """Schemas for User"""
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
+from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.utility.app_utility import ensure_optional_fields
 from app.v2_0.domain.models.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
@@ -20,14 +21,14 @@ class PersonalInfo(Modifier):
     first_name: str = ""
     last_name: str = ""
     user_email: str
-    user_birthdate: Optional[date] = None
+    user_birthdate: Optional[Union[date, str]] = None
     active_status: ActivityStatus = None
     casual_leaves: Optional[int] = 3
     medical_leaves: Optional[int] = 12
     user_image: str = "Image"
-    user_contact: Optional[int] = None
-    alternate_contact: Optional[int] = None
-    age: int = None
+    user_contact: Optional[Union[int, str]] = None
+    alternate_contact: Optional[Union[int, str]] = None
+    age: Optional[Union[int, str]] = None
     middle_name: str = ""
     gender: Optional[str] = None
     nationality: Optional[str] = None
@@ -36,7 +37,7 @@ class PersonalInfo(Modifier):
     permanent_address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
-    pincode: Optional[int] = None
+    pincode: Optional[Union[int, str]] = None
 
 
 class AadharDetails(BaseModel):
@@ -149,8 +150,8 @@ class GetUserOfficialSchema(Modifier):
     doj: Optional[date] = None
     job_confirmation: Optional[bool] = None
     current_location: Optional[str] = None
-    department_head: Optional[str] = None
-    reporting_manager: Optional[str] = None
+    department_head: Optional[int] = None
+    reporting_manager: Optional[int] = None
     designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
     accessible_modules: Optional[List[ModulesMap]] = None
@@ -159,6 +160,13 @@ class GetUserOfficialSchema(Modifier):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ensure_optional_fields(self)
+
+
+def validate_my_model(model):
+    try:
+        model()
+    except ValidationError as exc:
+        return ResponseDTO(204, "Input should be a valid dictionary or object to extract fields from", {})
 
 
 class UpdateUser(BaseModel):

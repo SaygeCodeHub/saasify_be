@@ -5,6 +5,7 @@ from typing import List
 from fastapi import Depends
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
+from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.companies import Companies
 from app.v2_0.domain.models.enums import Features, Modules
@@ -49,9 +50,10 @@ def user_update_func(user: UpdateUser, user_id, company_id, branch_id, u_id, db=
         else:
             db.rollback()
             return check
-    except Exception as exc:
+
+    except Exception as e:
         db.rollback()
-        return ResponseDTO(204, str(exc), {})
+        return ResponseDTO(204, str(e), {})
 
 
 def add_user_finances(user, user_id, new_employee, db):
@@ -191,7 +193,9 @@ def add_emp_in_ucb(user: UpdateUser, company_id, branch_id, accessible_modules, 
 def invite_new_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depends(get_db)):
     """Add new user"""
     inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-    new_employee = UsersAuth(user_email=user.personal_info.user_email, invited_by=inviter.user_email)
+    token = create_password_reset_code(user.personal_info.user_email, db)
+    new_employee = UsersAuth(user_email=user.personal_info.user_email, invited_by=inviter.user_email,
+                             change_password_token=token)
     db.add(new_employee)
     db.flush()
     return new_employee
