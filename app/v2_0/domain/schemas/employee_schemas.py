@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.v2_0.domain.models.enums import DesignationEnum, Modules, Features
+from app.v2_0.domain.models.enums import DesignationEnum
 from app.v2_0.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.domain.schemas.module_schemas import ModulesMap
 from app.v2_0.domain.schemas.user_schemas import UpdateUser

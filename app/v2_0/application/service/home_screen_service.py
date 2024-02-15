@@ -4,9 +4,8 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.announcement_service import fetch_announcements
 from app.v2_0.application.service.leave_service import get_authorized_leave_requests
-from app.v2_0.application.service.task_service import fetch_my_tasks, get_assigner_name
+from app.v2_0.application.service.task_service import get_assigner_name
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.announcements import Announcements
 from app.v2_0.domain.models.branch_settings import BranchSettings
@@ -16,6 +15,7 @@ from app.v2_0.domain.models.leaves import Leaves
 from app.v2_0.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.domain.models.tasks import Tasks
 from app.v2_0.domain.models.user_company_branch import UserCompanyBranch
+from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.schemas.announcement_schemas import GetAnnouncements
 from app.v2_0.domain.schemas.branch_schemas import GetBranch
@@ -146,6 +146,7 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
             ucb_entry = db.query(UserCompanyBranch).filter(
                 UserCompanyBranch.user_id == user_id).filter(UserCompanyBranch.company_id == company_id).filter(
                 UserCompanyBranch.branch_id == branch_id).first()
+            user_data = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
 
             branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
 
@@ -209,7 +210,8 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
                                            geo_fencing=iterated_result.geo_fencing,
                                            tasks_assigned_to_me=tasks_assigned_to_me,
                                            tasks_assigned_by_me=tasks_assigned_by_me,
-                                           announcements=active_announcements)
+                                           announcements=active_announcements,
+                                           gender=user_data.gender if user_data else None)
 
             return ResponseDTO(200, "Data fetched!", result)
 
