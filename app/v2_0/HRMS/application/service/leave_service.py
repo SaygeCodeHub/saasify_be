@@ -3,10 +3,6 @@ import asyncio
 from datetime import datetime
 
 from fastapi import Depends
-
-from app.v2_0.application.dto.dto_classes import ResponseDTO
-from app.v2_0.application.service.company_service import get_approver_data
-from app.v2_0.application.service.push_notification_service import send_leave_notification, \
 from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.service.company_service import get_approver_data
 from app.v2_0.HRMS.application.service.push_notification_service import send_leave_notification, \

@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, ValidationError
 
 from app.v2_0.HRMS.application.utility.app_utility import ensure_optional_fields
+from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap
