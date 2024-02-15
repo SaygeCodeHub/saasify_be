@@ -3,25 +3,25 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from app.v2_0.HRMS.domain.models.user_details import UserDetails
-from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.service.leave_service import get_authorized_leave_requests
 from app.v2_0.HRMS.application.service.task_service import get_assigner_name
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.announcements import Announcements
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
-from app.v2_0.enums import LeaveStatus, Features
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.HRMS.domain.models.tasks import Tasks
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
+from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.schemas.announcement_schemas import GetAnnouncements
 from app.v2_0.HRMS.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.HRMS.domain.schemas.home_screen_schemas import HomeScreenApiResponse, Salaries, IteratedBranchSettings
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap, FeaturesMap, AvailableModulesMap
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import LeaveStatus, Features
 
 
 def get_home_screen_branches(user_id, db):
@@ -161,13 +161,18 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
             accessible_modules = []
 
             for acm in iterated_result.accessible_modules:
+                accessible_features = []
+                for features in Features:
+                    if features.name.startswith(acm.name):
+                        accessible_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
+                                                               title=get_title(features.name),
+                                                               icon="",
+                                                               value=calculate_value(
+                                                                   features.name, user_id, company_id, branch_id, db),
+                                                               is_statistics=check_if_statistics(features.name)))
                 accessible_modules.append(
-                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
-                        FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
-                                    value=calculate_value(
-                                        af.name, user_id, company_id, branch_id, db),
-                                    is_statistics=check_if_statistics(af.name))
-                        for af in iterated_result.accessible_features]))
+                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="",
+                               accessible_features=accessible_features))
 
             available_module = []
             for avm in module_subscription.module_name:
