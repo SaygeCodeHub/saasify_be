@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from app.v2_0.application.db_config import DATABASE_URL_PROD
+from app.v2_0.infrastructure.db_config import DATABASE_URL_LOCAL_JAYRAJ, DATABASE_URL_PROD
 
 SQLALCHEMY_DATABASE_URL = DATABASE_URL_PROD
 
