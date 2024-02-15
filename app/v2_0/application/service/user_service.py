@@ -3,9 +3,8 @@ from datetime import datetime
 
 from app.v2_0.application.dto.dto_classes import ResponseDTO
 from app.v2_0.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.application.service.home_screen_service import calculate_value, check_if_statistics, get_title
-from app.v2_0.application.service.ucb_service import add_user_to_ucb, add_employee_to_ucb
+from app.v2_0.application.service.ucb_service import add_user_to_ucb
 from app.v2_0.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.domain.models.branch_settings import BranchSettings
 from app.v2_0.domain.models.companies import Companies
@@ -17,11 +16,10 @@ from app.v2_0.domain.models.user_details import UserDetails
 from app.v2_0.domain.models.user_documents import UserDocuments
 from app.v2_0.domain.models.user_finance import UserFinance
 from app.v2_0.domain.models.user_official_details import UserOfficialDetails
-from app.v2_0.domain.schemas.employee_schemas import InviteEmployee
 from app.v2_0.domain.schemas.module_schemas import ModulesMap, FeaturesMap
 from app.v2_0.domain.schemas.user_schemas import GetAadharDetails, \
     GetPassportDetails, GetPersonalInfo, GetUserOfficialSchema, \
-    GetUserFinanceSchema, GetUserBankDetailsSchema, UserBankDetailsSchema, UserOfficialSchema, PersonalInfo, UpdateUser
+    GetUserFinanceSchema, GetUserBankDetailsSchema, UserBankDetailsSchema, UserOfficialSchema, PersonalInfo
 
 
 def add_user_details(user, user_id, db):
@@ -101,15 +99,9 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
             company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
 
             user.__dict__["user_email"] = user_auth.user_email
-            user_details["designations"] = ucb.designations if ucb else []
-            user_details["accessible_modules"] = ucb.accessible_modules if ucb else []
-            user_details["accessible_features"] = ucb.accessible_features if ucb else []
-            user_details["approvers"] = ucb.approvers if ucb else []
             user_details["personal_info"] = GetPersonalInfo(**user.__dict__ if user else {})
             official = user_official.__dict__ if user_official else {}
-
             accessible_modules = []
-
             for acm in ucb.accessible_modules:
                 accessible_modules.append(
                     ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
@@ -118,17 +110,18 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
                                         af.name, user_id, company_id, branch_id, db),
                                     is_statistics=check_if_statistics(af.name))
                         for af in ucb.accessible_features]))
+
             official.update(
                 {"accessible_modules": accessible_modules if ucb else [], "approvers": ucb.approvers if ucb else [],
-                 "designations": ucb.designations if ucb else []})
+                 "designations": ucb.designations if ucb else [],
+                 "can_edit": True if user_id == company.owner else False})
             user_details.update({"documents": {
                 "aadhar": GetAadharDetails(**user_doc.__dict__ if user_doc else {}),
                 "passport": GetPassportDetails(**user_doc.__dict__ if user_doc else {})}})
             user_details.update(
                 {"financial": {"finances": GetUserFinanceSchema(**user_finances.__dict__ if user_finances else {}),
                                "bank_details": GetUserBankDetailsSchema(**user_bank.__dict__ if user_bank else {})}})
-            user_details["official"] = GetUserOfficialSchema(**official.__dict__ if official else {})
-            user_details["official"].__dict__.update({"can_edit": True if user_id == company.owner else False})
+            user_details["official"] = GetUserOfficialSchema(**official if official else {})
             user_details["financial"]["finances"].__dict__.update(
                 {"can_edit": True if user_id == company.owner else False})
 

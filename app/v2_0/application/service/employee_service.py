@@ -45,9 +45,14 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
         if check is None:
             user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
+
             inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
 
             if user:
+                ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).filter(
+                    UserCompanyBranch.company_id == company_id).first(UserCompanyBranch.branch_id == branch_id).first()
+                if ucb:
+                    return ResponseDTO(200, "User already belongs to this branch", {})
                 assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)
 
             else:
@@ -83,7 +88,7 @@ def fetch_employees(company_id, branch_id, user_id, db):
             result = []
             for details, auth, ucb in employees_query:
                 result.append({"employee_id": auth.user_id,
-                               "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else None,
+                               "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else "Invited User",
                                "user_contact": details.user_contact,
                                "designations": get_designation_name(ucb.designations),
                                "user_email": auth.user_email,
