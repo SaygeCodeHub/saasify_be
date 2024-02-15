@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import select
 
+from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.service.leave_service import get_authorized_leave_requests
 from app.v2_0.HRMS.application.service.task_service import get_assigner_name
