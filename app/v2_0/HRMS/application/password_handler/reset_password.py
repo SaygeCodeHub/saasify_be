@@ -66,7 +66,6 @@ def create_smtp_session(fetched_email, reset_code):
 
     # Authentication
     s.login("jayraj.manoj@gmail.com", "odxfrxoyfcgzwsks")
-    print(msg.as_string())
 
     s.sendmail("jayraj.manoj@gmail.com", fetched_email, msg.as_string())
 
