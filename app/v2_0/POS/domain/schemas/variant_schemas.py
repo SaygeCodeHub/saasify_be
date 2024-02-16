@@ -7,13 +7,15 @@ from app.v2_0.enums import Unit
 
 class InitVariant(BaseModel):
     unit: Unit
-    quantity: str
+    measuring_qty: str
+    stock_qty: int
     price: float
 
 
 class UpdateVariant(Modifier):
     variant_name: str = ""
-    quantity: str
+    measuring_qty: str
+    stock_qty: int
     price: float
     unit: Unit
 
@@ -29,6 +31,6 @@ class AddVariant(UpdateVariant):
 class GetVariants(BaseModel):
     variant_id: int
     variant_name: str
-    quantity: str
+    measuring_qty: str
     unit: str
     price: float

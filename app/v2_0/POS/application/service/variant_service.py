@@ -14,11 +14,12 @@ def add_variant(variant, company_id, branch_id, user_id, flag, db):
     if check is None:
         if flag is False:
             product = db.query(Products).filter(Products.product_id == variant.product_id).first()
-            variant.variant_name = product.product_name + " " + variant.quantity + " " + variant.unit.name.title()
+            variant.variant_name = product.product_name + " " + variant.measuring_qty + " " + variant.unit.name.title()
 
         variant.company_id = company_id
         variant.branch_id = branch_id
-        new_variant = ProductVariants(variant_name=variant.variant_name, quantity=variant.quantity, price=variant.price,
+        new_variant = ProductVariants(variant_name=variant.variant_name, measuring_qty=variant.measuring_qty,
+                                      stock_qty=variant.stock_qty, price=variant.price,
                                       unit=variant.unit, product_id=variant.product_id, category_id=variant.category_id,
                                       company_id=company_id, branch_id=branch_id)
         db.add(new_variant)
@@ -37,7 +38,8 @@ def modify_variant(variant: UpdateVariant, var_id, company_id, branch_id, user_i
             variant_query = db.query(ProductVariants).filter(ProductVariants.variant_id == var_id)
             variant_query.update(
                 {"modified_by": user_id, "modified_on": datetime.now(), "variant_name": variant.variant_name,
-                 "quantity": variant.quantity, "price": variant.price, "unit": variant.unit})
+                 "measuring_qty": variant.measuring_qty, "stock_qty": variant.stock_qty, "price": variant.price,
+                 "unit": variant.unit})
             db.commit()
 
             return ResponseDTO(200, "Variant updated!", {})

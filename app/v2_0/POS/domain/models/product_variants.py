@@ -9,7 +9,8 @@ class ProductVariants(Base):
 
     variant_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     variant_name = Column(String, nullable=True)
-    quantity = Column(String, nullable=True)
+    measuring_qty = Column(String, nullable=True)
+    stock_qty = Column(Integer, nullable=True)
     unit = Column(Enum(Unit), nullable=True)
     price = Column(Double, nullable=True)
     product_id = Column(Integer, ForeignKey("products.product_id"), nullable=False)
