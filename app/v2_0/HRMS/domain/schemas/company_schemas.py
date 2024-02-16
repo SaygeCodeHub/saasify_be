@@ -4,9 +4,9 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.v2_0.enums import ActivityStatus
 from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
+from app.v2_0.enums import ActivityStatus
 
 
 class UpdateCompany(Modifier):
@@ -17,6 +17,13 @@ class UpdateCompany(Modifier):
     services: str = None
     owner: int = None
     activity_status: ActivityStatus = ActivityStatus.ACTIVE
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.company_name == "":
+            self.company_name = None
+        if self.company_name.replace(" ", "") == "":
+            self.company_name = None
 
 
 class AddCompany(AddBranch, UpdateCompany):

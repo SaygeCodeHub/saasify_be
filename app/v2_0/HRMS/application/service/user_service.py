@@ -48,8 +48,10 @@ def add_user(user: AddUser, db):
     try:
         if user.user_email is None:
             return ResponseDTO(204, "Please enter an email!", {})
-        if (user.first_name or user.last_name) is None:
-            return ResponseDTO(204, "Please enter a name!", {})
+        if user.first_name is None:
+            return ResponseDTO(204, "Please enter first name!", {})
+        if user.last_name is None:
+            return ResponseDTO(204, "Please enter last name!", {})
         if user.password is None:
             return ResponseDTO(204, "Please enter a password!", {})
 
