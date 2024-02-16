@@ -162,7 +162,7 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
 
             for acm in iterated_result.accessible_modules:
                 accessible_features = []
-                for features in Features:
+                for features in iterated_result.accessible_features:
                     if features.name.startswith(acm.name):
                         accessible_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
                                                                title=get_title(features.name),

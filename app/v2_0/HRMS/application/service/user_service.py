@@ -103,13 +103,18 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
             official = user_official.__dict__ if user_official else {}
             accessible_modules = []
             for acm in ucb.accessible_modules:
+                accessible_features = []
+                for features in ucb.accessible_features:
+                    if features.name.startswith(acm.name):
+                        accessible_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
+                                                               title=get_title(features.name),
+                                                               icon="",
+                                                               value=calculate_value(
+                                                                   features.name, user_id, company_id, branch_id, db),
+                                                               is_statistics=check_if_statistics(features.name)))
                 accessible_modules.append(
-                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
-                        FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
-                                    value=calculate_value(
-                                        af.name, user_id, company_id, branch_id, db),
-                                    is_statistics=check_if_statistics(af.name))
-                        for af in ucb.accessible_features]))
+                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="",
+                               accessible_features=accessible_features))
 
             official.update(
                 {"accessible_modules": accessible_modules if ucb else [], "approvers": ucb.approvers if ucb else [],

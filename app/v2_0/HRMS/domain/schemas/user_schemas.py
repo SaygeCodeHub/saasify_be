@@ -5,10 +5,10 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, ValidationError
 
 from app.v2_0.HRMS.application.utility.app_utility import ensure_optional_fields
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import ActivityStatus, DesignationEnum, Features, Modules
 
 
 class LoginResponse(BaseModel):
@@ -39,11 +39,31 @@ class PersonalInfo(Modifier):
     state: Optional[str] = None
     pincode: Optional[Union[int, str]] = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.user_contact == "":
+            self.user_contact = None
+        if self.alternate_contact == "":
+            self.alternate_contact = None
+        if self.pincode == "":
+            self.pincode = None
+        if self.user_birthdate == "":
+            self.user_birthdate = None
+        if self.age == "":
+            self.age = None
+
 
 class AadharDetails(BaseModel):
-    aadhar_number: Optional[int] = None
+    aadhar_number: Optional[Union[int, str]] = None
     name_as_per_aadhar: Optional[str] = None
-    pan_number: Optional[str] = None
+    pan_number: Optional[Union[int, str]] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.aadhar_number == "":
+            self.aadhar_number = None
+        if self.pan_number == "":
+            self.pan_number = None
 
 
 class PassportDetails(BaseModel):
@@ -52,9 +72,14 @@ class PassportDetails(BaseModel):
     passport_lname: Optional[str] = None
     expiry_date: Optional[date] = None
     issue_date: Optional[date] = None
-    mobile_number: Optional[int] = None
+    mobile_number: Optional[Union[int, str]] = None
     current_address: Optional[str] = None
     permanent_address: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.mobile_number == "":
+            self.mobile_number = None
 
 
 class UserDocumentsSchema(Modifier):
@@ -79,12 +104,17 @@ class UserFinanceSchema(Modifier):
 class UserBankDetailsSchema(BaseModel):
     bank_detail_id: Optional[int] = None
     bank_name: Optional[str] = None
-    account_number: Optional[int] = None
+    account_number: Optional[Union[int, str]] = None
     ifsc_code: Optional[str] = None
     branch: Optional[str] = None
     account_type: Optional[str] = None
     country: Optional[str] = None
     modified_on: Optional[datetime] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.account_number == "":
+            self.account_number = None
 
 
 class AddUser(Modifier):
