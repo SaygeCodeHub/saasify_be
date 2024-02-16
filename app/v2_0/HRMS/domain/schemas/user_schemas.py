@@ -123,14 +123,25 @@ class UserBankDetailsSchema(BaseModel):
 
 class AddUser(Modifier):
     """Contains all the fields that will be accessible to all objects of type - 'User' """
-    first_name: str = ""
-    last_name: str = ""
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     password: Optional[str] = None
-    user_email: str
+    user_email: Optional[str] = None
     change_password_token: str = None
     medical_leaves: Optional[int] = 12
     casual_leaves: Optional[int] = 3
-    activity_status: ActivityStatus = "ACTIVE"
+    activity_status: ActivityStatus = ActivityStatus.ACTIVE
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.first_name == "":
+            self.first_name = None
+        if self.last_name == "":
+            self.last_name = None
+        if self.password == "":
+            self.password = None
+        if self.user_email == "":
+            self.user_email = None
 
 
 class GetUser(AadharDetails, PassportDetails, UserFinanceSchema):

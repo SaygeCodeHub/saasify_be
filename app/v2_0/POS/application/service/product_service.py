@@ -24,12 +24,13 @@ def add_product(product: AddProduct, company_id, branch_id, user_id, db):
 
         # Adds the variant in ProductVariants table
         variant = AddVariant
-        variant.variant_name = product.product_name + " " + product.quantity + " " + product.unit.name.title()
+        variant.variant_name = product.product_name + " " + product.measuring_qty + " " + product.unit.name.title()
         variant.price = product.price
-        variant.quantity = product.quantity
+        variant.measuring_qty = product.measuring_qty
         variant.unit = product.unit
         variant.category_id = product.category_id
         variant.product_id = new_product.product_id
+        variant.stock_qty = product.stock_qty
         add_variant(variant, company_id, branch_id, user_id, True, db)
         db.commit()
 
@@ -47,7 +48,7 @@ def update_variant_name(product_name, prod_id, db):
     variants = db.query(ProductVariants).filter(ProductVariants.product_id == prod_id).all()
 
     for variant in variants:
-        variant_name = product_name + " " + variant.quantity + " " + variant.unit.name.title()
+        variant_name = product_name + " " + variant.measuring_qty + " " + variant.unit.name.title()
         db.query(ProductVariants).filter(ProductVariants.variant_id == variant.variant_id).update(
             {"variant_name": variant_name})
 

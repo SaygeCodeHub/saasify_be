@@ -65,7 +65,7 @@ def remove_category(cat_id, company_id, branch_id, user_id, db):
 
 def get_variants(product_id, db):
     variants = db.query(ProductVariants).filter(ProductVariants.product_id == product_id).all()
-    result = [GetVariants(variant_id=variant.variant_id, variant_name=variant.variant_name, quantity=variant.quantity,
+    result = [GetVariants(variant_id=variant.variant_id, variant_name=variant.variant_name, measuring_qty=variant.measuring_qty,
                           unit=variant.unit.name.title(), price=variant.price)
               for variant in variants
               ]

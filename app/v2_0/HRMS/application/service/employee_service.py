@@ -44,13 +44,17 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
 
         if check is None:
+
+            if employee.user_email is None:
+                return ResponseDTO(204, "Please enter an email!", {})
+
             user = db.query(UsersAuth).filter(UsersAuth.user_email == employee.user_email).first()
 
             inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
 
             if user:
                 ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).filter(
-                    UserCompanyBranch.company_id == company_id).first(UserCompanyBranch.branch_id == branch_id).first()
+                    UserCompanyBranch.company_id == company_id).filter(UserCompanyBranch.branch_id == branch_id).first()
                 if ucb:
                     return ResponseDTO(200, "User already belongs to this branch", {})
                 assign_new_branch_to_existing_employee(employee, user, company_id, branch_id, db)

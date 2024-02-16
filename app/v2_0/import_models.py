@@ -3,7 +3,7 @@ from app.v2_0.HRMS.domain.models import user_auth, user_documents, user_finance,
     leaves, \
     user_official_details, user_bank_details, announcements
 from app.v2_0.HRMS.domain.models import module_subscriptions, user_details, shifts, user_company_branch, tasks
-from app.v2_0.POS.domain.models import categories, product_variants, products
+from app.v2_0.POS.domain.models import categories, product_variants, products, orders
 from app.v2_0.infrastructure.database import engine
 
 """=========================================================HRMS============================================================="""
@@ -27,3 +27,4 @@ shifts.Base.metadata.create_all(bind=engine)
 categories.Base.metadata.create_all(bind=engine)
 product_variants.Base.metadata.create_all(bind=engine)
 products.Base.metadata.create_all(bind=engine)
+orders.Base.metadata.create_all(bind=engine)

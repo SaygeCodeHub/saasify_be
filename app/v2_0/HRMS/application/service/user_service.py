@@ -1,7 +1,6 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.HRMS.application.service.home_screen_service import calculate_value, check_if_statistics, get_title
 from app.v2_0.HRMS.application.service.ucb_service import add_user_to_ucb
@@ -19,7 +18,8 @@ from app.v2_0.HRMS.domain.models.user_official_details import UserOfficialDetail
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap, FeaturesMap
 from app.v2_0.HRMS.domain.schemas.user_schemas import GetAadharDetails, \
     GetPassportDetails, GetPersonalInfo, GetUserOfficialSchema, \
-    GetUserFinanceSchema, GetUserBankDetailsSchema, UserBankDetailsSchema, UserOfficialSchema, PersonalInfo
+    GetUserFinanceSchema, GetUserBankDetailsSchema, UserBankDetailsSchema, UserOfficialSchema, PersonalInfo, AddUser
+from app.v2_0.dto.dto_classes import ResponseDTO
 
 
 def add_user_details(user, user_id, db):
@@ -43,14 +43,27 @@ def add_user_details(user, user_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def add_user(user, db):
+def add_user(user: AddUser, db):
     """Adds a user into the database"""
     try:
+        if user.user_email is None:
+            return ResponseDTO(204, "Please enter an email!", {})
+        if user.first_name is None:
+            return ResponseDTO(204, "Please enter first name!", {})
+        if user.last_name is None:
+            return ResponseDTO(204, "Please enter last name!", {})
+        if user.password is None:
+            return ResponseDTO(204, "Please enter a password!", {})
+
         user_email_exists = db.query(UsersAuth).filter(
             UsersAuth.user_email == user.user_email).first()
 
         if user_email_exists:
             return ResponseDTO(403, "User with this email already exists", {})
+
+        if user.password is None:
+            return ResponseDTO(204, "Please enter a password!", {})
+
         hashed_pwd = hash_pwd(user.password)
         user.password = hashed_pwd
         new_user = UsersAuth(user_email=user.user_email, password=user.password)
