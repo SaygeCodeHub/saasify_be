@@ -117,6 +117,8 @@ class UserBankDetailsSchema(BaseModel):
         super().__init__(*args, **kwargs)
         if self.account_number == "":
             self.account_number = None
+        if self.ifsc_code == "":
+            self.ifsc_code = None
 
 
 class AddUser(Modifier):

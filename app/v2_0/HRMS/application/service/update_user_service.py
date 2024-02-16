@@ -421,6 +421,7 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
         if account_number:
             db.rollback()
             return ResponseDTO(204, "Account number already belongs to someone!", {})
+
     if user.financial.bank_details.ifsc_code is not None:
         ifsc_code = db.query(UserBankDetails).filter(
             UserBankDetails.ifsc_code == user.financial.bank_details.ifsc_code).filter(
@@ -428,6 +429,7 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
         if ifsc_code:
             db.rollback()
             return ResponseDTO(204, "IFSC code already belongs to someone!", {})
+
     db.query(UserBankDetails).filter(UserBankDetails.user_id == u_id).update(
         {"bank_name": user.financial.bank_details.bank_name,
          "account_number": user.financial.bank_details.account_number,
