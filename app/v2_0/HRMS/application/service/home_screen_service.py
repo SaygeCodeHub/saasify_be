@@ -96,8 +96,7 @@ def calculate_value(feature_name, user_id, company_id, branch_id, db):
         elif feature_name == Features.HR_SALARY_ROLLOUT.name:
             salary_rollout = get_monthly_salary_rollout(user_id, branch_id, db)
             rounded_number = round(salary_rollout, 2)
-            rupee_symbol = "\u20B9"
-            return f"{rupee_symbol} {str(rounded_number)}"
+            return f"Rs. {str(rounded_number)}"
         elif feature_name == Features.HR_VIEW_ALL_EMPLOYEES.name:
             total_employees = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == branch_id).count()
             return str(total_employees)
