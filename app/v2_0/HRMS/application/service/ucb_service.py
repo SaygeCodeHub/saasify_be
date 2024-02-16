@@ -65,7 +65,6 @@ def add_company_to_ucb(new_company, user_id, db):
         for features in Features:
             if features.name.startswith(Modules.HR.name):
                 accessible_features.append(features)
-        print(accessible_features)
         ucb_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id)
         ucb_query.update(
             {"company_id": new_company.company_id, "designations": [DesignationEnum.OWNER],

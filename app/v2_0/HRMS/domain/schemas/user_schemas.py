@@ -80,6 +80,8 @@ class PassportDetails(BaseModel):
         super().__init__(*args, **kwargs)
         if self.mobile_number == "":
             self.mobile_number = None
+        if self.passport_num == "":
+            self.passport_num = None
 
 
 class UserDocumentsSchema(Modifier):
