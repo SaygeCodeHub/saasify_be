@@ -1,4 +1,4 @@
-"""Schmas for model - Announcements"""
+"""Schemas for model - Announcements"""
 from datetime import date, datetime
 
 from pydantic import BaseModel

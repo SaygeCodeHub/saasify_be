@@ -1,5 +1,5 @@
 """Schemas for Home screen API"""
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -18,6 +18,7 @@ class HomeScreenApiResponse(BaseModel):
     tasks_assigned_by_me: List[GetTasksAssignedByMe]
     announcements: List[GetAnnouncements]
     geo_fencing: bool
+    gender: Optional[str] = None
 
 
 class IteratedBranchSettings(BaseModel):

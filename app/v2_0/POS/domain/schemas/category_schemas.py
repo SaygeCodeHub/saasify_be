@@ -29,6 +29,3 @@ class GetCategories(BaseModel):
 
 class GetCategoriesWithProducts(GetCategories):
     products: List[GetProducts]
-
-# class GetCategoriesWithProductsResponse(BaseModel):
-#     categories: List[GetCategoriesWithProducts]

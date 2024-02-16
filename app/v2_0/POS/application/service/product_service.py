@@ -15,6 +15,8 @@ def add_product(product: AddProduct, company_id, branch_id, user_id, db):
     check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
     if check is None:
+        if product.category_id is None:
+            return ResponseDTO(204, "Category not found!", {})
         new_product = Products(product_name=product.product_name, image=product.image, description=product.description,
                                category_id=product.category_id, company_id=company_id, branch_id=branch_id)
         db.add(new_product)

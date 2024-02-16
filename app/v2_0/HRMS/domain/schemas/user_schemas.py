@@ -1,13 +1,14 @@
 """Schemas for User"""
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.v2_0.HRMS.application.utility.app_utility import ensure_optional_fields
-from app.v2_0.enums import ActivityStatus, DesignationEnum, Features, Modules
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import ActivityStatus, DesignationEnum, Features, Modules
 
 
 class LoginResponse(BaseModel):
@@ -20,14 +21,14 @@ class PersonalInfo(Modifier):
     first_name: str = ""
     last_name: str = ""
     user_email: str
-    user_birthdate: Optional[date] = None
+    user_birthdate: Optional[Union[date, str]] = None
     active_status: ActivityStatus = None
     casual_leaves: Optional[int] = 3
     medical_leaves: Optional[int] = 12
     user_image: str = "Image"
-    user_contact: Optional[int] = None
-    alternate_contact: Optional[int] = None
-    age: int = None
+    user_contact: Optional[Union[int, str]] = None
+    alternate_contact: Optional[Union[int, str]] = None
+    age: Optional[Union[int, str]] = None
     middle_name: str = ""
     gender: Optional[str] = None
     nationality: Optional[str] = None
@@ -36,13 +37,33 @@ class PersonalInfo(Modifier):
     permanent_address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
-    pincode: Optional[int] = None
+    pincode: Optional[Union[int, str]] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.user_contact == "":
+            self.user_contact = None
+        if self.alternate_contact == "":
+            self.alternate_contact = None
+        if self.pincode == "":
+            self.pincode = None
+        if self.user_birthdate == "":
+            self.user_birthdate = None
+        if self.age == "":
+            self.age = None
 
 
 class AadharDetails(BaseModel):
-    aadhar_number: Optional[int] = None
+    aadhar_number: Optional[Union[int, str]] = None
     name_as_per_aadhar: Optional[str] = None
-    pan_number: Optional[str] = None
+    pan_number: Optional[Union[int, str]] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.aadhar_number == "":
+            self.aadhar_number = None
+        if self.pan_number == "":
+            self.pan_number = None
 
 
 class PassportDetails(BaseModel):
@@ -51,9 +72,16 @@ class PassportDetails(BaseModel):
     passport_lname: Optional[str] = None
     expiry_date: Optional[date] = None
     issue_date: Optional[date] = None
-    mobile_number: Optional[int] = None
+    mobile_number: Optional[Union[int, str]] = None
     current_address: Optional[str] = None
     permanent_address: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.mobile_number == "":
+            self.mobile_number = None
+        if self.passport_num == "":
+            self.passport_num = None
 
 
 class UserDocumentsSchema(Modifier):
@@ -78,12 +106,19 @@ class UserFinanceSchema(Modifier):
 class UserBankDetailsSchema(BaseModel):
     bank_detail_id: Optional[int] = None
     bank_name: Optional[str] = None
-    account_number: Optional[int] = None
+    account_number: Optional[Union[int, str]] = None
     ifsc_code: Optional[str] = None
     branch: Optional[str] = None
     account_type: Optional[str] = None
     country: Optional[str] = None
     modified_on: Optional[datetime] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.account_number == "":
+            self.account_number = None
+        if self.ifsc_code == "":
+            self.ifsc_code = None
 
 
 class AddUser(Modifier):
@@ -149,8 +184,8 @@ class GetUserOfficialSchema(Modifier):
     doj: Optional[date] = None
     job_confirmation: Optional[bool] = None
     current_location: Optional[str] = None
-    department_head: Optional[str] = None
-    reporting_manager: Optional[str] = None
+    department_head: Optional[int] = None
+    reporting_manager: Optional[int] = None
     designations: Optional[List[DesignationEnum]] = None
     approvers: Optional[List[int]] = None
     accessible_modules: Optional[List[ModulesMap]] = None
@@ -159,6 +194,13 @@ class GetUserOfficialSchema(Modifier):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ensure_optional_fields(self)
+
+
+def validate_my_model(model):
+    try:
+        model()
+    except ValidationError as exc:
+        return ResponseDTO(204, "Input should be a valid dictionary or object to extract fields from", {})
 
 
 class UpdateUser(BaseModel):

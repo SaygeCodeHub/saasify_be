@@ -15,7 +15,7 @@ from app.v2_0.HRMS.application.service.company_service import add_company, fetch
 from app.v2_0.HRMS.application.service.employee_service import invite_employee, fetch_employees, fetch_employee_salaries
 from app.v2_0.HRMS.application.service.home_screen_service import fetch_home_screen_data
 from app.v2_0.HRMS.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
-    fetch_all_leaves, modify_leave_status
+    fetch_all_leaves, modify_leave_status, withdraw_leave_func
 from app.v2_0.HRMS.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
 from app.v2_0.HRMS.application.service.shift_service import add_shift, fetch_all_shifts, change_shift_info, \
     remove_shift, \
@@ -211,6 +211,12 @@ def get_all_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get
 def update_leave_status(application_response: UpdateLeave, user_id: int, company_id: int, branch_id: int,
                         db=Depends(get_db)):
     return modify_leave_status(application_response, user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/withdrawLeave")
+def update_leave_status(leave_id: int, user_id: int, company_id: int, branch_id: int,
+                        db=Depends(get_db)):
+    return withdraw_leave_func(leave_id, user_id, company_id, branch_id, db)
 
 
 """----------------------------------------------Approver related APIs-------------------------------------------------------------------"""

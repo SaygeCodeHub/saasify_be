@@ -4,10 +4,9 @@ from typing import List
 
 from fastapi import Depends
 
-from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.HRMS.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.companies import Companies
-from app.v2_0.enums import Features, Modules
 from app.v2_0.HRMS.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_bank_details import UserBankDetails
@@ -17,6 +16,8 @@ from app.v2_0.HRMS.domain.models.user_documents import UserDocuments
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.models.user_official_details import UserOfficialDetails
 from app.v2_0.HRMS.domain.schemas.user_schemas import UpdateUser
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import Features, Modules
 from app.v2_0.infrastructure.database import get_db
 
 
@@ -49,9 +50,10 @@ def user_update_func(user: UpdateUser, user_id, company_id, branch_id, u_id, db=
         else:
             db.rollback()
             return check
-    except Exception as exc:
+
+    except Exception as e:
         db.rollback()
-        return ResponseDTO(204, str(exc), {})
+        return ResponseDTO(204, str(e), {})
 
 
 def add_user_finances(user, user_id, new_employee, db):
@@ -191,7 +193,9 @@ def add_emp_in_ucb(user: UpdateUser, company_id, branch_id, accessible_modules, 
 def invite_new_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depends(get_db)):
     """Add new user"""
     inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-    new_employee = UsersAuth(user_email=user.personal_info.user_email, invited_by=inviter.user_email)
+    token = create_password_reset_code(user.personal_info.user_email, db)
+    new_employee = UsersAuth(user_email=user.personal_info.user_email, invited_by=inviter.user_email,
+                             change_password_token=token)
     db.add(new_employee)
     db.flush()
     return new_employee
@@ -361,18 +365,20 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
     if user.documents is not None:
         if user.documents.aadhar.aadhar_number is not None:
             aadhar = db.query(UserDocuments).filter(
-                UserDocuments.aadhar_number == user.documents.aadhar.aadhar_number).filter(
-                UserDocuments.user_id != u_id).first()
+                UserDocuments.user_id != u_id).filter(
+                UserDocuments.aadhar_number == user.documents.aadhar.aadhar_number).first()
             if aadhar:
                 db.rollback()
                 return ResponseDTO(204, "Aadhar number already belongs to someone!", {})
+
         if user.documents.aadhar.pan_number is not None:
             pan_num = db.query(UserDocuments).filter(
                 UserDocuments.pan_number == user.documents.aadhar.pan_number).filter(
                 UserDocuments.user_id != u_id).first()
             if pan_num:
                 db.rollback()
-                return ResponseDTO(204, "pan number already belongs to someone!", {})
+                return ResponseDTO(204, "Pan number already belongs to someone!", {})
+
         if user.documents.passport.passport_num is not None:
             passport = db.query(UserDocuments).filter(
                 UserDocuments.passport_num == user.documents.passport.passport_num).filter(
@@ -380,6 +386,7 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
             if passport:
                 db.rollback()
                 return ResponseDTO(204, "Passport number already belongs to someone!", {})
+
     db.query(UserDocuments).filter(UserDocuments.user_id == u_id).update(
         {"aadhar_number": user.documents.aadhar.aadhar_number,
          "name_as_per_aadhar": user.documents.aadhar.name_as_per_aadhar,
@@ -416,6 +423,7 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
         if account_number:
             db.rollback()
             return ResponseDTO(204, "Account number already belongs to someone!", {})
+
     if user.financial.bank_details.ifsc_code is not None:
         ifsc_code = db.query(UserBankDetails).filter(
             UserBankDetails.ifsc_code == user.financial.bank_details.ifsc_code).filter(
@@ -423,6 +431,7 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
         if ifsc_code:
             db.rollback()
             return ResponseDTO(204, "IFSC code already belongs to someone!", {})
+
     db.query(UserBankDetails).filter(UserBankDetails.user_id == u_id).update(
         {"bank_name": user.financial.bank_details.bank_name,
          "account_number": user.financial.bank_details.account_number,

@@ -31,14 +31,11 @@ class GetBranch(BaseModel):
     branch_id: int
 
 
-
 class CreateBranchResponse(BaseModel):
     branch_name: str
     branch_id: int
     # modules: Optional[List[Modules]]
 
-
-
- # accessible_modules: List[Modules]
- #    accessible_features: List[Features]
- #    geo_fencing: bool
+# accessible_modules: List[Modules]
+#    accessible_features: List[Features]
+#    geo_fencing: bool

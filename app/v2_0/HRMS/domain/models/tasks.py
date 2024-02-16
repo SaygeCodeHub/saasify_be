@@ -19,7 +19,7 @@ class Tasks(Base):
     due_date = Column(Date, nullable=True)
     completion_date = Column(DateTime, nullable=True)
     priority = Column(Enum(TaskPriority), nullable=False)
-    task_status = Column(Enum(TaskStatus), nullable=True,server_default=TaskStatus.PENDING.name)
+    task_status = Column(Enum(TaskStatus), nullable=True, server_default=TaskStatus.PENDING.name)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)

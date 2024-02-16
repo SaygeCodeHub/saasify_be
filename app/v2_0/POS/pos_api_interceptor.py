@@ -35,7 +35,7 @@ def delete_category(cat_id: int, company_id: int, branch_id: int, user_id: int,
     return remove_category(cat_id, company_id, branch_id, user_id, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getCategoryWithProduct")
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/getCategoryWithProduct")
 def get_category_with_products(requirement: ResponseRequirements, company_id: int, branch_id: int, user_id: int,
                                db=Depends(get_db)):
     return fetch_category_with_products(requirement, company_id, branch_id, user_id, db)

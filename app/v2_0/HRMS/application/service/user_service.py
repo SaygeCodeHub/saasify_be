@@ -99,34 +99,34 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
             company = db.query(Companies).filter(Companies.company_id == ucb.company_id).first()
 
             user.__dict__["user_email"] = user_auth.user_email
-            user_details["designations"] = ucb.designations if ucb else []
-            user_details["accessible_modules"] = ucb.accessible_modules if ucb else []
-            user_details["accessible_features"] = ucb.accessible_features if ucb else []
-            user_details["approvers"] = ucb.approvers if ucb else []
             user_details["personal_info"] = GetPersonalInfo(**user.__dict__ if user else {})
             official = user_official.__dict__ if user_official else {}
-
             accessible_modules = []
-
             for acm in ucb.accessible_modules:
+                accessible_features = []
+                for features in ucb.accessible_features:
+                    if features.name.startswith(acm.name):
+                        accessible_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
+                                                               title=get_title(features.name),
+                                                               icon="",
+                                                               value=calculate_value(
+                                                                   features.name, user_id, company_id, branch_id, db),
+                                                               is_statistics=check_if_statistics(features.name)))
                 accessible_modules.append(
-                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="", accessible_features=[
-                        FeaturesMap(feature_key=af.name, feature_id=af.value, title=get_title(af.name), icon="",
-                                    value=calculate_value(
-                                        af.name, user_id, company_id, branch_id, db),
-                                    is_statistics=check_if_statistics(af.name))
-                        for af in ucb.accessible_features]))
+                    ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="",
+                               accessible_features=accessible_features))
+
             official.update(
                 {"accessible_modules": accessible_modules if ucb else [], "approvers": ucb.approvers if ucb else [],
-                 "designations": ucb.designations if ucb else []})
+                 "designations": ucb.designations if ucb else [],
+                 "can_edit": True if user_id == company.owner else False})
             user_details.update({"documents": {
                 "aadhar": GetAadharDetails(**user_doc.__dict__ if user_doc else {}),
                 "passport": GetPassportDetails(**user_doc.__dict__ if user_doc else {})}})
             user_details.update(
                 {"financial": {"finances": GetUserFinanceSchema(**user_finances.__dict__ if user_finances else {}),
                                "bank_details": GetUserBankDetailsSchema(**user_bank.__dict__ if user_bank else {})}})
-            user_details["official"] = GetUserOfficialSchema(**official.__dict__ if official else {})
-            user_details["official"].__dict__.update({"can_edit": True if user_id == company.owner else False})
+            user_details["official"] = GetUserOfficialSchema(**official if official else {})
             user_details["financial"]["finances"].__dict__.update(
                 {"can_edit": True if user_id == company.owner else False})
 
