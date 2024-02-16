@@ -4,22 +4,24 @@ from datetime import datetime, time
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, add_new_branch_to_ucb
+from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, \
+    add_new_branch_to_ucb
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
 from app.v2_0.HRMS.domain.models.companies import Companies
-from app.v2_0.enums import ActivityStatus, Modules
 from app.v2_0.HRMS.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
-from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
+from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import BranchSettingsSchema, \
+    UpdateBranchSettings
 from app.v2_0.HRMS.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
 from app.v2_0.HRMS.domain.schemas.leaves_schemas import ApproverData
 from app.v2_0.HRMS.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import ActivityStatus, Modules
 
 
 def set_employee_leaves(settings, company_id, db):
@@ -35,31 +37,43 @@ def set_employee_leaves(settings, company_id, db):
         if u.medical_leaves is None and u.casual_leaves is None:
             query.update(
                 {"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})
+            db.flush()
+
+
+def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, branch_id, db):
+    """Updates the branch settings"""
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+
+        if check is None:
+            existing_settings_query = db.query(BranchSettings).filter(
+                BranchSettings.branch_id == branch_id)
+            settings.modified_on = datetime.now()
+            settings.modified_by = user_id
+            company = db.query(Companies).filter(
+                Companies.company_id == existing_settings_query.first().company_id).first()
+
+            if settings.default_approver != company.owner:
+                return ResponseDTO(400, "Default approver should be the company owner!", {})
+
+            existing_settings_query.update(
+                {"working_days": settings.working_days, "time_in": settings.time_in, "time_out": settings.time_out,
+                 "timezone": settings.timezone, "currency": settings.currency, "overtime_rate": settings.overtime_rate,
+                 "overtime_rate_per": settings.overtime_rate_per, "default_approver": settings.default_approver})
+            set_employee_leaves(settings, company_id, db)
+
+            branch = db.query(Branches).filter(Branches.branch_id == branch_id)
+            branch.update({"branch_address": settings.branch_address, "pincode": settings.pincode,
+                           "longitude": settings.longitude, "latitude": settings.longitude})
+
             db.commit()
 
-
-def modify_branch_settings(settings, user_id, company_id, branch_id, db):
-    """Updates the branch settings"""
-
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-
-    if check is None:
-        existing_settings_query = db.query(BranchSettings).filter(
-            BranchSettings.branch_id == branch_id)
-        settings.modified_on = datetime.now()
-        settings.modified_by = user_id
-        company = db.query(Companies).filter(Companies.company_id == existing_settings_query.first().company_id).first()
-
-        if settings.default_approver != company.owner:
-            return ResponseDTO(400, "Default approver should be the company owner!", {})
-
-        existing_settings_query.update(settings.__dict__)
-        db.commit()
-        set_employee_leaves(settings, company_id, db)
-
-        return ResponseDTO(200, "Settings updated", {})
-    else:
-        return check
+            return ResponseDTO(200, "Settings updated", {})
+        else:
+            return check
+    except Exception as exc:
+        db.rollback()
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_approver_data(approver_id, db):
@@ -83,8 +97,10 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
                 return ResponseDTO(404, "Settings do not exist!", {})
 
             settings.default_approver = get_approver_data(settings.default_approver, db)
-
-            result = GetBranchSettings(**settings.__dict__)
+            branch_data = db.query(Branches).filter(Branches.branch_id == branch_id).first()
+            setting_data = settings.__dict__
+            setting_data.update(branch_data.__dict__)
+            result = UpdateBranchSettings(**setting_data)
 
             return ResponseDTO(200, "Settings fetched!", result)
         else:
