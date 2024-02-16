@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.v2_0.infrastructure.db_config import DATABASE_URL_LOCAL_JAYRAJ, DATABASE_URL_PROD, DATABASE_URL_LOCAL_ADITI
 
-SQLALCHEMY_DATABASE_URL = DATABASE_URL_LOCAL_JAYRAJ
+SQLALCHEMY_DATABASE_URL = DATABASE_URL_PROD
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 
