@@ -24,6 +24,11 @@ class InviteEmployee(Modifier):
     approvers: List = None
     accessible_modules: Optional[List[ModulesMap]] = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.user_email == "":
+            self.user_email = None
+
 
 class UpdateEmployee(UpdateUser):
     first_name: str
