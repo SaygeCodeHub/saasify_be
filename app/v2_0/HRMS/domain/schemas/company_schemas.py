@@ -10,7 +10,7 @@ from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 
 
 class UpdateCompany(Modifier):
-    company_name: str
+    company_name: Optional[str] | None = None
     company_domain: str = None
     company_logo: str = None
     company_email: str = None

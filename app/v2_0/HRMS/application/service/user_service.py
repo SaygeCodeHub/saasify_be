@@ -51,6 +51,10 @@ def add_user(user, db):
 
         if user_email_exists:
             return ResponseDTO(403, "User with this email already exists", {})
+
+        if user.password is None:
+            return ResponseDTO(204, "Please enter a password!", {})
+
         hashed_pwd = hash_pwd(user.password)
         user.password = hashed_pwd
         new_user = UsersAuth(user_email=user.user_email, password=user.password)

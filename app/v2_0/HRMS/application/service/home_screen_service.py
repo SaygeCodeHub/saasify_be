@@ -98,8 +98,12 @@ def calculate_value(feature_name, user_id, company_id, branch_id, db):
             rounded_number = round(salary_rollout, 2)
             return f"Rs. {str(rounded_number)}"
         elif feature_name == Features.HR_VIEW_ALL_EMPLOYEES.name:
-            total_employees = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == branch_id).count()
-            return str(total_employees)
+            total_employees = db.query(UserCompanyBranch).filter(UserCompanyBranch.branch_id == branch_id).all()
+            if total_employees:
+                count = len(total_employees)
+            else:
+                count = 0
+            return str(count)
 
     else:
         return ""

@@ -5,7 +5,8 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 
 from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, add_new_branch_to_ucb
+from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, \
+    add_new_branch_to_ucb
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
@@ -267,6 +268,9 @@ def add_company(company, user_id, db):
         user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
         if user_exists is None:
             return ResponseDTO(404, "User does not exist!", {})
+
+        if company.company_name is None:
+            return ResponseDTO(204, "Please enter company name!", {})
 
         new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
                                 activity_status=company.activity_status)
