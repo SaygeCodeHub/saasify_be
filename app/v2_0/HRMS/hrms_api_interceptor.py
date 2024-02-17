@@ -159,7 +159,7 @@ def create_branch(branch: AddBranch, user_id: int, branch_id: int, company_id: i
     return add_new_branch(branch, user_id, branch_id, company_id, db)
 
 
-@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch/{bran_id}")
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateBranch")
 def update_branch(branch: UpdateBranch, user_id: int, branch_id: int, company_id: int, bran_id: int,
                   db=Depends(get_db)):
     return modify_branch(branch, user_id, company_id, branch_id, bran_id, db)
