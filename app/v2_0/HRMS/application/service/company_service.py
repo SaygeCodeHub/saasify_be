@@ -86,31 +86,31 @@ def get_approver_data(approver_id, db):
 
 def fetch_branch_settings(user_id, company_id, branch_id, db):
     """Fetches the branch settings"""
-    # try:
+    try:
 
-    user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-    if user_exists is None:
-        return ResponseDTO(404, "User does not exist!", {})
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+        if user_exists is None:
+            return ResponseDTO(404, "User does not exist!", {})
 
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
-        settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
-        if settings is None:
-            return ResponseDTO(404, "Settings do not exist!", {})
+        if check is None:
+            settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
+            if settings is None:
+                return ResponseDTO(404, "Settings do not exist!", {})
 
-        settings.default_approver = get_approver_data(settings.default_approver, db)
-        branch_data = db.query(Branches).filter(Branches.branch_id == branch_id).first()
-        setting_data = settings.__dict__
-        setting_data.update(branch_data.__dict__)
-        result = GetBranchSettings(**setting_data)
+            settings.default_approver = get_approver_data(settings.default_approver, db)
+            branch_data = db.query(Branches).filter(Branches.branch_id == branch_id).first()
+            setting_data = settings.__dict__
+            setting_data.update(branch_data.__dict__)
+            result = GetBranchSettings(**setting_data)
 
-        return ResponseDTO(200, "Settings fetched!", result)
-    else:
-        return check
+            return ResponseDTO(200, "Settings fetched!", result)
+        else:
+            return check
 
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
 
 
 def import_hq_settings(branch_id, company_id, user_id, db):
@@ -144,8 +144,8 @@ def add_branch_settings(company_settings, user_id, db):
 
         if get_branch.is_head_quarter is True:
             new_settings = BranchSettings(branch_id=company_settings.branch_id,
-                                          time_in=time(9, 30),
-                                          time_out=time(18, 30),
+                                          time_in=datetime.combine(datetime.now().date(), time(9, 30)),
+                                          time_out=datetime.combine(datetime.now().date(), time(18, 30)),
                                           company_id=company_settings.company_id,
                                           is_hq_settings=True, total_casual_leaves=3,
                                           total_medical_leaves=12, overtime_rate_per="HOUR",

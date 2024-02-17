@@ -9,8 +9,8 @@ from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 
 
 class GetBranchSettings(BaseModel):
-    time_in: Optional[Union[time, str]]
-    time_out: Optional[Union[time, str]]
+    time_in: Optional[Union[datetime, str]]
+    time_out: Optional[Union[datetime, str]]
     timezone: Optional[Union[datetime, str]] = None
     currency: Optional[str] = ""
     default_approver: Optional[ApproverData]
@@ -43,12 +43,12 @@ class GetBranchSettings(BaseModel):
 
 
 class UpdateBranchSettings(Modifier):
-    time_in: Optional[Union[time, str]]
-    time_out: Optional[Union[time, str]]
+    time_in: Optional[Union[datetime, str]]
+    time_out: Optional[Union[datetime, str]]
     timezone: Optional[Union[datetime, str]] = None
     currency: Optional[str] = ""
     default_approver: int
-    working_days: Optional[int]
+    working_days: Optional[Union[int, str]]= None
     total_medical_leaves: Optional[Union[int, str]] = 12
     total_casual_leaves: Optional[Union[int, str]] = 3
     overtime_rate: Optional[Union[float, str]] = None
@@ -74,6 +74,8 @@ class UpdateBranchSettings(Modifier):
             self.longitude = None
         if self.latitude == "":
             self.latitude = None
+        if self.working_days == "":
+            self.working_days = None
 
 
 class BranchSettingsSchema(UpdateBranchSettings):
