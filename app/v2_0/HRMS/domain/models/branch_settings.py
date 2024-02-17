@@ -1,6 +1,6 @@
 """Model - BranchSettings"""
 
-from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Double, Boolean, DateTime, Time
+from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Double, Boolean, DateTime
 from sqlalchemy.sql.expression import text
 
 from app.v2_0.infrastructure.database import Base
