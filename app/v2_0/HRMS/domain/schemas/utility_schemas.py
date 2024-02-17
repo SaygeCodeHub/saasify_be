@@ -12,9 +12,18 @@ class DeviceToken(BaseModel):
 
 class Credentials(BaseModel):
     """Used to get the credentials of an individual"""
-    email: str
+    email: Optional[str] = None
     token: Optional[str] = None
-    password: str
+    password: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.email == "":
+            self.email = None
+        if self.token == "":
+            self.token = None
+        if self.password == "":
+            self.password = None
 
 
 class JsonObject(BaseModel):

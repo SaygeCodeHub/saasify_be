@@ -14,6 +14,10 @@ from app.v2_0.dto.dto_classes import ResponseDTO
 def check_token(obj, db):
     """Verifies the reset token stored in DB, against the token entered by an individual"""
     try:
+        if obj.email is None:
+            return ResponseDTO(204, "Please enter email.", {})
+        if obj.password is None:
+            return ResponseDTO(204, "Please enter password.", {})
         user = db.query(UsersAuth).filter(UsersAuth.user_email == obj.email).first()
         if user is None:
             return ResponseDTO(404, "User not found!", {})
@@ -28,6 +32,10 @@ def check_token(obj, db):
 
 def change_password(obj, db):
     """Updates the password and makes the change_password_token null in db"""
+    if obj.email is None:
+        return ResponseDTO(204, "Please enter email.", {})
+    if obj.password is None:
+        return ResponseDTO(204, "Please enter password.", {})
     user_query = db.query(UsersAuth).filter(UsersAuth.user_email == obj.model_dump()["email"])
     user = user_query.first()
 
