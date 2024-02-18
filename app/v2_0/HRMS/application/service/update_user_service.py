@@ -6,6 +6,7 @@ from fastapi import Depends
 
 from app.v2_0.HRMS.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.companies import Companies
 from app.v2_0.HRMS.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
@@ -105,7 +106,7 @@ def add_emp(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depends(g
                        db)
 
         """add user details"""
-        add_user_details(user, user_id, new_employee, db)
+        add_user_details(user, user_id, branch_id, new_employee, db)
 
     """add user official details"""
     add_user_official_details(user, user_id, new_employee, company_id, db)
@@ -183,8 +184,7 @@ def add_emp_in_ucb(user: UpdateUser, company_id, branch_id, accessible_modules, 
     ucb_employee = UserCompanyBranch(user_id=new_employee.user_id, company_id=company_id,
                                      branch_id=branch_id,
                                      designations=user.official.designations, approvers=approvers_list,
-                                     accessible_modules=accessible_modules,
-                                     accessible_features=accessible_features)
+                                     accessible_modules=accessible_modules, accessible_features=accessible_features)
 
     db.add(ucb_employee)
     db.flush()
@@ -201,23 +201,22 @@ def invite_new_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=D
     return new_employee
 
 
-def add_user_details(user, user_id, new_employee, db=Depends(get_db)):
+def add_user_details(user, user_id, branch_id, new_employee, db=Depends(get_db)):
+    branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
     new_user = UserDetails(user_id=new_employee.user_id, first_name=user.personal_info.first_name,
-                           last_name=user.personal_info.last_name,
-                           middle_name=user.personal_info.middle_name,
-                           user_contact=user.personal_info.user_contact,
+                           last_name=user.personal_info.last_name, middle_name=user.personal_info.middle_name,
+                           user_contact=user.personal_info.user_contact, user_image=user.personal_info.user_image,
                            alternate_contact=user.personal_info.alternate_contact,
-                           user_image=user.personal_info.user_image,
                            user_birthdate=user.personal_info.user_birthdate,
                            age=user.personal_info.age, gender=user.personal_info.gender,
-                           nationality=user.personal_info.nationality,
-                           marital_status=user.personal_info.marital_status,
+                           nationality=user.personal_info.nationality, marital_status=user.personal_info.marital_status,
                            current_address=user.personal_info.current_address,
                            permanent_address=user.personal_info.permanent_address,
                            city=user.personal_info.city, state=user.personal_info.state,
-                           pincode=user.personal_info.pincode,
-                           activity_status=user.personal_info.active_status, modified_by=user_id,
-                           modified_on=datetime.now())
+                           pincode=user.personal_info.pincode, activity_status=user.personal_info.active_status,
+                           medical_leaves=user.personal_info.medical_leaves if user.personal_info.medical_leaves else branch_settings.total_medical_leaves,
+                           casual_leaves=user.personal_info.casual_leaves if user.personal_info.casual_leaves else branch_settings.total_casual_leaves,
+                           modified_by=user_id, modified_on=datetime.now())
     db.add(new_user)
     db.flush()
     return new_user
@@ -254,8 +253,7 @@ def add_user_docs_data(user, user_id, new_employee, db):
                              mobile_number=user.documents.passport.mobile_number,
                              current_address=user.documents.passport.current_address,
                              permanent_address=user.documents.passport.permanent_address,
-                             modified_by=user_id,
-                             modified_on=datetime.now())
+                             modified_by=user_id, modified_on=datetime.now())
     else:
         docs = UserDocuments(user_id=new_employee.user_id)
 

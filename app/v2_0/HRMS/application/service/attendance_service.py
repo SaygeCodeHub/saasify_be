@@ -1,12 +1,11 @@
 from datetime import date, datetime, timedelta
 from typing import Optional
 
-import pytz
 from fastapi import Depends
 
-from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.attendance import Attendance
+from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.infrastructure.database import get_db
 
 
@@ -44,10 +43,9 @@ def calculate_average_working_hours(working_hours_list):
     return timedelta(seconds=rounded_average_hours)
 
 
-def check_in(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
-    tz = pytz.timezone("Asia/Kolkata")
+def check_in_func(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     new_attendance = Attendance(company_id=company_id, branch_id=branch_id, user_id=user_id, date=date.today())
-    new_attendance.check_in = datetime.now(tz)
+    new_attendance.check_in = datetime.now()
     db.add(new_attendance)
     db.commit()
 
@@ -56,8 +54,7 @@ def check_in(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
                         "average_working_hours": get_average_working_hours(company_id, branch_id, user_id, db)})
 
 
-def check_out(attendance, db=Depends(get_db)):
-    tz = pytz.timezone("Asia/Kolkata")
+def check_out_func(attendance, db=Depends(get_db)):
     if attendance.check_out:
         return ResponseDTO(204, "Attendance already marked for Today",
                            {"check_in": attendance.check_in, "check_out": attendance.check_out,
@@ -65,7 +62,7 @@ def check_out(attendance, db=Depends(get_db)):
                                                                                attendance.branch_id, attendance.user_id,
                                                                                db)})
     else:
-        attendance.check_out = datetime.now(tz)
+        attendance.check_out = datetime.now()
         db.commit()
 
         return ResponseDTO(200, "Check-out successfully",
@@ -82,9 +79,9 @@ def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depen
             attendance = fetch_attendance_today(company_id, branch_id, user_id, db)
 
             if attendance:
-                return check_out(attendance, db)
+                return check_out_func(attendance, db)
             else:
-                return check_in(company_id, branch_id, user_id, db)
+                return check_in_func(company_id, branch_id, user_id, db)
 
         else:
             return ResponseDTO(204, "User not found", {})

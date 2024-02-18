@@ -52,9 +52,9 @@ class Features(PyEnum):
 
 
 class TaskPriority(PyEnum):
-    LOW = 0
+    HIGH = 0
     MEDIUM = 1
-    HIGH = 2
+    LOW = 2
 
 
 class TaskStatus(PyEnum):
