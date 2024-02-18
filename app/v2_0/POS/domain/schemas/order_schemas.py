@@ -2,8 +2,6 @@
 from typing import Dict, List
 
 from pydantic import BaseModel
-from sqlalchemy.dialects.postgresql import json
-
 from app.v2_0.enums import TaskStatus
 
 

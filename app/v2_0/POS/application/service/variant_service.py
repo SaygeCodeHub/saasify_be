@@ -4,7 +4,7 @@ from datetime import datetime
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.POS.domain.models.product_variants import ProductVariants
 from app.v2_0.POS.domain.models.products import Products
-from app.v2_0.POS.domain.schemas.variant_schemas import AddVariant, UpdateVariant
+from app.v2_0.POS.domain.schemas.variant_schemas import UpdateVariant
 from app.v2_0.dto.dto_classes import ResponseDTO
 
 

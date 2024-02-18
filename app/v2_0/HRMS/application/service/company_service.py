@@ -7,20 +7,24 @@ from sqlalchemy import select
 from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, \
     add_new_branch_to_ucb
+from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, \
+    add_new_branch_to_ucb
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
 from app.v2_0.HRMS.domain.models.companies import Companies
-from app.v2_0.enums import ActivityStatus, Modules
 from app.v2_0.HRMS.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
-from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
-from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import GetBranchSettings, BranchSettingsSchema
+from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse, UpdateBranch
+from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import BranchSettingsSchema, \
+    UpdateBranchSettings, GetBranchSettings
 from app.v2_0.HRMS.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
 from app.v2_0.HRMS.domain.schemas.leaves_schemas import ApproverData
 from app.v2_0.HRMS.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import ActivityStatus, Modules
 
 
 def set_employee_leaves(settings, company_id, db):
@@ -36,31 +40,43 @@ def set_employee_leaves(settings, company_id, db):
         if u.medical_leaves is None and u.casual_leaves is None:
             query.update(
                 {"medical_leaves": settings.total_medical_leaves, "casual_leaves": settings.total_casual_leaves})
+            db.flush()
+
+
+def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, branch_id, db):
+    """Updates the branch settings"""
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+
+        if check is None:
+            existing_settings_query = db.query(BranchSettings).filter(
+                BranchSettings.branch_id == branch_id)
+            settings.modified_on = datetime.now()
+            settings.modified_by = user_id
+            company = db.query(Companies).filter(
+                Companies.company_id == existing_settings_query.first().company_id).first()
+
+            if settings.default_approver != company.owner:
+                return ResponseDTO(400, "Default approver should be the company owner!", {})
+
+            existing_settings_query.update(
+                {"working_days": settings.working_days, "time_in": settings.time_in, "time_out": settings.time_out,
+                 "timezone": settings.timezone, "currency": settings.currency, "overtime_rate": settings.overtime_rate,
+                 "overtime_rate_per": settings.overtime_rate_per, "default_approver": settings.default_approver})
+            set_employee_leaves(settings, company_id, db)
+
+            branch = db.query(Branches).filter(Branches.branch_id == branch_id)
+            branch.update({"branch_address": settings.branch_address, "pincode": settings.pincode,
+                           "longitude": settings.longitude, "latitude": settings.longitude})
+
             db.commit()
 
-
-def modify_branch_settings(settings, user_id, company_id, branch_id, db):
-    """Updates the branch settings"""
-
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-
-    if check is None:
-        existing_settings_query = db.query(BranchSettings).filter(
-            BranchSettings.branch_id == branch_id)
-        settings.modified_on = datetime.now()
-        settings.modified_by = user_id
-        company = db.query(Companies).filter(Companies.company_id == existing_settings_query.first().company_id).first()
-
-        if settings.default_approver != company.owner:
-            return ResponseDTO(400, "Default approver should be the company owner!", {})
-
-        existing_settings_query.update(settings.__dict__)
-        db.commit()
-        set_employee_leaves(settings, company_id, db)
-
-        return ResponseDTO(200, "Settings updated", {})
-    else:
-        return check
+            return ResponseDTO(200, "Settings updated", {})
+        else:
+            return check
+    except Exception as exc:
+        db.rollback()
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_approver_data(approver_id, db):
@@ -84,8 +100,10 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
                 return ResponseDTO(404, "Settings do not exist!", {})
 
             settings.default_approver = get_approver_data(settings.default_approver, db)
-
-            result = GetBranchSettings(**settings.__dict__)
+            branch_data = db.query(Branches).filter(Branches.branch_id == branch_id).first()
+            setting_data = settings.__dict__
+            setting_data.update(branch_data.__dict__)
+            result = GetBranchSettings(**setting_data)
 
             return ResponseDTO(200, "Settings fetched!", result)
         else:
@@ -208,8 +226,6 @@ def add_init_branch(branch, user_id, company_id, db):
     add_init_branch_to_ucb(new_branch, user_id, company_id, db)
 
     set_branch_settings(new_branch, user_id, company_id, db)
-    new_module_subscription = ModuleSubscriptions(branch_id=new_branch.branch_id, company_id=company_id,
-                                                  module_name=Modules.HR)
 
     # Adds HR module by default to the branch
     # module = ModuleSchema
@@ -237,7 +253,7 @@ def fetch_branches(user_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
+def modify_branch(branch: UpdateBranch, user_id, company_id, branch_id, bran_id, db):
     """Updates a branch"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
@@ -264,43 +280,44 @@ def modify_branch(branch, user_id, company_id, branch_id, bran_id, db):
 
 def add_company(company, user_id, db):
     """Creates a company and adds a branch to it"""
-    try:
-        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-        if user_exists is None:
-            return ResponseDTO(404, "User does not exist!", {})
+    # try:
+    user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+    if user_exists is None:
+        return ResponseDTO(404, "User does not exist!", {})
 
-        if company.company_name is None:
-            return ResponseDTO(204, "Please enter company name!", {})
+    if company.company_name is None:
+        return ResponseDTO(204, "Please enter company name!", {})
 
-        new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
-                                activity_status=company.activity_status)
-        db.add(new_company)
-        db.flush()
+    new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
+                            activity_status=company.activity_status)
+    db.add(new_company)
+    db.flush()
 
-        add_company_to_ucb(new_company, user_id, db)
+    add_company_to_ucb(new_company, user_id, db)
 
-        branch = AddBranch
-        branch.branch_name = company.branch_name
-        branch.is_head_quarter = company.is_head_quarter
-        init_branch = add_init_branch(branch, user_id, new_company.company_id, db)
+    branch = AddBranch
+    branch.branch_name = company.branch_name
+    branch.is_head_quarter = company.is_head_quarter
+    init_branch = add_init_branch(branch, user_id, new_company.company_id, db)
 
-        module_start_date = datetime.now().date()
-        module_end_date = module_start_date + relativedelta(months=6)
-        new_module_subscription = ModuleSubscriptions(branch_id=init_branch.branch_id,
-                                                      company_id=new_company.company_id,
-                                                      module_name=[Modules.HR],
-                                                      start_date=module_start_date,
-                                                      end_date=module_end_date)
-        db.add(new_module_subscription)
+    module_start_date = datetime.now().date()
+    module_end_date = module_start_date + relativedelta(months=6)
+    new_module_subscription = ModuleSubscriptions(branch_id=init_branch.branch_id,
+                                                  company_id=new_company.company_id,
+                                                  module_name=[Modules.HR],
+                                                  start_date=module_start_date,
+                                                  end_date=module_end_date)
+    db.add(new_module_subscription)
 
-        db.commit()
+    db.commit()
 
-        return ResponseDTO(200, "Company created successfully",
-                           AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
-                                              branch=init_branch))
+    return ResponseDTO(200, "Company created successfully",
+                       AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
+                                          branch=init_branch))
 
-    except Exception as exc:
-        return ResponseDTO(204, str(exc), {})
+
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})
 
 
 def fetch_company(user_id, company_id, branch_id, db):

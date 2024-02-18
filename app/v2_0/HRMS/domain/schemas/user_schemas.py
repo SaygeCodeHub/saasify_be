@@ -207,13 +207,6 @@ class GetUserOfficialSchema(Modifier):
         ensure_optional_fields(self)
 
 
-def validate_my_model(model):
-    try:
-        model()
-    except ValidationError as exc:
-        return ResponseDTO(204, "Input should be a valid dictionary or object to extract fields from", {})
-
-
 class UpdateUser(BaseModel):
     personal_info: PersonalInfo
     documents: Optional[UserDocumentsSchema]
