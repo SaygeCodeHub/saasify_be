@@ -70,6 +70,11 @@ def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int,
 def login(credentials: Credentials, db=Depends(get_db)):
     """User Login"""
     try:
+        if credentials.email is None:
+            return ResponseDTO(204, "Please enter email.", {})
+        if credentials.password is None:
+            return ResponseDTO(204, "Please enter password.", {})
+
         email = credentials.email
         pwd = credentials.password
 
@@ -113,6 +118,7 @@ def forgot_password(email: JsonObject, db=Depends(get_db)):
 @router.post("/v2.0/sendVerificationLink")
 def verify_token(obj: Credentials, db=Depends(get_db)):
     """Calls the service layer to verify the token received by an individual"""
+
     return check_token(obj, db)
 
 
