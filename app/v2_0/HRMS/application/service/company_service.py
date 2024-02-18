@@ -226,8 +226,6 @@ def add_init_branch(branch, user_id, company_id, db):
     add_init_branch_to_ucb(new_branch, user_id, company_id, db)
 
     set_branch_settings(new_branch, user_id, company_id, db)
-    new_module_subscription = ModuleSubscriptions(branch_id=new_branch.branch_id, company_id=company_id,
-                                                  module_name=Modules.HR)
 
     # Adds HR module by default to the branch
     # module = ModuleSchema
