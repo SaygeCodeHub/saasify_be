@@ -116,6 +116,13 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
             user_details["personal_info"] = GetPersonalInfo(**user.__dict__ if user else {})
             official = user_official.__dict__ if user_official else {}
             accessible_modules = []
+            can_edit = True
+            if user_id == u_id:
+                if user_id == company.owner:
+                    can_edit = True
+                else:
+                    can_edit = False
+
             for acm in ucb.accessible_modules:
                 accessible_features = []
                 for features in ucb.accessible_features:
@@ -133,7 +140,7 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
             official.update(
                 {"accessible_modules": accessible_modules if ucb else [], "approvers": ucb.approvers if ucb else [],
                  "designations": ucb.designations if ucb else [],
-                 "can_edit": True if user_id == company.owner else False})
+                 "can_edit": can_edit})
             user_details.update({"documents": {
                 "aadhar": GetAadharDetails(**user_doc.__dict__ if user_doc else {}),
                 "passport": GetPassportDetails(**user_doc.__dict__ if user_doc else {})}})
@@ -142,7 +149,7 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
                                "bank_details": GetUserBankDetailsSchema(**user_bank.__dict__ if user_bank else {})}})
             user_details["official"] = GetUserOfficialSchema(**official if official else {})
             user_details["financial"]["finances"].__dict__.update(
-                {"can_edit": True if user_id == company.owner else False})
+                {"can_edit": can_edit})
 
         return ResponseDTO(200, "User fetched!", user_details)
 
