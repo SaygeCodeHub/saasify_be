@@ -41,7 +41,7 @@ def user_update_func(user: UpdateUser, user_id, company_id, branch_id, u_id, db=
 
             else:
                 """Update employee"""
-                user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+                user_auth = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
                 if user_auth is None:
                     db.rollback()
                     return ResponseDTO(404, "User not found!", {})
