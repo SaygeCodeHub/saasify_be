@@ -53,6 +53,10 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
             inviter = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
 
             if user:
+                user_company = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).filter(
+                    UserCompanyBranch.company_id != company_id).first
+                if user_company:
+                    return ResponseDTO(204, "User already belongs to a different company", {})
                 ucb = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user.user_id).filter(
                     UserCompanyBranch.company_id == company_id).filter(UserCompanyBranch.branch_id == branch_id).first()
                 if ucb:
