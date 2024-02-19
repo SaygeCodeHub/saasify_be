@@ -396,18 +396,20 @@ def update_approver(approver, user_id, company_id, branch_id, u_id, db):
 
 
 def remove_user(u_id, user_id, company_id, branch_id, db):
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-    if check is None:
-        user_query = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+        if check is None:
+            user_query = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
 
-        user_tasks_query = Tasks.__table__.delete().where(Tasks.assigned_to == u_id)
-        db.execute(user_tasks_query)
+            assigned_to_tasks_query = db.query(Tasks).filter(Tasks.assigned_to == u_id)
+            assigned_to_tasks_query.update({"assigned_to": None})
+            monitored_by_tasks_query = db.query(Tasks).filter(Tasks.monitored_by == u_id)
+            monitored_by_tasks_query.update({"monitored_by": None})
 
-        db.delete(user_query)
-        db.commit()
-        return ResponseDTO(200, "User deleted!", {})
-    else:
-        return check
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+            db.delete(user_query)
+            db.commit()
+            return ResponseDTO(200, "User deleted!", {})
+        else:
+            return check
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
