@@ -68,9 +68,9 @@ def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int,
     return user_update_func(user, user_id, company_id, branch_id, u_id, db)
 
 
-@router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteUser/{u_id}")
-def delete_user(u_id: int, company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
-    return remove_user(u_id, user_id, company_id, branch_id, db)
+# @router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteUser/{u_id}")
+# def delete_user(u_id: int, company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+#     return remove_user(u_id, user_id, company_id, branch_id, db)
 
 
 @router.post("/v2.0/authenticateUser")
