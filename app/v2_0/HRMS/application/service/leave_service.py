@@ -70,8 +70,10 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             leave_application.company_id = company_id
             leave_application.branch_id = branch_id
             if len(leave_application.approvers) == 0:
-                company = db.query(Companies).filter(Companies.company_id == company_id).first()
-                leave_application.approvers = [company.owner]
+                # company = db.query(Companies).filter(Companies.company_id == company_id).first()
+                ucb_approvers = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
+                    UserCompanyBranch.branch_id == branch_id).first()
+                leave_application.approvers = ucb_approvers.approvers
 
             new_leave_application = Leaves(**leave_application.model_dump())
             db.add(new_leave_application)

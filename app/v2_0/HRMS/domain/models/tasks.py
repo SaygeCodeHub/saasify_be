@@ -1,5 +1,6 @@
 """Model - Tasks"""
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, TIMESTAMP, text, Enum, DateTime
+from sqlalchemy.orm import relationship
 
 from app.v2_0.enums import TaskPriority, TaskStatus
 from app.v2_0.infrastructure.database import Base
@@ -23,3 +24,6 @@ class Tasks(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
+
+    # assigned_user = relationship('UsersAuth',back_populates='task_1', foreign_keys=[assigned_to])
+    # monitored_user = relationship('UsersAuth',back_populates='task_2', foreign_keys=[monitored_by])

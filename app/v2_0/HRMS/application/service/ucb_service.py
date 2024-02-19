@@ -37,7 +37,7 @@ def add_employee_to_ucb(employee: InviteEmployee, new_employee, company_id, bran
                 for features in Features:
                     if features.value == feature.feature_id:
                         features_array.append(features)
-    if employee.approvers is None:
+    if len(employee.approvers) == 0:
         approvers = [company.owner]
         approvers_list = list(approvers)
     elif len(employee.approvers) != 0:

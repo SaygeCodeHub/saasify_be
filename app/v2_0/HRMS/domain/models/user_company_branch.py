@@ -1,6 +1,7 @@
 """Model - UserCompanyBranch"""
 
 from sqlalchemy import Column, Integer, ForeignKey, Enum, ARRAY, String, TIMESTAMP, text
+from sqlalchemy.orm import relationship
 
 from app.v2_0.enums import DesignationEnum, Modules, Features
 from app.v2_0.infrastructure.database import Base
@@ -23,3 +24,5 @@ class UserCompanyBranch(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
+
+    user_auth = relationship('UsersAuth', back_populates='user_company_branch')

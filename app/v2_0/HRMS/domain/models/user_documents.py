@@ -1,5 +1,6 @@
 """Model - UserDocuments"""
 from sqlalchemy import Column, Integer, ForeignKey, BIGINT, String, Date, TIMESTAMP
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 from app.v2_0.infrastructure.database import Base
@@ -25,3 +26,5 @@ class UserDocuments(Base):
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+    user_auth = relationship('UsersAuth', back_populates='user_documents')

@@ -12,7 +12,8 @@ from app.v2_0.HRMS.application.service.attendance_service import mark_attendance
     attendance_history_func
 from app.v2_0.HRMS.application.service.company_service import add_company, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings, add_new_branch
-from app.v2_0.HRMS.application.service.employee_service import invite_employee, fetch_employees, fetch_employee_salaries
+from app.v2_0.HRMS.application.service.employee_service import invite_employee, fetch_employees, \
+    fetch_employee_salaries, modify_activity_status
 from app.v2_0.HRMS.application.service.home_screen_service import fetch_home_screen_data
 from app.v2_0.HRMS.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_all_leaves, modify_leave_status, withdraw_leave_func
@@ -22,7 +23,7 @@ from app.v2_0.HRMS.application.service.shift_service import add_shift, fetch_all
     assign_shift_to_employee
 from app.v2_0.HRMS.application.service.task_service import assign_task, fetch_my_tasks, change_task_status
 from app.v2_0.HRMS.application.service.update_user_service import user_update_func
-from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id, update_approver
+from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id, update_approver, remove_user
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
@@ -31,7 +32,7 @@ from app.v2_0.HRMS.domain.schemas.approver_schemas import AddApprover
 from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, UpdateBranch
 from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import UpdateBranchSettings
 from app.v2_0.HRMS.domain.schemas.company_schemas import AddCompany, UpdateCompany
-from app.v2_0.HRMS.domain.schemas.employee_schemas import InviteEmployee
+from app.v2_0.HRMS.domain.schemas.employee_schemas import InviteEmployee, UpdateActivityStatus
 from app.v2_0.HRMS.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.HRMS.domain.schemas.shifts_schemas import AddShift, UpdateShift
@@ -39,6 +40,7 @@ from app.v2_0.HRMS.domain.schemas.task_schemas import AssignTask, UpdateTask
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.HRMS.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
 from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import ActivityStatus
 from app.v2_0.infrastructure.database import engine, get_db, Base
 
 router = APIRouter()
@@ -66,6 +68,11 @@ def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int,
     return user_update_func(user, user_id, company_id, branch_id, u_id, db)
 
 
+@router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteUser/{u_id}")
+def delete_user(u_id: int, company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return remove_user(u_id, user_id, company_id, branch_id, db)
+
+
 @router.post("/v2.0/authenticateUser")
 def login(credentials: Credentials, db=Depends(get_db)):
     """User Login"""
@@ -83,6 +90,11 @@ def login(credentials: Credentials, db=Depends(get_db)):
         if is_user_present is None:
             return ResponseDTO(404, "User is not registered, please register.", {})
 
+        user_activity_status = db.query(UserDetails).filter(UserDetails.user_id == is_user_present.user_id).first()
+
+        if user_activity_status.activity_status == ActivityStatus.INACTIVE:
+            return ResponseDTO(204, "You no longer belong to this company", {})
+
         if is_user_present.password is None:
             return ResponseDTO(404, "Password is not set yet. Please set your password", {})
 
@@ -92,6 +104,10 @@ def login(credentials: Credentials, db=Depends(get_db)):
         # Get all user data
         user_details = db.query(UserDetails).filter(
             UserDetails.user_id == is_user_present.user_id).first()
+        if user_details.middle_name is None:
+            name = user_details.first_name + " " + user_details.last_name
+        else:
+            name = user_details.first_name + " " + user_details.middle_name + " " + user_details.last_name
 
         ucb = db.query(UserCompanyBranch).filter(
             UserCompanyBranch.user_id == is_user_present.user_id).first()
@@ -103,7 +119,7 @@ def login(credentials: Credentials, db=Depends(get_db)):
 
         return ResponseDTO(200, "Login successful",
                            LoginResponse(user_id=is_user_present.user_id,
-                                         name=user_details.first_name + " " + user_details.last_name, company=data))
+                                         name=name, company=data))
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
@@ -136,6 +152,12 @@ def send_employee_invite(employee: InviteEmployee, user_id: int, company_id: int
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getEmployees")
 def get_employees(branch_id: int, company_id: int, user_id: str, db=Depends(get_db)):
     return fetch_employees(company_id, branch_id, user_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateEmployeeActivityStatus/{u_id}")
+def update_activity_status(status: UpdateActivityStatus, user_id: int, company_id: int, branch_id: int, u_id: int,
+                           db=Depends(get_db)):
+    return modify_activity_status(status, user_id, company_id, branch_id, u_id, db)
 
 
 """----------------------------------------------Company related APIs-------------------------------------------------------------------"""
@@ -228,9 +250,9 @@ def update_leave_status(leave_id: int, user_id: int, company_id: int, branch_id:
 """----------------------------------------------Approver related APIs-------------------------------------------------------------------"""
 
 
-@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateApprover")
-def add_approver(approver: AddApprover, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return update_approver(approver, user_id, company_id, branch_id, db)
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateApprover/{u_id}")
+def add_approver(approver: AddApprover, user_id: int, company_id: int, branch_id: int, u_id: int, db=Depends(get_db)):
+    return update_approver(approver, user_id, company_id, branch_id, u_id, db)
 
 
 """----------------------------------------------Attendance related APIs-------------------------------------------------------------------"""
