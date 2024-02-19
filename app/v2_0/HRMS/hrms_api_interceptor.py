@@ -23,7 +23,7 @@ from app.v2_0.HRMS.application.service.shift_service import add_shift, fetch_all
     assign_shift_to_employee
 from app.v2_0.HRMS.application.service.task_service import assign_task, fetch_my_tasks, change_task_status
 from app.v2_0.HRMS.application.service.update_user_service import user_update_func
-from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id, update_approver
+from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id, update_approver, remove_user
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
@@ -66,6 +66,11 @@ def update_user(user: UpdateUser, user_id: int, company_id: int, branch_id: int,
                 db=Depends(get_db)):
     """Calls service layer to update user"""
     return user_update_func(user, user_id, company_id, branch_id, u_id, db)
+
+
+@router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteUser/{u_id}")
+def delete_user(u_id: int, company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return remove_user(u_id, user_id, company_id, branch_id, db)
 
 
 @router.post("/v2.0/authenticateUser")

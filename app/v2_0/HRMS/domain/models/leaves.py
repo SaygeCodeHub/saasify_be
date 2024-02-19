@@ -1,5 +1,6 @@
 """Model - Leaves"""
 from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Boolean, Enum, ARRAY, Date
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 from app.v2_0.enums import LeaveType, LeaveStatus
@@ -24,3 +25,5 @@ class Leaves(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
+
+    user_auth = relationship('UsersAuth', back_populates='leaves')

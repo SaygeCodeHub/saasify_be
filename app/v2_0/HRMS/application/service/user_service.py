@@ -8,6 +8,7 @@ from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_b
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.companies import Companies
 from app.v2_0.HRMS.domain.models.leaves import Leaves
+from app.v2_0.HRMS.domain.models.tasks import Tasks
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_bank_details import UserBankDetails
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
@@ -392,3 +393,21 @@ def update_approver(approver, user_id, company_id, branch_id, u_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+
+
+def remove_user(u_id, user_id, company_id, branch_id, db):
+    # try:
+    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    if check is None:
+        user_query = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
+
+        user_tasks_query = Tasks.__table__.delete().where(Tasks.assigned_to == u_id)
+        db.execute(user_tasks_query)
+
+        db.delete(user_query)
+        db.commit()
+        return ResponseDTO(200, "User deleted!", {})
+    else:
+        return check
+# except Exception as exc:
+#     return ResponseDTO(204, str(exc), {})

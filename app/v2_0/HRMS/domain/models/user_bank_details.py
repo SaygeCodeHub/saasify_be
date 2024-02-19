@@ -1,6 +1,7 @@
 """Model - UserBank"""
 
 from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 from app.v2_0.infrastructure.database import Base
@@ -20,3 +21,5 @@ class UserBankDetails(Base):
     country = Column(String, nullable=True)
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+    user_auth = relationship('UsersAuth', back_populates='bank_details')

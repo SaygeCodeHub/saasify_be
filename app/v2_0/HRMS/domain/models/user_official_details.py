@@ -1,6 +1,7 @@
 """Model - UserOfficial"""
 
 from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, String, Boolean
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 from app.v2_0.infrastructure.database import Base
@@ -20,3 +21,5 @@ class UserOfficialDetails(Base):
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+    user_auth = relationship('UsersAuth', back_populates='user_official')
