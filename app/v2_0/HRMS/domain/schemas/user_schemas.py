@@ -86,7 +86,7 @@ class PassportDetails(BaseModel):
 
 class UserDocumentsSchema(Modifier):
     aadhar: Optional[AadharDetails]
-    passport: List[PassportDetails]
+    passport: Optional[PassportDetails]
 
 
 class UserFinanceSchema(Modifier):
