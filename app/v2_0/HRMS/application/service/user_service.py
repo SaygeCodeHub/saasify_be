@@ -354,17 +354,17 @@ def update_leave_approvers(approvers_list, user_id, db):
     db.commit()
 
 
-def update_approver(approver, user_id, company_id, branch_id, db):
+def update_approver(approver, user_id, company_id, branch_id, u_id, db):
     """Adds an approver to the list of approvers of a user"""
     try:
-        check = check_if_company_and_branch_exist(company_id, branch_id, None, db)
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
             flag = True
-            user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id)
+            user_query = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == u_id)
             user = user_query.first()
 
             if user is None:
-                return ResponseDTO(404, "User not found", {})
+                return ResponseDTO(404, "User to be updated does not exist", {})
 
             company = db.query(Companies).filter(Companies.company_id == user.company_id).first()
 

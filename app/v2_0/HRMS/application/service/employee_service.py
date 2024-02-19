@@ -1,4 +1,6 @@
 """Service layer for Employees"""
+from datetime import datetime
+
 from sqlalchemy import select
 
 from app.v2_0.dto.dto_classes import ResponseDTO
@@ -13,7 +15,7 @@ from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
-from app.v2_0.HRMS.domain.schemas.employee_schemas import GetEmployeeSalaries
+from app.v2_0.HRMS.domain.schemas.employee_schemas import GetEmployeeSalaries, UpdateActivityStatus
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser
 
 
@@ -151,3 +153,19 @@ def fetch_employee_salaries(user_id, company_id, branch_id, db):
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), [])
+
+
+def modify_activity_status(status: UpdateActivityStatus, user_id, company_id, branch_id, u_id, db):
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+
+        if check is None:
+            status_query = db.query(UserDetails).filter(UserDetails.user_id == u_id)
+            status_query.update(
+                {"modified_by": user_id, "modified_on": datetime.now(), "activity_status": status.activity_status})
+            db.commit()
+            return ResponseDTO(200, "Employee's activity status updated!", {})
+        else:
+            return check
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
