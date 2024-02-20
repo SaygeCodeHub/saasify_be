@@ -290,7 +290,7 @@ def withdraw_leave_func(leave_id: int, user_id: int, company_id: int, branch_id:
         if leave.is_leave_approved is True or leave.leave_status == LeaveStatus.REJECTED or leave.leave_status == LeaveStatus.APPROVED:
             return ResponseDTO(200, "Leave already updated!", leave)
 
-        leave_response["leave_status"] = LeaveStatus.WITHDRAW
+        leave_response["leave_status"] = LeaveStatus.WITHDRAWN
         leave_response["modified_by"] = user_id
         leave_response["modified_on"] = datetime.now()
         leave_response["comment"] = "Leave withdrawn"

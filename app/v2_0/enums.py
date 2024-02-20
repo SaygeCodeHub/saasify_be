@@ -21,7 +21,7 @@ class LeaveStatus(PyEnum):
     REJECTED = 0
     PENDING = 1
     APPROVED = 2
-    WITHDRAW = 3
+    WITHDRAWN = 3
 
 
 class LeaveType(PyEnum):
