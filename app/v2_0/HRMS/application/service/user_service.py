@@ -35,9 +35,17 @@ def add_user_details(user, user_id, db):
         user_docs = UserDocuments(user_id=user_id)
         db.add(user_docs)
 
-        # Creates an entry in the finance table for the corresponding user_id
+        # Creates an entry in the user_finance table for the corresponding user_id
         user_finance = UserFinance(user_id=user_id)
         db.add(user_finance)
+
+        # Creates an entry in the user_official table for the corresponding user_id
+        user_official = UserOfficialDetails(user_id =user_id)
+        db.add(user_official)
+
+        # Creates an entry in the user_bank_details table for the corresponding user_id
+        user_bank_details = UserBankDetails(user_id = user_id)
+        db.add(user_bank_details)
 
     except Exception as exc:
         db.rollback()

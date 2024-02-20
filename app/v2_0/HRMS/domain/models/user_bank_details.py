@@ -1,6 +1,6 @@
 """Model - UserBank"""
 
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, String
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, String, BIGINT
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
@@ -14,7 +14,7 @@ class UserBankDetails(Base):
     bank_detail_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users_auth.user_id"), nullable=False)
     bank_name = Column(String, nullable=True)
-    account_number = Column(Integer, nullable=True)
+    account_number = Column(BIGINT, nullable=True)
     ifsc_code = Column(String, nullable=True)
     branch_name = Column(String, nullable=True)
     account_type = Column(String, nullable=True)
