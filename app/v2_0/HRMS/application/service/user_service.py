@@ -406,6 +406,13 @@ def remove_user(u_id, user_id, company_id, branch_id, db):
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
+            if user_id == u_id:
+                return ResponseDTO(204, "You cannot delete yourself!", {})
+
+            company = db.query(Companies).filter(Companies.company_id == company_id).first()
+            if u_id == company.owner:
+                return ResponseDTO(204, "Cannot delete company owner!", {})
+
             user_query = db.query(UsersAuth).filter(UsersAuth.user_id == u_id).first()
 
             assigned_to_tasks_query = db.query(Tasks).filter(Tasks.assigned_to == u_id)

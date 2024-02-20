@@ -28,5 +28,4 @@ class UsersAuth(Base):
     leaves = relationship('Leaves', back_populates='user_auth', cascade='all, delete-orphan')
     bank_details = relationship('UserBankDetails', back_populates='user_auth', cascade='all, delete-orphan')
     user_official = relationship('UserOfficialDetails', back_populates='user_auth', cascade='all, delete-orphan')
-    # task_1 = relationship('Tasks', back_populates='assigned_user', cascade='all, delete-orphan')
-    # task_2 = relationship('Tasks', back_populates='monitored_user', cascade='all, delete-orphan')
+    attendance = relationship('Attendance', back_populates='user_auth', cascade='all, delete-orphan')

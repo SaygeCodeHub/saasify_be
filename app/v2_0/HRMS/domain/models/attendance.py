@@ -1,5 +1,6 @@
 """Model - Attendance"""
 from sqlalchemy import Column, Integer, ForeignKey, Date, DateTime
+from sqlalchemy.orm import relationship
 
 from app.v2_0.infrastructure.database import Base
 
@@ -14,3 +15,5 @@ class Attendance(Base):
     date = Column(Date, nullable=False)
     check_in = Column(DateTime(timezone=True), nullable=True)
     check_out = Column(DateTime(timezone=True), nullable=True)
+
+    user_auth = relationship('UsersAuth', back_populates='attendance')
