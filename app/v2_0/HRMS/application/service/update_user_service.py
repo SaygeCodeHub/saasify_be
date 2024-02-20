@@ -267,7 +267,7 @@ def add_user_bank_data(user, new_employee, db):
                                bank_name=user.financial.bank_details.bank_name,
                                account_number=user.financial.bank_details.account_number,
                                ifsc_code=user.financial.bank_details.ifsc_code,
-                               branch_name=user.financial.bank_details.branch,
+                               branch_name=user.financial.bank_details.branch_name,
                                account_type=user.financial.bank_details.account_type,
                                country=user.financial.bank_details.country,
                                modified_on=datetime.now())
@@ -434,7 +434,7 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
         {"bank_name": user.financial.bank_details.bank_name,
          "account_number": user.financial.bank_details.account_number,
          "ifsc_code": user.financial.bank_details.ifsc_code,
-         "branch_name": user.financial.bank_details.branch,
+         "branch_name": user.financial.bank_details.branch_name,
          "account_type": user.financial.bank_details.account_type,
          "country": user.financial.bank_details.country,
          "modified_on": datetime.now()})

@@ -108,7 +108,7 @@ class UserBankDetailsSchema(BaseModel):
     bank_name: Optional[str] = None
     account_number: Optional[Union[int, str]] = None
     ifsc_code: Optional[str] = None
-    branch: Optional[str] = None
+    branch_name: Optional[str] = None
     account_type: Optional[str] = None
     country: Optional[str] = None
     modified_on: Optional[datetime] = None
@@ -288,7 +288,7 @@ class GetUserBankDetailsSchema(BaseModel):
     bank_name: Optional[str] = None
     account_number: Optional[int] = None
     ifsc_code: Optional[str] = None
-    branch: Optional[str] = None
+    branch_name: Optional[str] = None
     account_type: Optional[str] = None
     country: Optional[str] = None
     modified_on: Optional[datetime] = None
