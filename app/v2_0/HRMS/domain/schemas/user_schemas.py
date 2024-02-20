@@ -22,7 +22,7 @@ class PersonalInfo(Modifier):
     last_name: str = ""
     user_email: str
     user_birthdate: Optional[Union[date, str]] = None
-    active_status: ActivityStatus = None
+    active_status: ActivityStatus = ActivityStatus.ACTIVE
     casual_leaves: Optional[int] = 3
     medical_leaves: Optional[int] = 12
     user_image: str = "Image"
