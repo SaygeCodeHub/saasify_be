@@ -193,7 +193,7 @@ def fetch_all_leaves(user_id, company_id, branch_id, db):
 
 def calculate_num_of_leaves(leaveObject, leaves, db):
     """Calculates the number of leaves remaining after approval"""
-    duration = (leaveObject.end_date - leaveObject.start_date).days
+    duration = (leaveObject.end_date - leaveObject.start_date).days + 1
 
     for x in range(0, duration):
         leaves = leaves - 1
