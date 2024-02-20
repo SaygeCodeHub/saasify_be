@@ -92,15 +92,36 @@ class UserDocumentsSchema(Modifier):
 class UserFinanceSchema(Modifier):
     fin_id: Optional[int] = None
     user_id: Optional[int] = None
-    basic_salary: Optional[float] = 0.0
-    BOA: Optional[float] = 0.0
-    bonus: Optional[float] = 0.0
-    PF: Optional[float] = 0.0
-    performance_bonus: Optional[float] = 0.0
-    gratuity: Optional[float] = 0.0
-    deduction: Optional[float] = 0.0
-    fixed_monthly_gross: Optional[float] = 0.0
-    total_annual_gross: Optional[float] = 0.0
+    basic_salary: Optional[Union[float, str]] = 0.0
+    BOA: Optional[Union[float, str]] = 0.0
+    bonus: Optional[Union[float, str]] = 0.0
+    PF: Optional[Union[float, str]] = 0.0
+    performance_bonus: Optional[Union[float, str]] = 0.0
+    gratuity: Optional[Union[float, str]] = 0.0
+    deduction: Optional[Union[float, str]] = 0.0
+    fixed_monthly_gross: Optional[Union[float, str]] = 0.0
+    total_annual_gross: Optional[Union[float, str]] = 0.0
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.basic_salary == "":
+            self.basic_salary = None
+        if self.BOA == "":
+            self.BOA = None
+        if self.bonus == "":
+            self.bonus = None
+        if self.PF == "":
+            self.PF = None
+        if self.performance_bonus == "":
+            self.performance_bonus = None
+        if self.gratuity == "":
+            self.gratuity = None
+        if self.deduction == "":
+            self.deduction = None
+        if self.fixed_monthly_gross == "":
+            self.fixed_monthly_gross = None
+        if self.total_annual_gross == "":
+            self.total_annual_gross = None
 
 
 class UserBankDetailsSchema(BaseModel):
