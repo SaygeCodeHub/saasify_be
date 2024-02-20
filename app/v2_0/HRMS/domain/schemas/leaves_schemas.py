@@ -33,10 +33,6 @@ class UpdateLeave(Modifier):
     is_leave_approved: bool
 
 
-class WithdrawLeave(Modifier):
-    leave_id: int
-
-
 class GetPendingLeaves(BaseModel):
     leave_id: int
     user_id: int
