@@ -28,7 +28,7 @@ class ApplyLeaveResponse(BaseModel):
 
 class UpdateLeave(Modifier):
     leave_id: int
-    comment: str
+    comment: Optional[str]
     leave_status: LeaveStatus = None
     is_leave_approved: bool
 
