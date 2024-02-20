@@ -34,6 +34,9 @@ def assign_task(assigned_task, user_id, company_id, branch_id, db):
 
 def get_assigner_name(monitored_by, db):
     assigner = db.query(UserDetails).filter(UserDetails.user_id == monitored_by).first()
+    if assigner.first_name is None or assigner.last_name is None:
+        assigner.first_name = "Some"
+        assigner.last_name = "Employee"
 
     return Data(id=monitored_by, name=assigner.first_name + " " + assigner.last_name)
 
