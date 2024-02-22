@@ -90,19 +90,20 @@ def fetch_employees(company_id, branch_id, user_id, db):
 
         if check is None:
             employees_query = (
-                db.query(UserDetails, UsersAuth, UserCompanyBranch)
+                db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
                 .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
                 .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
+                .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
                 .filter(UserCompanyBranch.branch_id == branch_id))
 
             result = []
-            for details, auth, ucb in employees_query:
+            for details, auth, ucb, finance in employees_query:
+                payroll = finance.salary - finance.deduction
                 result.append({"employee_id": auth.user_id,
                                "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else "Invited User",
-                               "user_contact": details.user_contact,
+                               "user_contact": details.user_contact, "user_email": auth.user_email,
                                "designations": get_designation_name(ucb.designations),
-                               "user_email": auth.user_email,
-                               "current_address": details.current_address})
+                               "current_address": details.current_address, "payroll": payroll})
 
             return ResponseDTO(200, "Employees fetched!", result)
         else:
