@@ -98,7 +98,7 @@ def fetch_employees(company_id, branch_id, user_id, db):
 
             result = []
             for details, auth, ucb, finance in employees_query:
-                payroll = finance.salary - finance.deduction
+                payroll = finance.basic_salary - finance.deduction
                 result.append({"employee_id": auth.user_id,
                                "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else "Invited User",
                                "user_contact": details.user_contact, "user_email": auth.user_email,
