@@ -153,7 +153,7 @@ def add_emp(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depends(g
 
     add_user_bank_data(user, new_employee, db)
     db.commit()
-    return ResponseDTO(200, "Employee added successfully!", {})
+    return ResponseDTO(200, "Employee added successfully!", {"user_id": new_employee.user_id})
 
 
 def add_emp_in_ucb(user: UpdateUser, company_id, branch_id, accessible_modules, accessible_features,
