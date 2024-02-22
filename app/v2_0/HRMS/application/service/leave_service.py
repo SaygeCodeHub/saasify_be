@@ -1,6 +1,6 @@
 """Service layer for Leaves"""
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import Depends
 from app.v2_0.dto.dto_classes import ResponseDTO
@@ -191,9 +191,26 @@ def fetch_all_leaves(user_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
+def check_weekend_and_national_holiday_between_dates(start_date, end_date):
+    current_date = start_date
+    current_year = datetime.today().year
+    weekend_days = 0
+    while current_date <= end_date:
+        # Check if the current day is Saturday or Sunday (weekday() returns 5 for Saturday and 6 for Sunday) or a national holiday
+        if (current_date.weekday() == 5 or current_date.weekday() == 6 or
+                current_date == datetime(current_year, 8, 15).date()
+                or current_date == datetime(current_year, 1, 26).date() or current_date == datetime(current_year, 10,
+                                                                                                    2).date()):
+            weekend_days = weekend_days + 1
+        current_date += timedelta(days=1)  # Move to the next day
+    return weekend_days
+
+
 def calculate_num_of_leaves(leaveObject, leaves, db):
     """Calculates the number of leaves remaining after approval"""
-    duration = (leaveObject.end_date - leaveObject.start_date).days + 1
+    duration = (
+                           leaveObject.end_date - leaveObject.start_date).days + 1 - check_weekend_and_national_holiday_between_dates(
+        leaveObject.start_date, leaveObject.end_date)
 
     for x in range(0, duration):
         leaves = leaves - 1

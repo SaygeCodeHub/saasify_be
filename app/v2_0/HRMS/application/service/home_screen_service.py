@@ -62,9 +62,8 @@ def get_monthly_salary_rollout(user_id, branch_id, db):
                   ]
 
         salary_sum = 0
-        for i in range(0, datetime.now().day):
-            for x in result:
-                salary_sum = salary_sum + x.basic_salary / 30
+        for x in result:
+            salary_sum = salary_sum + x.basic_salary
 
         total_deduction = 0
         for x in result:
