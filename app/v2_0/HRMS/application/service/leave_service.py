@@ -58,6 +58,13 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
+            leaves = db.query(Leaves).filter(Leaves.user_id == user_id).all()
+
+            for leave in leaves:
+                if (leave.start_date <= leave_application.start_date <= leave.end_date) or (
+                        leave.start_date <= leave_application.end_date <= leave.end_date) or (
+                        leave_application.start_date < leave.start_date and leave_application.end_date > leave.end_date):
+                    return ResponseDTO(204, "You can't apply for a leave on the same dates again!", {})
 
             message = check_remaining_leaves(user_id, leave_application, db)
 
@@ -209,7 +216,7 @@ def check_weekend_and_national_holiday_between_dates(start_date, end_date):
 def calculate_num_of_leaves(leaveObject, leaves, db):
     """Calculates the number of leaves remaining after approval"""
     duration = (
-                           leaveObject.end_date - leaveObject.start_date).days + 1 - check_weekend_and_national_holiday_between_dates(
+                       leaveObject.end_date - leaveObject.start_date).days + 1 - check_weekend_and_national_holiday_between_dates(
         leaveObject.start_date, leaveObject.end_date)
 
     for x in range(0, duration):
