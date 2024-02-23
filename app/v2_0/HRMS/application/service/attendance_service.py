@@ -7,6 +7,7 @@ from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_b
 from app.v2_0.HRMS.domain.models.attendance import Attendance
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
+from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.enums import LeaveStatus, LeaveType
 from app.v2_0.infrastructure.database import get_db
@@ -41,7 +42,7 @@ def calculate_average_working_hours(working_hours_list):
 
     total_working_hours = sum(working_hours_list, timedelta())
     average_working_hours = total_working_hours / len(working_hours_list)
-    rounded_average_hours = round(average_working_hours.total_seconds())  # Round to the nearest second
+    rounded_average_hours = round(average_working_hours.total_seconds())
 
     return timedelta(seconds=rounded_average_hours)
 
@@ -51,14 +52,18 @@ def check_leaves_func(company_id: int, branch_id: int, user_id: int, db=Depends(
         Leaves.user_id == user_id).filter(Leaves.start_date <= date.today()).filter(
         date.today() <= Leaves.end_date).first()
     if leaves:
-        if leaves.leave_status == LeaveStatus.APPROVED:
-            if leaves.leave_type == LeaveType.CASUAL:
-                user_details = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
-                user_details.casual_leaves += 1
-
-            else:
-                user_details = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
-                user_details.medical_leaves += 1
+        user_details = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
+        user_finance = db.query(UserFinance).filter(UserFinance.user_id == user_id).first()
+        if user_finance.deduction == 0:
+            if leaves.leave_status == LeaveStatus.APPROVED:
+                if leaves.leave_type == LeaveType.CASUAL:
+                    user_details.casual_leaves += 1
+                else:
+                    user_details.medical_leaves += 1
+                db.commit()
+        else:
+            per_day_pay = user_finance.basic_salary / 30 if user_finance.basic_salary is not None else 0 / 30
+            user_finance.deduction -= per_day_pay
             db.commit()
 
 
