@@ -5,7 +5,10 @@ from fastapi import Depends
 
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.attendance import Attendance
+from app.v2_0.HRMS.domain.models.leaves import Leaves
+from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import LeaveStatus, LeaveType
 from app.v2_0.infrastructure.database import get_db
 
 
@@ -43,7 +46,24 @@ def calculate_average_working_hours(working_hours_list):
     return timedelta(seconds=rounded_average_hours)
 
 
+def check_leaves_func(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    leaves = db.query(Leaves).filter(Leaves.company_id == company_id).filter(Leaves.branch_id == branch_id).filter(
+        Leaves.user_id == user_id).filter(Leaves.start_date <= date.today()).filter(
+        date.today() <= Leaves.end_date).first()
+    if leaves:
+        if leaves.leave_status == LeaveStatus.APPROVED:
+            if leaves.leave_type == LeaveType.CASUAL:
+                user_details = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
+                user_details.casual_leaves += 1
+
+            else:
+                user_details = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
+                user_details.medical_leaves += 1
+            db.commit()
+
+
 def check_in_func(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    check_leaves_func(company_id, branch_id, user_id, db)
     new_attendance = Attendance(company_id=company_id, branch_id=branch_id, user_id=user_id, date=date.today())
     new_attendance.check_in = datetime.now()
     db.add(new_attendance)
@@ -92,7 +112,6 @@ def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depen
 def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     try:
         user = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-
         if user is None:
             attendance = fetch_attendance_today(company_id, branch_id, user_id, db)
 
