@@ -51,4 +51,5 @@ class UpdateTask(Modifier):
 
 
 class EditTask(AssignTask):
+    task_id: int
     comment: Optional[str] = None
