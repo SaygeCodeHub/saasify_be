@@ -54,7 +54,8 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
                 GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
                                      due_date=task.due_date,
                                      priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
-                                     task_status=task.task_status.name) for task in tasks_assigned_to_me]
+                                     task_status=task.task_status.name, comment=task.comment) for task in
+                tasks_assigned_to_me]
 
             tasks_assigned_by_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
                 Tasks.branch_id == branch_id).filter(Tasks.monitored_by == user_id).all()
@@ -63,7 +64,7 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
                 GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
                                      due_date=task.due_date,
                                      priority=task.priority, assigned_to=get_assigner_name(task.assigned_to, db),
-                                     task_status=task.task_status.name)
+                                     task_status=task.task_status.name, comment=task.comment)
                 for task in tasks_assigned_by_me]
 
             return ResponseDTO(200, "Tasks fetched!", {"tasks_assigned_to_me": array_of_tasks_assigned_to_me,
