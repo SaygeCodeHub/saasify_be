@@ -103,7 +103,8 @@ def change_task(updated_task, user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-
+            updated_task.branch_id = branch_id
+            updated_task.company_id = company_id
             query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
             query.update(updated_task.__dict__)
             db.commit()
