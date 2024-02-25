@@ -2,13 +2,13 @@
 import asyncio
 from datetime import datetime
 
-from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.service.push_notification_service import send_task_assigned_notification, \
     send_task_updated_notification
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.tasks import Tasks
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, Data, GetTasksAssignedByMe
+from app.v2_0.dto.dto_classes import ResponseDTO
 
 
 def assign_task(assigned_task, user_id, company_id, branch_id, db):
@@ -75,7 +75,7 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
 
 
 def change_task_status(updated_task, user_id, company_id, branch_id, db):
-    """Updates the status of the task - DONE"""
+    """Updates the status of the task - DONE/CLOSED"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
@@ -83,11 +83,31 @@ def change_task_status(updated_task, user_id, company_id, branch_id, db):
 
             query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
             query.update({"completion_date": updated_task.completion_date, "task_status": updated_task.task_status,
-                          "modified_by": user_id, "modified_on": datetime.now()})
+                          "comment": updated_task.comment, "modified_by": user_id, "modified_on": datetime.now()})
             asyncio.run(send_task_updated_notification(updated_task, user_id, company_id, branch_id, db))
             db.commit()
 
-            return ResponseDTO(200, "Task updated!", {})
+            return ResponseDTO(200, "Task updated successfully!", {})
+
+        else:
+            return check
+
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
+
+
+def change_task(updated_task, user_id, company_id, branch_id, db):
+    """Edit the task details"""
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+
+        if check is None:
+
+            query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
+            query.update(updated_task.__dict__)
+            db.commit()
+
+            return ResponseDTO(200, "Task Edited Successfully!", {})
 
         else:
             return check

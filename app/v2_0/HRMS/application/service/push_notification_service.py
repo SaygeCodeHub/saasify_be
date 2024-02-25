@@ -3,10 +3,10 @@
 import httpx
 from fastapi import HTTPException
 
-from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
+from app.v2_0.dto.dto_classes import ResponseDTO
 
 
 async def send_notification(device_token: str, title: str, body: str):
@@ -84,5 +84,7 @@ async def send_task_updated_notification(updated_task, user_id, company_id, bran
     assignee = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"New task update! - {updated_task.title}"
     body = f"Task assigned to {assignee.first_name} {assignee.last_name} was completed on {updated_task.completion_date}"
-    result = await send_notification(ucb_entry.device_token, title, body)
+    closed_body = f"Task assigned to {assignee.first_name} {assignee.last_name} was closed on {updated_task.completion_date} because {updated_task.comment}"
+    result = await send_notification(ucb_entry.device_token, title,
+                                     body if updated_task.task_status.name == "DONE" else closed_body)
     print(result.__dict__)

@@ -1,6 +1,5 @@
 """Model - Tasks"""
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, TIMESTAMP, text, Enum, DateTime
-from sqlalchemy.orm import relationship
 
 from app.v2_0.enums import TaskPriority, TaskStatus
 from app.v2_0.infrastructure.database import Base
@@ -21,6 +20,7 @@ class Tasks(Base):
     completion_date = Column(DateTime, nullable=True)
     priority = Column(Enum(TaskPriority), nullable=False)
     task_status = Column(Enum(TaskStatus), nullable=True, server_default=TaskStatus.PENDING.name)
+    comment = Column(String, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
