@@ -86,5 +86,5 @@ async def send_task_updated_notification(updated_task, user_id, company_id, bran
     body = f"Task assigned to {assignee.first_name} {assignee.last_name} was completed on {updated_task.completion_date}"
     closed_body = f"Task assigned to {assignee.first_name} {assignee.last_name} was closed on {updated_task.completion_date} because {updated_task.comment}"
     result = await send_notification(ucb_entry.device_token, title,
-                                     body if updated_task.task_status.name == "DONE" else closed_body)
+                                     body if updated_task.task_status == "DONE" else closed_body)
     print(result.__dict__)

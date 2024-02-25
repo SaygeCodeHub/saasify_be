@@ -1,11 +1,11 @@
 """Schemas for model - Tasks"""
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
-from app.v2_0.enums import TaskPriority, TaskStatus
+from app.v2_0.enums import TaskPriority
 
 
 class Data(BaseModel):
@@ -45,11 +45,24 @@ class UpdateTask(Modifier):
     title: str
     monitored_by: int
     task_id: int
-    completion_date: datetime
-    task_status: Optional[TaskStatus] = None
+    completion_date: Optional[Union[datetime, str]] = None
+    task_status: Optional[str] = None
     comment: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.completion_date == "":
+            self.completion_date = None
 
 
 class EditTask(AssignTask):
+    title: str
+    task_description: str
+    due_date: date
+    priority: TaskPriority
     task_id: int
     comment: Optional[str] = None
+    task_status: str = None
+    assigned_to: int
+    company_id: int = None
+    branch_id: int = None
