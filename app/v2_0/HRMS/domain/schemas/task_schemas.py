@@ -9,7 +9,7 @@ from app.v2_0.enums import TaskPriority
 
 
 class Data(BaseModel):
-    id: int
+    id: Optional[int] =None
     name: str
 
 
@@ -45,7 +45,6 @@ class UpdateTask(Modifier):
     title: str
     monitored_by: int
     task_id: int
-    completion_date: Optional[Union[datetime, str]] = None
     task_status: Optional[str] = None
     comment: Optional[str] = None
 
@@ -66,3 +65,4 @@ class EditTask(AssignTask):
     assigned_to: int
     company_id: int = None
     branch_id: int = None
+    assigned_by: int

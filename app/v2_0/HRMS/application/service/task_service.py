@@ -49,13 +49,13 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
         if check is None:
             tasks_assigned_to_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
                 Tasks.branch_id == branch_id).filter(Tasks.assigned_to == user_id).all()
-
-            array_of_tasks_assigned_to_me = [
-                GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
-                                     due_date=task.due_date,
-                                     priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
-                                     task_status=task.task_status.name, comment=task.comment) for task in
-                tasks_assigned_to_me]
+            array_of_tasks_assigned_to_me = []
+            for task in tasks_assigned_to_me:
+                array_of_tasks_assigned_to_me.append(
+                    GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                         due_date=task.due_date,
+                                         priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
+                                         task_status=task.task_status.name, comment=task.comment))
 
             tasks_assigned_by_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
                 Tasks.branch_id == branch_id).filter(Tasks.monitored_by == user_id).all()
@@ -77,24 +77,29 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
 
 def change_task_status(updated_task, user_id, company_id, branch_id, db):
     """Updates the status of the task - DONE/CLOSED"""
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
+        if check is None:
 
-        query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
-        query.update({"completion_date": updated_task.completion_date, "task_status": updated_task.task_status,
-                      "comment": updated_task.comment, "modified_by": user_id, "modified_on": datetime.now()})
-        asyncio.run(send_task_updated_notification(updated_task, user_id, company_id, branch_id, db))
-        db.commit()
+            query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
+            if updated_task.task_status == "DONE":
+                query.update({"completion_date": datetime.now(), "task_status": updated_task.task_status,
+                              "comment": updated_task.comment, "modified_by": user_id, "modified_on": datetime.now()})
 
-        return ResponseDTO(200, "Task updated successfully!", {})
+            query.update({"task_status": updated_task.task_status,
+                          "comment": updated_task.comment, "modified_by": user_id, "modified_on": datetime.now()})
 
-    else:
-        return check
+            asyncio.run(send_task_updated_notification(updated_task, user_id, company_id, branch_id, db))
+            db.commit()
 
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+            return ResponseDTO(200, "Task updated successfully!", {})
+
+        else:
+            return check
+
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
 
 
 def change_task(updated_task, user_id, company_id, branch_id, db):
@@ -107,11 +112,10 @@ def change_task(updated_task, user_id, company_id, branch_id, db):
             updated_task.company_id = company_id
             query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
             query.update({"title": updated_task.title, "task_description": updated_task.task_description,
-                          "assigned_to": updated_task.assigned_to, "monitored_by": updated_task.monitored_by,
+                          "assigned_to": updated_task.assigned_to, "monitored_by": updated_task.assigned_by,
                           "due_date": updated_task.due_date, "priority": updated_task.priority,
-                          "comment": updated_task.comment,
-                          "company_id": updated_task.company_id, "branch_id": updated_task.branch_id,
-                          "modified_on": datetime.now(), "modified_by": user_id})
+                          "comment": updated_task.comment, "company_id": updated_task.company_id,
+                          "branch_id": updated_task.branch_id, "modified_by": user_id, "modified_on": datetime.now()})
             db.commit()
 
             return ResponseDTO(200, "Task Edited Successfully!", {})

@@ -194,11 +194,14 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
                                         available_features=available_features))
 
             my_tasks = get_tasks_assigned_to_me(user_id, db)
-            tasks_assigned_to_me = [
-                GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
-                                     due_date=task.due_date,
-                                     priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
-                                     task_status=task.task_status.name) for task in my_tasks]
+            tasks_assigned_to_me = []
+            for task in my_tasks:
+                tasks_assigned_to_me.append(
+                    GetTasksAssignedToMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
+                                         due_date=task.due_date,
+                                         priority=task.priority, assigned_by=get_assigner_name(task.monitored_by, db),
+                                         task_status=task.task_status.name))
+
             tasks_by_me = get_tasks_assigned_by_me(user_id, db)
             tasks_assigned_by_me = [
                 GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,

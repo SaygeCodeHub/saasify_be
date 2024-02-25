@@ -6,7 +6,6 @@ from app.v2_0.HRMS import hrms_api_interceptor
 from app.v2_0.POS import pos_api_interceptor
 from app.v2_0.infrastructure.database import engine, Base
 
-# from app.v2_0.import_models import Base
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
