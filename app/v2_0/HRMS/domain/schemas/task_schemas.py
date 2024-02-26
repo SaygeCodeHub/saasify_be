@@ -1,6 +1,6 @@
 """Schemas for model - Tasks"""
-from datetime import date, datetime
-from typing import Optional, Union
+from datetime import date
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -9,7 +9,7 @@ from app.v2_0.enums import TaskPriority
 
 
 class Data(BaseModel):
-    id: Optional[int] =None
+    id: Optional[int] = None
     name: str
 
 
@@ -47,11 +47,6 @@ class UpdateTask(Modifier):
     task_id: int
     task_status: Optional[str] = None
     comment: Optional[str] = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.completion_date == "":
-            self.completion_date = None
 
 
 class EditTask(AssignTask):
