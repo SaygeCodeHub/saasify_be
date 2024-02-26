@@ -13,11 +13,13 @@ from app.v2_0.HRMS.application.service.attendance_service import mark_attendance
 from app.v2_0.HRMS.application.service.company_service import add_company, fetch_company, modify_company, \
     modify_branch, fetch_branches, get_all_user_data, modify_branch_settings, fetch_branch_settings, add_new_branch
 from app.v2_0.HRMS.application.service.employee_service import invite_employee, fetch_employees, \
-    fetch_employee_salaries, modify_activity_status
+    modify_activity_status
 from app.v2_0.HRMS.application.service.home_screen_service import fetch_home_screen_data
 from app.v2_0.HRMS.application.service.leave_service import get_screen_apply_leave, apply_for_leave, fetch_leaves, \
     fetch_all_leaves, modify_leave_status, withdraw_leave_func
 from app.v2_0.HRMS.application.service.module_service import add_module, fetch_subscribed_modules, fetch_all_modules
+from app.v2_0.HRMS.application.service.salary_rollout_service import calculate_rollout, calculate_deduction, \
+    rollout_individual, rollout_all
 from app.v2_0.HRMS.application.service.shift_service import add_shift, fetch_all_shifts, change_shift_info, \
     remove_shift, \
     assign_shift_to_employee
@@ -296,7 +298,22 @@ def get_all_modules(user_id: int, company_id: int, branch_id: int, db=Depends(ge
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getSalaries")
 def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return fetch_employee_salaries(user_id, company_id, branch_id, db)
+    return calculate_rollout(company_id, branch_id, user_id, db)
+
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/calculate_deductions")
+def deduction_calculation(user_id: int, company_id: int, branch_id: int, u_id: str, db=Depends(get_db)):
+    return calculate_deduction(company_id, branch_id, user_id, u_id, db)
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/rolloutAllSalaries")
+def rollout_all_employee_salary(user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return rollout_all(company_id, branch_id, user_id, db)
+
+
+@router.post("/v2.0/{company_id}/{branch_id}/{user_id}/rolloutIndividualSalaries")
+def rollout_individual_salary(user_id: int, company_id: int, branch_id: int, u_id: str, db=Depends(get_db)):
+    return rollout_individual(company_id, branch_id, user_id, u_id, db)
 
 
 """----------------------------------------------Home Screen API-------------------------------------------------------------------"""

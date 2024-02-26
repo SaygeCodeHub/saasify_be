@@ -72,6 +72,9 @@ def check_in_func(company_id: int, branch_id: int, user_id: int, db=Depends(get_
     new_attendance = Attendance(company_id=company_id, branch_id=branch_id, user_id=user_id, date=date.today())
     new_attendance.check_in = datetime.now()
     db.add(new_attendance)
+    if datetime.now().day == 1:
+        user_finance = db.query(UserFinance).filter(UserFinance.user_id == user_id).first()
+        user_finance.is_rolled_out = False
     db.commit()
 
     return ResponseDTO(200, "Check-in successfully",
@@ -111,6 +114,7 @@ def mark_attendance_func(company_id: int, branch_id: int, user_id: int, db=Depen
         else:
             return ResponseDTO(204, "User not found", {})
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -128,6 +132,7 @@ def get_todays_attendance(user_id: int, company_id: int, branch_id: int, db=Depe
         else:
             return ResponseDTO(204, "User not found", {})
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), {})
 
 
@@ -147,6 +152,7 @@ def attendance_history_func(user_id: int, company_id: int, branch_id: int, db=De
         else:
             return ResponseDTO(204, "User not found", [])
     except Exception as exc:
+        db.rollback()
         return ResponseDTO(204, str(exc), [])
 
 

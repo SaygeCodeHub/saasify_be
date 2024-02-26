@@ -1,6 +1,6 @@
 """Model - UserFinance"""
 
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Double
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Double, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
@@ -22,6 +22,7 @@ class UserFinance(Base):
     deduction = Column(Double, nullable=True, server_default=text('0.0'))
     fixed_monthly_gross = Column(Double, nullable=True, server_default=text('0.0'))
     total_annual_gross = Column(Double, nullable=True, server_default=text('0.0'))
+    is_rolled_out = Column(Boolean, nullable=True, server_default=text('false'))
     modified_on = Column(TIMESTAMP(timezone=True), nullable=True)
     modified_by = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
