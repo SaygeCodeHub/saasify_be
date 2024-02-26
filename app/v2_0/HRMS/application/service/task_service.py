@@ -48,7 +48,8 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
 
         if check is None:
             tasks_assigned_to_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
-                Tasks.branch_id == branch_id).filter(Tasks.assigned_to == user_id).all()
+                Tasks.branch_id == branch_id).filter(Tasks.assigned_to == user_id).order_by(
+                Tasks.task_status != "PENDING").all()
             array_of_tasks_assigned_to_me = []
             for task in tasks_assigned_to_me:
                 array_of_tasks_assigned_to_me.append(
@@ -58,7 +59,8 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
                                          task_status=task.task_status.name, comment=task.comment))
 
             tasks_assigned_by_me = db.query(Tasks).filter(Tasks.company_id == company_id).filter(
-                Tasks.branch_id == branch_id).filter(Tasks.monitored_by == user_id).all()
+                Tasks.branch_id == branch_id).filter(Tasks.monitored_by == user_id).order_by(
+                Tasks.task_status != "PENDING").all()
 
             array_of_tasks_assigned_by_me = [
                 GetTasksAssignedByMe(task_id=task.task_id, title=task.title, task_description=task.task_description,
