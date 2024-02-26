@@ -116,12 +116,14 @@ def get_title(name):
 
 
 def get_tasks_assigned_to_me(user_id, db):
-    tasks_assigned_to_me = db.query(Tasks).filter(Tasks.assigned_to == user_id).limit(10).all()
+    tasks_assigned_to_me = (db.query(Tasks).filter(Tasks.assigned_to == user_id)
+                            .order_by(Tasks.task_status != "PENDING").limit(6).all())
     return tasks_assigned_to_me
 
 
 def get_tasks_assigned_by_me(user_id, db):
-    tasks_assigned_by_me = db.query(Tasks).filter(Tasks.monitored_by == user_id).limit(10).all()
+    tasks_assigned_by_me = (db.query(Tasks).filter(Tasks.monitored_by == user_id)
+                            .order_by(Tasks.task_status != "PENDING").limit(6).all())
     return tasks_assigned_by_me
 
 
