@@ -60,4 +60,4 @@ class EditTask(AssignTask):
     assigned_to: int
     company_id: int = None
     branch_id: int = None
-    assigned_by: int
+    monitored_by: int

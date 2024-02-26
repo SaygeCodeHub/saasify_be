@@ -112,7 +112,7 @@ def change_task(updated_task, user_id, company_id, branch_id, db):
             updated_task.company_id = company_id
             query = db.query(Tasks).filter(Tasks.task_id == updated_task.task_id)
             query.update({"title": updated_task.title, "task_description": updated_task.task_description,
-                          "assigned_to": updated_task.assigned_to, "monitored_by": updated_task.assigned_by,
+                          "assigned_to": updated_task.assigned_to, "monitored_by": updated_task.monitored_by,
                           "due_date": updated_task.due_date, "priority": updated_task.priority,
                           "comment": updated_task.comment, "company_id": updated_task.company_id,
                           "branch_id": updated_task.branch_id, "modified_by": user_id, "modified_on": datetime.now()})
