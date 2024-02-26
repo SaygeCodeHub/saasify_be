@@ -60,6 +60,7 @@ class TaskPriority(PyEnum):
 class TaskStatus(PyEnum):
     PENDING = 0
     DONE = 1
+    CLOSED = 2
 
 
 class Unit(PyEnum):

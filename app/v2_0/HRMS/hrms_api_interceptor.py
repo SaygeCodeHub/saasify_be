@@ -21,7 +21,7 @@ from app.v2_0.HRMS.application.service.module_service import add_module, fetch_s
 from app.v2_0.HRMS.application.service.shift_service import add_shift, fetch_all_shifts, change_shift_info, \
     remove_shift, \
     assign_shift_to_employee
-from app.v2_0.HRMS.application.service.task_service import assign_task, fetch_my_tasks, change_task_status
+from app.v2_0.HRMS.application.service.task_service import assign_task, fetch_my_tasks, change_task_status, change_task
 from app.v2_0.HRMS.application.service.update_user_service import user_update_func
 from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id, update_approver, remove_user
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
@@ -36,7 +36,7 @@ from app.v2_0.HRMS.domain.schemas.employee_schemas import InviteEmployee, Update
 from app.v2_0.HRMS.domain.schemas.leaves_schemas import ApplyLeave, UpdateLeave
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModuleSchema
 from app.v2_0.HRMS.domain.schemas.shifts_schemas import AddShift, UpdateShift
-from app.v2_0.HRMS.domain.schemas.task_schemas import AssignTask, UpdateTask
+from app.v2_0.HRMS.domain.schemas.task_schemas import AssignTask, UpdateTask, EditTask
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.HRMS.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
 from app.v2_0.dto.dto_classes import ResponseDTO
@@ -324,6 +324,11 @@ def get_my_tasks(user_id: int, company_id: int, branch_id: int, db=Depends(get_d
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateTaskStatus")
 def update_task(updated_task: UpdateTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return change_task_status(updated_task, user_id, company_id, branch_id, db)
+
+
+@router.put("/v2.0/{company_id}/{branch_id}/{user_id}/editTask")
+def edit_tasks(edit_task: EditTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return change_task(edit_task, user_id, company_id, branch_id, db)
 
 
 """----------------------------------------------Announcement related APIs-------------------------------------------------------------------"""

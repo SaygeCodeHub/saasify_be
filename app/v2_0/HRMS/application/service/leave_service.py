@@ -3,19 +3,19 @@ import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import Depends
-from app.v2_0.dto.dto_classes import ResponseDTO
+
 from app.v2_0.HRMS.application.service.company_service import get_approver_data
 from app.v2_0.HRMS.application.service.push_notification_service import send_leave_notification, \
     send_leave_status_notification
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
-from app.v2_0.HRMS.domain.models.companies import Companies
-from app.v2_0.enums import LeaveType, LeaveStatus
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
-from app.v2_0.HRMS.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, ApplyLeaveResponse, GetLeaves, \
+from app.v2_0.HRMS.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, GetLeaves, \
     GetPendingLeaves, FetchAllLeavesResponse
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import LeaveType, LeaveStatus
 from app.v2_0.infrastructure.database import get_db
 
 
@@ -90,12 +90,7 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             asyncio.run(
                 send_leave_notification(leave_application, leave_application.approvers, user_id, company_id, branch_id,
                                         db))
-
-            return ResponseDTO(200, msg,
-                               ApplyLeaveResponse(leave_id=new_leave_application.leave_id,
-                                                  leave_status=new_leave_application.leave_status.name,
-                                                  is_leave_approved=new_leave_application.is_leave_approved,
-                                                  comment=new_leave_application.comment))
+            return ResponseDTO(200, msg, {})
 
         else:
             return check

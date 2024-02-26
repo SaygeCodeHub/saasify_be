@@ -3,20 +3,20 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from app.v2_0.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.HRMS.application.service.ucb_service import add_employee_to_ucb
 from app.v2_0.HRMS.application.service.user_service import add_user_details
 from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
-from app.v2_0.enums import DesignationEnum, ActivityStatus
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.schemas.employee_schemas import GetEmployeeSalaries, UpdateActivityStatus
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser
+from app.v2_0.dto.dto_classes import ResponseDTO
+from app.v2_0.enums import DesignationEnum, ActivityStatus
 
 
 def set_employee_details(new_employee, branch_id, db):
@@ -131,12 +131,12 @@ def fetch_employee_salaries(user_id, company_id, branch_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-            salaries_query = select(UserCompanyBranch.designations, UserDetails.first_name,
-                                    UserDetails.last_name, UserFinance.salary, UserFinance.deduction).select_from(
-                UserCompanyBranch).join(UserFinance, UserCompanyBranch.user_id == UserFinance.user_id).join(UserDetails,
-                                                                                                            UserCompanyBranch.user_id == UserDetails.user_id).filter(
-                UserCompanyBranch.branch_id == branch_id).filter(
-                UserCompanyBranch.designations != [DesignationEnum.OWNER])
+            salaries_query = (select(UserCompanyBranch.designations, UserDetails.first_name,
+                                     UserDetails.last_name, UserFinance.salary, UserFinance.deduction).select_from(
+                UserCompanyBranch).join(UserFinance, UserCompanyBranch.user_id == UserFinance.user_id)
+                              .join(UserDetails, UserCompanyBranch.user_id == UserDetails.user_id).filter(
+                UserCompanyBranch.branch_id == branch_id)
+                              .filter(UserCompanyBranch.designations != [DesignationEnum.OWNER]))
 
             salaries = db.execute(salaries_query)
 
