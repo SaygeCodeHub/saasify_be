@@ -116,7 +116,7 @@ def get_title(name):
 
 
 def get_tasks_assigned_to_me(user_id, db):
-    tasks_assigned_to_me = db.query(Tasks).filter(Tasks.assigned_to == user_id).filter(Tasks.s).limit(10).all()
+    tasks_assigned_to_me = db.query(Tasks).filter(Tasks.assigned_to == user_id).limit(10).all()
     return tasks_assigned_to_me
 
 
