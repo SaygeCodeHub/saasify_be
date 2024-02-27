@@ -302,7 +302,8 @@ def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depe
     return calculate_rollout(company_id, branch_id, user_id, db)
 
 
-@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/calculate_deductions")
+
+@router.get("/v2.0/{company_id}/{branch_id}/{user_id}/calculateDeductions")
 def deduction_calculation(user_id: int, company_id: int, branch_id: int, u_id: str, db=Depends(get_db)):
     return calculate_deduction(company_id, branch_id, user_id, u_id, db)
 
