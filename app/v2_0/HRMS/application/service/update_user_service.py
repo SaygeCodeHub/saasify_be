@@ -441,4 +441,4 @@ def update_user(user: UpdateUser, user_id, company_id, branch_id, u_id, db=Depen
          "modified_on": datetime.now()})
 
     db.commit()
-    return ResponseDTO(200, "User updated successfully!", {"user_id": u_id})
+    return ResponseDTO(200, "User updated successfully!", {"user_id": int(u_id)})
