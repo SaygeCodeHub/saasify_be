@@ -3,7 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.v2_0.enums import Features, Modules
+from app.enums.features_enum import Features
+from app.enums.modules_enum import Modules
 from app.v2_0.HRMS.domain.schemas.announcement_schemas import GetAnnouncements
 from app.v2_0.HRMS.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap, AvailableModulesMap

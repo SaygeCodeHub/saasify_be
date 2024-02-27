@@ -2,7 +2,7 @@
 from sqlalchemy import Column, String, Integer, TIMESTAMP, Time, ForeignKey
 from sqlalchemy.sql.expression import text
 
-from app.v2_0.infrastructure.database import Base
+from app.infrastructure.database import Base
 
 
 class Shifts(Base):

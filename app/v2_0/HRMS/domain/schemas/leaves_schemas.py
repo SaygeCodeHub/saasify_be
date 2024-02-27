@@ -4,7 +4,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.v2_0.enums import LeaveStatus, LeaveType
+from app.enums.leave_status_enum import LeaveStatus
+from app.enums.leave_type_enum import LeaveType
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 
 

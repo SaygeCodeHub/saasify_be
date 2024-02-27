@@ -3,9 +3,11 @@ from datetime import datetime
 
 from sqlalchemy import select
 
+from app.enums.features_enum import Features
+from app.enums.leave_status_enum import LeaveStatus
 from app.v2_0.HRMS.application.service.leave_service import get_authorized_leave_requests
 from app.v2_0.HRMS.application.service.task_service import get_assigner_name
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.announcements import Announcements
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
@@ -20,8 +22,7 @@ from app.v2_0.HRMS.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.HRMS.domain.schemas.home_screen_schemas import HomeScreenApiResponse, Salaries, IteratedBranchSettings
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap, FeaturesMap, AvailableModulesMap
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.enums import LeaveStatus, Features
+from app.dto.dto_classes import ResponseDTO
 
 
 def get_home_screen_branches(user_id, db):

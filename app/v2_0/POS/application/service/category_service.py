@@ -1,7 +1,7 @@
 """Service layer for model - Categories"""
 from datetime import datetime
 
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.POS.domain.models.categories import Categories
 from app.v2_0.POS.domain.models.product_variants import ProductVariants
 from app.v2_0.POS.domain.models.products import Products
@@ -9,7 +9,7 @@ from app.v2_0.POS.domain.schemas.category_schemas import AddCategory, UpdateCate
     GetCategories
 from app.v2_0.POS.domain.schemas.product_schemas import GetProducts
 from app.v2_0.POS.domain.schemas.variant_schemas import GetVariants
-from app.v2_0.dto.dto_classes import ResponseDTO
+from app.dto.dto_classes import ResponseDTO
 
 
 def add_category(category: AddCategory, company_id, branch_id, user_id, db):

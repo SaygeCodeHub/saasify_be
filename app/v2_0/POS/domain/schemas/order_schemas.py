@@ -2,7 +2,8 @@
 from typing import Dict, List
 
 from pydantic import BaseModel
-from app.v2_0.enums import TaskStatus
+
+from app.enums.task_status_enum import TaskStatus
 
 
 class PlaceOrder(BaseModel):

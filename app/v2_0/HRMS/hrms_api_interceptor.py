@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter
 from fastapi import Depends
 
+from app.enums.activity_status_enum import ActivityStatus
 from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.HRMS.application.password_handler.reset_password import initiate_pwd_reset, change_password, check_token
 from app.v2_0.HRMS.application.service.announcement_service import add_announcements, fetch_announcements, \
@@ -29,7 +30,7 @@ from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
-from app.v2_0.HRMS.domain.schemas.announcement_schemas import AddAnnouncement, UpdateAnnouncement
+from app.v2_0.HRMS.domain.schemas.announcement_schemas import UpdateAnnouncement
 from app.v2_0.HRMS.domain.schemas.approver_schemas import AddApprover
 from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, UpdateBranch
 from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import UpdateBranchSettings
@@ -41,9 +42,9 @@ from app.v2_0.HRMS.domain.schemas.shifts_schemas import AddShift, UpdateShift
 from app.v2_0.HRMS.domain.schemas.task_schemas import AssignTask, UpdateTask, EditTask
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.HRMS.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.enums import ActivityStatus
-from app.v2_0.infrastructure.database import engine, get_db, Base
+from app.dto.dto_classes import ResponseDTO
+from app.infrastructure.database import engine, get_db, Base
+from app.v3_0.schemas.form_schema import DynamicForm
 
 router = APIRouter()
 Base.metadata.create_all(bind=engine)
@@ -352,7 +353,7 @@ def edit_tasks(edit_task: EditTask, user_id: int, company_id: int, branch_id: in
 
 
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/addAnnouncements")
-def create_announcements(announcement: AddAnnouncement, user_id: int, company_id: int, branch_id: int,
+def create_announcements(announcement: DynamicForm, user_id: int, company_id: int, branch_id: int,
                          db=Depends(get_db)):
     return add_announcements(announcement, user_id, company_id, branch_id, db)
 
@@ -364,9 +365,10 @@ def get_all_announcements(user_id: int, company_id: int, branch_id: int,
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateAnnouncements")
-def update_announcements(announcement: UpdateAnnouncement, user_id: int, company_id: int, branch_id: int,
+def update_announcements(announcement: DynamicForm, user_id: int, company_id: int, branch_id: int,
+                         announcement_id: Optional[str] = None,
                          db=Depends(get_db)):
-    return change_announcement_data(announcement, user_id, company_id, branch_id, db)
+    return change_announcement_data(announcement, user_id, company_id, branch_id, announcement_id, db)
 
 
 @router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteAnnouncements/{announcement_id}")

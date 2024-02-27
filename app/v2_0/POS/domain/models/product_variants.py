@@ -1,6 +1,6 @@
 """Model - ProductVariants"""
-from app.v2_0.enums import Unit
-from app.v2_0.infrastructure.database import Base
+from app.enums.unit_enum import Unit
+from app.infrastructure.database import Base
 from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Double, Enum
 
 

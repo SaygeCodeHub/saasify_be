@@ -6,14 +6,14 @@ from fastapi import Depends
 from sqlalchemy import extract
 
 from app.v2_0.HRMS.application.service.employee_service import get_designation_name
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.attendance import Attendance
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.infrastructure.database import get_db
+from app.dto.dto_classes import ResponseDTO
+from app.infrastructure.database import get_db
 
 
 def calculate_rollout(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
