@@ -1,7 +1,7 @@
 """Model - Categories"""
 from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey
 
-from app.v2_0.infrastructure.database import Base
+from app.infrastructure.database import Base
 
 
 class Categories(Base):

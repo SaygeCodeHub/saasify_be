@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
-from app.v2_0.enums import ActivityStatus
+from app.enums.activity_status_enum import ActivityStatus
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 
 

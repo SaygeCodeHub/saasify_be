@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, String, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
-from app.v2_0.infrastructure.database import Base
+from app.infrastructure.database import Base
 
 
 class UserOfficialDetails(Base):

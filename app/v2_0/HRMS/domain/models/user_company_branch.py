@@ -3,8 +3,10 @@
 from sqlalchemy import Column, Integer, ForeignKey, Enum, ARRAY, String, TIMESTAMP, text
 from sqlalchemy.orm import relationship
 
-from app.v2_0.enums import DesignationEnum, Modules, Features
-from app.v2_0.infrastructure.database import Base
+from app.enums.designation_enum import DesignationEnum
+from app.enums.features_enum import Features
+from app.enums.modules_enum import Modules
+from app.infrastructure.database import Base
 
 
 class UserCompanyBranch(Base):

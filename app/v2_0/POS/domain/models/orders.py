@@ -1,6 +1,6 @@
 """Model - Orders"""
-from app.v2_0.enums import TaskStatus
-from app.v2_0.infrastructure.database import Base
+from app.enums.task_status_enum import TaskStatus
+from app.infrastructure.database import Base
 from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Double, ARRAY, JSON, BIGINT, Enum
 
 

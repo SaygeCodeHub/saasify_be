@@ -1,8 +1,8 @@
 """Service layer for Inventory operations"""
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.POS.domain.models.product_variants import ProductVariants
 from app.v2_0.POS.domain.schemas.inventory_schemas import GetAllInventory
-from app.v2_0.dto.dto_classes import ResponseDTO
+from app.dto.dto_classes import ResponseDTO
 
 
 def fetch_all_inventory(company_id, branch_id, user_id, db):

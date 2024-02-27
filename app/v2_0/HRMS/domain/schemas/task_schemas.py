@@ -4,8 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from app.enums.task_priority_enum import TaskPriority
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
-from app.v2_0.enums import TaskPriority
 
 
 class Data(BaseModel):

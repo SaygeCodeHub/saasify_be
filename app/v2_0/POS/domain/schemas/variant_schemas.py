@@ -1,8 +1,8 @@
 """Schemas for Model - ProductVariants"""
 from pydantic import BaseModel
 
+from app.enums.unit_enum import Unit
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
-from app.v2_0.enums import Unit
 
 
 class InitVariant(BaseModel):

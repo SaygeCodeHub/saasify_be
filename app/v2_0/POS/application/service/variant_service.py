@@ -1,11 +1,11 @@
 """Service layer for model - ProductVariants"""
 from datetime import datetime
 
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.POS.domain.models.product_variants import ProductVariants
 from app.v2_0.POS.domain.models.products import Products
 from app.v2_0.POS.domain.schemas.variant_schemas import UpdateVariant
-from app.v2_0.dto.dto_classes import ResponseDTO
+from app.dto.dto_classes import ResponseDTO
 
 
 def add_variant(variant, company_id, branch_id, user_id, flag, db):

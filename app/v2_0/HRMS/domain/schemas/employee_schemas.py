@@ -3,7 +3,8 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.v2_0.enums import DesignationEnum, ActivityStatus
+from app.enums.activity_status_enum import ActivityStatus
+from app.enums.designation_enum import DesignationEnum
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap
 from app.v2_0.HRMS.domain.schemas.user_schemas import UpdateUser

@@ -1,10 +1,10 @@
 """Contains the code that acts as a utility to various files"""
 from typing import Optional, List
 
-from app.v2_0.dto.dto_classes import ResponseDTO
+from app.dto.dto_classes import ResponseDTO
+from app.enums.features_enum import Features
 from app.v2_0.HRMS.domain.models.branches import Branches
 from app.v2_0.HRMS.domain.models.companies import Companies
-from app.v2_0.enums import Features
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 
 

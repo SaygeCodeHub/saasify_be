@@ -4,7 +4,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from app.v2_0.enums import Modules
+from app.enums.modules_enum import Modules
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 
 

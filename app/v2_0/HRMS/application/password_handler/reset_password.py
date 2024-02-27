@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
-from app.v2_0.dto.dto_classes import ResponseDTO
+from app.dto.dto_classes import ResponseDTO
 
 """-------------------------------Update password code starts below this line-----------------------------"""
 

@@ -2,8 +2,8 @@
 from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, Enum, Date, ARRAY
 from sqlalchemy.sql.expression import text
 
-from app.v2_0.enums import Modules
-from app.v2_0.infrastructure.database import Base
+from app.enums.modules_enum import Modules
+from app.infrastructure.database import Base
 
 
 class ModuleSubscriptions(Base):
