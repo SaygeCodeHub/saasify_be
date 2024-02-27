@@ -4,10 +4,10 @@ from datetime import datetime
 import httpx
 from fastapi import HTTPException
 
+from app.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
-from app.dto.dto_classes import ResponseDTO
 
 
 async def send_notification(device_token: str, title: str, body: str):
@@ -62,7 +62,8 @@ async def send_leave_status_notification(application_response, user_id, company_
         UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.company_id == company_id).first()
     approver = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"Leave {application_response.leave_status.name}!"
-    body = f"{application_response.comment}. \n Regards, {approver.first_name.title()} {approver.last_name.title()}. "
+    comment = f"{application_response.comment}.\n"
+    body = f"{comment if application_response.comment else ""}Regards, {approver.first_name.title()} {approver.last_name.title()}. "
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
 
@@ -84,8 +85,8 @@ async def send_task_updated_notification(updated_task, user_id, company_id, bran
         UserCompanyBranch.branch_id == branch_id).filter(UserCompanyBranch.user_id == updated_task.monitored_by).first()
     assignee = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"New task update! - {updated_task.title}"
-    body = f"Task assigned to {assignee.first_name} {assignee.last_name} was completed on {datetime.now()}"
-    closed_body = f"Task assigned to {assignee.first_name} {assignee.last_name} was closed on {datetime.now()} because {updated_task.comment}"
+    body = f"Task assigned to {assignee.first_name} {assignee.last_name} was completed on {datetime.now().date}"
+    closed_body = f"Task assigned to {assignee.first_name} {assignee.last_name} was closed on {datetime.now().date()}"
     result = await send_notification(ucb_entry.device_token, title,
                                      body if updated_task.task_status == "DONE" else closed_body)
     print(result.__dict__)

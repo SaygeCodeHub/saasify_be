@@ -3,12 +3,13 @@ from datetime import datetime
 
 from sqlalchemy import select
 
+from app.dto.dto_classes import ResponseDTO
 from app.enums.activity_status_enum import ActivityStatus
 from app.enums.designation_enum import DesignationEnum
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.application.password_handler.reset_password import create_password_reset_code
 from app.v2_0.HRMS.application.service.ucb_service import add_employee_to_ucb
 from app.v2_0.HRMS.application.service.user_service import add_user_details
-from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
@@ -17,7 +18,6 @@ from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.schemas.employee_schemas import GetEmployeeSalaries, UpdateActivityStatus
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser
-from app.dto.dto_classes import ResponseDTO
 
 
 def set_employee_details(new_employee, branch_id, db):
@@ -95,7 +95,7 @@ def fetch_employees(company_id, branch_id, user_id, db):
                 .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
                 .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
                 .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
-                .filter(UserCompanyBranch.branch_id == branch_id))
+                .filter(UserCompanyBranch.branch_id == branch_id).order_by(UserDetails.user_id))
 
             result = []
             for details, auth, ucb, finance in employees_query:
