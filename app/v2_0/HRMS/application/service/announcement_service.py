@@ -31,8 +31,7 @@ def fetch_announcements(user_id, company_id, branch_id, db):
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
-            announcements = db.query(Announcements).filter(Announcements.company_id == company_id).filter(
-                Announcements.is_active == True).all()
+            announcements = db.query(Announcements).filter(Announcements.company_id == company_id).all()
             result = [GetAnnouncements(id=announcement.announcement_id, due_date=announcement.due_date,
                                        description=announcement.description,
                                        is_active=announcement.is_active)
