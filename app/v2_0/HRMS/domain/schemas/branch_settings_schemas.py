@@ -23,6 +23,7 @@ class GetBranchSettings(BaseModel):
     pincode: Optional[Union[int, str]] = None
     longitude: Optional[Union[float, str]] = None
     latitude: Optional[Union[float, str]] = None
+    geo_fencing: Optional[Union[bool, str]] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,6 +41,8 @@ class GetBranchSettings(BaseModel):
             self.longitude = None
         if self.latitude == "":
             self.latitude = None
+        if self.geo_fencing == "":
+            self.geo_fencing = False
 
 
 class UpdateBranchSettings(Modifier):
@@ -48,7 +51,7 @@ class UpdateBranchSettings(Modifier):
     timezone: Optional[Union[datetime, str]] = None
     currency: Optional[str] = ""
     default_approver: int
-    working_days: Optional[Union[int, str]]= None
+    working_days: Optional[Union[int, str]] = None
     total_medical_leaves: Optional[Union[int, str]] = 12
     total_casual_leaves: Optional[Union[int, str]] = 3
     overtime_rate: Optional[Union[float, str]] = None
@@ -57,6 +60,7 @@ class UpdateBranchSettings(Modifier):
     pincode: Optional[Union[int, str]] = None
     longitude: Optional[Union[float, str]] = None
     latitude: Optional[Union[float, str]] = None
+    geo_fencing: Optional[Union[bool, str]] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -76,6 +80,8 @@ class UpdateBranchSettings(Modifier):
             self.latitude = None
         if self.working_days == "":
             self.working_days = None
+        if self.geo_fencing == "":
+            self.geo_fencing = False
 
 
 class BranchSettingsSchema(UpdateBranchSettings):
