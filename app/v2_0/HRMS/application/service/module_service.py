@@ -1,7 +1,7 @@
 """Service layer for Modules"""
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist, get_all_features
-from app.v2_0.enums import Modules
+from app.dto.dto_classes import ResponseDTO
+from app.enums.modules_enum import Modules
+from app.utility.app_utility import check_if_company_and_branch_exist, get_all_features
 from app.v2_0.HRMS.domain.models.module_subscriptions import ModuleSubscriptions
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch

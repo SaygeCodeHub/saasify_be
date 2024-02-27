@@ -2,8 +2,8 @@
 from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Enum
 from sqlalchemy.sql.expression import text
 
-from app.v2_0.enums import ActivityStatus
-from app.v2_0.infrastructure.database import Base
+from app.enums.activity_status_enum import ActivityStatus
+from app.infrastructure.database import Base
 
 
 class Companies(Base):

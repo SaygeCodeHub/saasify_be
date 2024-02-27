@@ -4,9 +4,9 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from app.enums.activity_status_enum import ActivityStatus
 from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, CreateBranchResponse
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
-from app.v2_0.enums import ActivityStatus
 
 
 class UpdateCompany(Modifier):

@@ -1,8 +1,10 @@
 """Service layer for UserCompanyBranch"""
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.HRMS.application.utility.app_utility import get_all_features
+from app.dto.dto_classes import ResponseDTO
+from app.enums.designation_enum import DesignationEnum
+from app.enums.features_enum import Features
+from app.enums.modules_enum import Modules
+from app.utility.app_utility import get_all_features
 from app.v2_0.HRMS.domain.models.companies import Companies
-from app.v2_0.enums import DesignationEnum, Modules, Features
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.schemas.employee_schemas import InviteEmployee
 

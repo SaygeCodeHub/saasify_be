@@ -1,7 +1,7 @@
 """Model - Announcements"""
 from sqlalchemy import Column, Integer, Date, String, Boolean, text, ForeignKey, TIMESTAMP
 
-from app.v2_0.infrastructure.database import Base
+from app.infrastructure.database import Base
 
 
 class Announcements(Base):

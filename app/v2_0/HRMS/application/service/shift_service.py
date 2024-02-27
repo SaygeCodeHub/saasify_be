@@ -1,8 +1,8 @@
 """Service layer for - Shifts"""
 from datetime import datetime
 
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.dto.dto_classes import ResponseDTO
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.shifts import Shifts
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.schemas.shifts_schemas import AddShift, GetShifts

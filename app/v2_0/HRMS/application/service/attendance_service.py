@@ -3,14 +3,15 @@ from typing import Optional
 
 from fastapi import Depends
 
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.enums.leave_status_enum import LeaveStatus
+from app.enums.leave_type_enum import LeaveType
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.attendance import Attendance
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.enums import LeaveStatus, LeaveType
-from app.v2_0.infrastructure.database import get_db
+from app.dto.dto_classes import ResponseDTO
+from app.infrastructure.database import get_db
 
 
 def fetch_attendance_today(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):

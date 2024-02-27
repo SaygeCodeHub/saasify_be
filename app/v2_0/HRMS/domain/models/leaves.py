@@ -3,8 +3,9 @@ from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Boolean, 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
-from app.v2_0.enums import LeaveType, LeaveStatus
-from app.v2_0.infrastructure.database import Base
+from app.enums.leave_status_enum import LeaveStatus
+from app.enums.leave_type_enum import LeaveType
+from app.infrastructure.database import Base
 
 
 class Leaves(Base):

@@ -3,7 +3,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, String, TIMESTAMP, Double, Boolean, DateTime
 from sqlalchemy.sql.expression import text
 
-from app.v2_0.infrastructure.database import Base
+from app.infrastructure.database import Base
 
 
 class BranchSettings(Base):

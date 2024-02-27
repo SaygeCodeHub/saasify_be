@@ -4,9 +4,11 @@ from datetime import datetime, time
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 
+from app.enums.activity_status_enum import ActivityStatus
+from app.enums.modules_enum import Modules
 from app.v2_0.HRMS.application.service.ucb_service import add_init_branch_to_ucb, add_company_to_ucb, \
     add_new_branch_to_ucb
-from app.v2_0.HRMS.application.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
 from app.v2_0.HRMS.domain.models.companies import Companies
@@ -20,8 +22,7 @@ from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import BranchSettingsS
 from app.v2_0.HRMS.domain.schemas.company_schemas import GetCompany, AddCompanyResponse
 from app.v2_0.HRMS.domain.schemas.leaves_schemas import ApproverData
 from app.v2_0.HRMS.domain.schemas.utility_schemas import UserDataResponse, GetUserDataResponse
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.enums import ActivityStatus, Modules
+from app.dto.dto_classes import ResponseDTO
 
 
 def set_employee_leaves(settings, company_id, db):

@@ -10,7 +10,7 @@ from app.v2_0.POS.domain.schemas.category_schemas import AddCategory, UpdateCate
 from app.v2_0.POS.domain.schemas.order_schemas import PlaceOrder
 from app.v2_0.POS.domain.schemas.product_schemas import AddProduct, UpdateProduct
 from app.v2_0.POS.domain.schemas.variant_schemas import AddVariant, UpdateVariant
-from app.v2_0.infrastructure.database import Base, engine, get_db
+from app.infrastructure.database import Base, engine, get_db
 
 router = APIRouter()
 Base.metadata.create_all(bind=engine)

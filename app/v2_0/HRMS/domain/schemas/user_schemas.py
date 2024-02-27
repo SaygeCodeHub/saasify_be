@@ -2,13 +2,16 @@
 from datetime import date, datetime
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from app.v2_0.HRMS.application.utility.app_utility import ensure_optional_fields
+from app.enums.activity_status_enum import ActivityStatus
+from app.enums.designation_enum import DesignationEnum
+from app.enums.features_enum import Features
+from app.enums.modules_enum import Modules
+from app.utility.app_utility import ensure_optional_fields
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap
-from app.v2_0.dto.dto_classes import ResponseDTO
-from app.v2_0.enums import ActivityStatus, DesignationEnum, Features, Modules
+
 
 
 class LoginResponse(BaseModel):

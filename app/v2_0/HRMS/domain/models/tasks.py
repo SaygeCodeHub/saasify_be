@@ -1,8 +1,9 @@
 """Model - Tasks"""
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, TIMESTAMP, text, Enum, DateTime
 
-from app.v2_0.enums import TaskPriority, TaskStatus
-from app.v2_0.infrastructure.database import Base
+from app.enums.task_priority_enum import TaskPriority
+from app.enums.task_status_enum import TaskStatus
+from app.infrastructure.database import Base
 
 
 class Tasks(Base):
