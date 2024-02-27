@@ -144,46 +144,47 @@ def employee_rollout(employee_finance, db=Depends(get_db)):
 
 
 def calculate_deduction(company_id: int, branch_id: int, user_id: int, u_id: str, db=Depends(get_db)):
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
-        final_pay = 0.0
-        working_days = calculate_working_days_in_month()
-        if u_id:
-            employee = (db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
-                        .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
-                        .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
-                        .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
-                        .filter(UserCompanyBranch.branch_id == branch_id).filter(UsersAuth.user_id == u_id))
-            total_deductions = 0.0
-            for details, auth, ucb, finance in employee:
-                if finance:
-                    pay = finance.BOA + finance.bonus + finance.PF + finance.performance_bonus + finance.gratuity + finance.basic_salary
-                    total_deductions = finance_deduction(finance, db, working_days)
-                    final_pay = pay - total_deductions
-            return ResponseDTO(200, "Deduction calculated successfully!", {"final_pay": round(final_pay, 2)})
+        if check is None:
+            final_pay = 0.0
+            working_days = calculate_working_days_in_month()
+            if u_id:
+                employee = (db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
+                            .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
+                            .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
+                            .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
+                            .filter(UserCompanyBranch.branch_id == branch_id).filter(UsersAuth.user_id == u_id))
+                total_deductions = 0.0
+                for details, auth, ucb, finance in employee:
+                    if finance:
+                        pay = finance.BOA + finance.bonus + finance.PF + finance.performance_bonus + finance.gratuity + finance.basic_salary
+                        total_deductions = finance_deduction(finance, db, working_days)
+                        final_pay = pay - total_deductions
+                return ResponseDTO(200, "Deduction calculated successfully!", {"final_pay": round(final_pay, 2)})
+            else:
+                employees = (
+                    db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
+                    .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
+                    .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
+                    .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
+                    .filter(UserCompanyBranch.branch_id == branch_id))
+                total_deductions = 0.0
+                for details, auth, ucb, finance in employees:
+                    if finance:
+                        if finance.is_rolled_out == False:
+                            pay = finance.BOA + finance.bonus + finance.PF + finance.performance_bonus + finance.gratuity + finance.basic_salary
+                            total_deductions += finance_deduction(finance, db, working_days)
+                            final_pay += (pay - total_deductions)
+                return ResponseDTO(200, "Deduction calculated successfully!", {"final_pay": round(final_pay, 2)})
         else:
-            employees = (
-                db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
-                .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
-                .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
-                .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
-                .filter(UserCompanyBranch.branch_id == branch_id))
-            total_deductions = 0.0
-            for details, auth, ucb, finance in employees:
-                if finance:
-                    pay = finance.BOA + finance.bonus + finance.PF + finance.performance_bonus + finance.gratuity + finance.basic_salary
-                    total_deductions += finance_deduction(finance, db, working_days)
-                    final_pay += (pay - total_deductions)
-            return ResponseDTO(200, "Deduction calculated successfully!", {"final_pay": round(final_pay, 2)})
-    else:
-        return check
+            return check
 
+    except Exception as exc:
+        db.rollback()
+        return ResponseDTO(204, str(exc), {})
 
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
 
 def finance_deduction(finance, db, working_days):
     total_deductions = 0.0
