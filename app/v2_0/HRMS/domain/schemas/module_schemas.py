@@ -1,6 +1,6 @@
 """Schemas for -  Module"""
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -30,6 +30,8 @@ class FeaturesMap(BaseModel):
     title: str
     icon: str
     value: str
+    is_view: bool
+    build_screen_endpoint: Optional[str]
 
 
 class ModulesMap(BaseModel):

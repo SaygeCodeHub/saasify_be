@@ -11,3 +11,4 @@ class Features(PyEnum):
     HR_MY_LEAVES = 0.6
     HR_TIMESHEET = 0.7
     HR_SHIFT_MANAGEMENT = 0.8
+    HR_ADD_ANNOUNCEMENT = 0.9
