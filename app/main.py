@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from app.v2_0.HRMS import hrms_api_interceptor
 from app.v2_0.POS import pos_api_interceptor
 from app.infrastructure.database import engine, Base
-from app.v3_0 import build_api_interceptor
+from app.v3_0 import api_interceptor
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,7 +20,7 @@ app.add_middleware(
 
 app.include_router(hrms_api_interceptor.router)
 app.include_router(pos_api_interceptor.router)
-app.include_router(build_api_interceptor.router)
+app.include_router(api_interceptor.router)
 
 
 @app.get('/')

@@ -30,7 +30,7 @@ from app.v2_0.HRMS.application.service.user_service import add_user, fetch_by_id
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
-from app.v2_0.HRMS.domain.schemas.announcement_schemas import UpdateAnnouncement
+from app.v2_0.HRMS.domain.schemas.announcement_schemas import UpdateAnnouncement, AddAnnouncement
 from app.v2_0.HRMS.domain.schemas.approver_schemas import AddApprover
 from app.v2_0.HRMS.domain.schemas.branch_schemas import AddBranch, UpdateBranch
 from app.v2_0.HRMS.domain.schemas.branch_settings_schemas import UpdateBranchSettings
@@ -354,7 +354,7 @@ def edit_tasks(edit_task: EditTask, user_id: int, company_id: int, branch_id: in
 
 
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/addAnnouncements")
-def create_announcements(announcement: DynamicForm, user_id: int, company_id: int, branch_id: int,
+def create_announcements(announcement: AddAnnouncement, user_id: int, company_id: int, branch_id: int,
                          db=Depends(get_db)):
     return add_announcements(announcement, user_id, company_id, branch_id, db)
 
@@ -366,10 +366,9 @@ def get_all_announcements(user_id: int, company_id: int, branch_id: int,
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateAnnouncements")
-def update_announcements(announcement: DynamicForm, user_id: int, company_id: int, branch_id: int,
-                         announcement_id: Optional[str] = None,
+def update_announcements(announcement: UpdateAnnouncement, user_id: int, company_id: int, branch_id: int,
                          db=Depends(get_db)):
-    return change_announcement_data(announcement, user_id, company_id, branch_id, announcement_id, db)
+    return change_announcement_data(announcement, user_id, company_id, branch_id, db)
 
 
 @router.delete("/v2.0/{company_id}/{branch_id}/{user_id}/deleteAnnouncements/{announcement_id}")
