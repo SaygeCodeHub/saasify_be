@@ -46,6 +46,8 @@ async def send_leave_notification(leave_application, approvers, applicant_id, co
         applicant = db.query(UserDetails).filter(UserDetails.user_id == applicant_id).first()
         title = "New leave application!"
         body = f"{applicant.first_name.title()} {applicant.last_name.title()} has applied for a {leave_application.leave_type.name.title()} leave"
+        if user.device_token is None:
+            user.device_token = ""
         result = await send_notification(user.device_token, title, body)
         print(result.__dict__)
 
@@ -63,6 +65,8 @@ async def send_leave_status_notification(application_response, user_id, company_
     approver = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"Leave {application_response.leave_status.name}!"
     body = f"{application_response.comment}. \n Regards, {approver.first_name.title()} {approver.last_name.title()}. "
+    if ucb_entry.device_token is None:
+        ucb_entry.device_token = ""
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
 
@@ -74,6 +78,8 @@ async def send_task_assigned_notification(assigned_task, user_id, company_id, br
     monitor = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
     title = f"New task assigned! - {assigned_task.title}"
     body = f"Description: {assigned_task.task_description}. \n Priority: {assigned_task.priority.name.title()} \n Assigned by: {monitor.first_name} {monitor.last_name}"
+    if ucb_entry.device_token is None:
+        ucb_entry.device_token = ""
     result = await send_notification(ucb_entry.device_token, title, body)
     print(result.__dict__)
 
@@ -86,6 +92,8 @@ async def send_task_updated_notification(updated_task, user_id, company_id, bran
     title = f"New task update! - {updated_task.title}"
     body = f"Task assigned to {assignee.first_name} {assignee.last_name} was completed on {datetime.now().date}"
     closed_body = f"Task assigned to {assignee.first_name} {assignee.last_name} was closed on {datetime.now().date()}"
+    if ucb_entry.device_token is None:
+        ucb_entry.device_token = ""
     result = await send_notification(ucb_entry.device_token, title,
                                      body if updated_task.task_status == "DONE" else closed_body)
     print(result.__dict__)
