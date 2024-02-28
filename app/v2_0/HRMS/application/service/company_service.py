@@ -43,40 +43,41 @@ def set_employee_leaves(settings, company_id, db):
 
 def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, branch_id, db):
     """Updates the branch settings"""
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
-        existing_settings_query = db.query(BranchSettings).filter(
-            BranchSettings.branch_id == branch_id)
+        if check is None:
+            existing_settings_query = db.query(BranchSettings).filter(
+                BranchSettings.branch_id == branch_id)
 
-        company = db.query(Companies).filter(
-            Companies.company_id == existing_settings_query.first().company_id).first()
+            company = db.query(Companies).filter(
+                Companies.company_id == existing_settings_query.first().company_id).first()
 
-        if settings.default_approver != company.owner:
-            return ResponseDTO(400, "Default approver should be the company owner!", {})
+            if settings.default_approver != company.owner:
+                return ResponseDTO(400, "Default approver should be the company owner!", {})
 
-        existing_settings_query.update(
-            {"working_days": settings.working_days, "time_in": settings.time_in, "time_out": settings.time_out,
-             "timezone": settings.timezone, "currency": settings.currency,
-             "default_approver": settings.default_approver, "overtime_rate": settings.overtime_rate,
-             "overtime_rate_per": settings.overtime_rate_per,
-             "modified_on": datetime.now(), "modified_by": user_id, "geo_fencing": settings.geo_fencing, })
-        set_employee_leaves(settings, company_id, db)
+            existing_settings_query.update(
+                {"working_days": settings.working_days, "time_in": settings.time_in, "time_out": settings.time_out,
+                 "timezone": settings.timezone, "currency": settings.currency,
+                 "default_approver": settings.default_approver, "overtime_rate": settings.overtime_rate,
+                 "overtime_rate_per": settings.overtime_rate_per,
+                 "modified_on": datetime.now(), "modified_by": user_id, "geo_fencing": settings.geo_fencing, })
+            set_employee_leaves(settings, company_id, db)
 
-        branch = db.query(Branches).filter(Branches.branch_id == branch_id)
-        branch.update({"branch_address": settings.branch_address, "pincode": settings.pincode,
-                       "longitude": settings.longitude, "latitude": settings.longitude,
-                       "modified_on": datetime.now(), "modified_by": user_id})
+            branch = db.query(Branches).filter(Branches.branch_id == branch_id)
+            branch.update({"branch_address": settings.branch_address, "pincode": settings.pincode,
+                           "longitude": settings.longitude, "latitude": settings.longitude,
+                           "modified_on": datetime.now(), "modified_by": user_id})
 
-        db.commit()
+            db.commit()
 
-        return ResponseDTO(200, "Settings updated", {})
-    else:
-        return check
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
+            return ResponseDTO(200, "Settings updated", {})
+        else:
+            return check
+
+    except Exception as exc:
+        db.rollback()
+        return ResponseDTO(204, str(exc), {})
 
 
 def get_approver_data(approver_id, db):
