@@ -179,7 +179,7 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
                 UserCompanyBranch.user_id == user_id).filter(UserCompanyBranch.company_id == company_id).filter(
                 UserCompanyBranch.branch_id == branch_id).first()
             user_data = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
-            name = user_data.first_name if user_data.first_name else "Invited" + " " + user_data.last_name if user_data.last_name else "User"
+            name = user_data.first_name + " " + user_data.last_name if user_data.first_name and user_data.last_name else "Invited User"
             branch_settings = db.query(BranchSettings).filter(BranchSettings.branch_id == branch_id).first()
 
             iterated_result = IteratedBranchSettings(
