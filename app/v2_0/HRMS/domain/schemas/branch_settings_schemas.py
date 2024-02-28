@@ -23,6 +23,7 @@ class GetBranchSettings(BaseModel):
     pincode: Optional[Union[int, str]] = None
     longitude: Optional[Union[float, str]] = None
     latitude: Optional[Union[float, str]] = None
+    geo_fencing: Optional[Union[bool, str]] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,6 +41,8 @@ class GetBranchSettings(BaseModel):
             self.longitude = None
         if self.latitude == "":
             self.latitude = None
+        if self.geo_fencing == "":
+            self.geo_fencing = False
 
 
 class UpdateBranchSettings(Modifier):
@@ -57,7 +60,8 @@ class UpdateBranchSettings(Modifier):
     pincode: Optional[Union[int, str]] = None
     longitude: Optional[Union[float, str]] = None
     latitude: Optional[Union[float, str]] = None
-    geo_fencing: bool
+    geo_fencing: Optional[Union[bool, str]] = None
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,6 +81,8 @@ class UpdateBranchSettings(Modifier):
             self.latitude = None
         if self.working_days == "":
             self.working_days = None
+        if self.geo_fencing == "":
+            self.geo_fencing = False
 
 
 class BranchSettingsSchema(UpdateBranchSettings):
