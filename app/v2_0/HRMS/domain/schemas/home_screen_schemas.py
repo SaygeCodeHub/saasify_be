@@ -12,6 +12,7 @@ from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, GetT
 
 
 class HomeScreenApiResponse(BaseModel):
+    name: str = ""
     branches: List[GetBranch]
     accessible_modules: List[ModulesMap]
     available_modules: List[AvailableModulesMap]
