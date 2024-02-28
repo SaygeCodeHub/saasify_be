@@ -2,7 +2,8 @@
 from datetime import datetime
 
 from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.HRMS.application.service.home_screen_service import calculate_value, check_if_statistics, get_title
+from app.v2_0.HRMS.application.service.home_screen_service import calculate_value, check_if_statistics, get_title, \
+    get_is_view, get_build_screen_endpoint
 from app.v2_0.HRMS.application.service.ucb_service import add_user_to_ucb
 from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
@@ -40,11 +41,11 @@ def add_user_details(user, user_id, db):
         db.add(user_finance)
 
         # Creates an entry in the user_official table for the corresponding user_id
-        user_official = UserOfficialDetails(user_id =user_id)
+        user_official = UserOfficialDetails(user_id=user_id)
         db.add(user_official)
 
         # Creates an entry in the user_bank_details table for the corresponding user_id
-        user_bank_details = UserBankDetails(user_id = user_id)
+        user_bank_details = UserBankDetails(user_id=user_id)
         db.add(user_bank_details)
 
     except Exception as exc:
@@ -140,7 +141,10 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
                                                                icon="",
                                                                value=calculate_value(
                                                                    features.name, user_id, company_id, branch_id, db),
-                                                               is_statistics=check_if_statistics(features.name)))
+                                                               is_statistics=check_if_statistics(features.name),
+                                                               is_view=get_is_view(features.name),
+                                                               build_screen_endpoint=get_build_screen_endpoint(
+                                                                   features.name)))
                 accessible_modules.append(
                     ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="",
                                accessible_features=accessible_features))

@@ -62,6 +62,7 @@ class UpdateBranchSettings(Modifier):
     latitude: Optional[Union[float, str]] = None
     geo_fencing: Optional[Union[bool, str]] = None
 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.time_in == "":

@@ -49,8 +49,7 @@ def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, 
         if check is None:
             existing_settings_query = db.query(BranchSettings).filter(
                 BranchSettings.branch_id == branch_id)
-            settings.modified_on = datetime.now()
-            settings.modified_by = user_id
+
             company = db.query(Companies).filter(
                 Companies.company_id == existing_settings_query.first().company_id).first()
 
@@ -58,9 +57,11 @@ def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, 
                 return ResponseDTO(400, "Default approver should be the company owner!", {})
             existing_settings_query.update(
                 {"working_days": settings.working_days, "time_in": settings.time_in, "time_out": settings.time_out,
-                 "timezone": settings.timezone, "currency": settings.currency, "overtime_rate": settings.overtime_rate,
-                 "overtime_rate_per": settings.overtime_rate_per, "default_approver": settings.default_approver,
-                 "geo_fencing": settings.geo_fencing, "modified_on": datetime.now(), "modified_by": user_id})
+                 "timezone": settings.timezone, "currency": settings.currency,
+                 "default_approver": settings.default_approver, "overtime_rate": settings.overtime_rate,
+                 "overtime_rate_per": settings.overtime_rate_per,
+                 "modified_on": datetime.now(), "modified_by": user_id, "geo_fencing": settings.geo_fencing, })
+
             set_employee_leaves(settings, company_id, db)
 
             branch = db.query(Branches).filter(Branches.branch_id == branch_id)
@@ -73,6 +74,7 @@ def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, 
             return ResponseDTO(200, "Settings updated", {})
         else:
             return check
+
     except Exception as exc:
         db.rollback()
         return ResponseDTO(204, str(exc), {})
