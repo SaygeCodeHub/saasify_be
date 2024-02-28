@@ -1,5 +1,4 @@
 """Service layer for Leaves"""
-import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import Depends
@@ -88,9 +87,9 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             db.commit()
             db.refresh(new_leave_application)
 
-            asyncio.run(
-                send_leave_notification(leave_application, leave_application.approvers, user_id, company_id, branch_id,
-                                        db))
+            # asyncio.run(
+            #     send_leave_notification(leave_application, leave_application.approvers, user_id, company_id, branch_id,
+            #                             db))
             return ResponseDTO(200, msg, {})
 
         else:
@@ -285,7 +284,7 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             leave_query.update(application_response.__dict__)
             db.commit()
 
-            asyncio.run(send_leave_status_notification(application_response, user_id, company_id, branch_id, db))
+            # asyncio.run(send_leave_status_notification(application_response, user_id, company_id, branch_id, db))
 
             return ResponseDTO(200, "Leave status updated!", {})
         else:
