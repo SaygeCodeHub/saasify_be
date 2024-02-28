@@ -142,9 +142,7 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
                                                                value=calculate_value(
                                                                    features.name, user_id, company_id, branch_id, db),
                                                                is_statistics=check_if_statistics(features.name),
-                                                               is_view=get_is_view(features.name),
-                                                               build_screen_endpoint=get_build_screen_endpoint(
-                                                                   features.name)))
+                                                               ))
                 accessible_modules.append(
                     ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="",
                                accessible_features=accessible_features))
