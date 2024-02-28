@@ -1,13 +1,13 @@
 """Service layer for - Task Management"""
 from datetime import datetime
 
+from app.dto.dto_classes import ResponseDTO
 from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.application.service.push_notification_service import send_task_assigned_notification, \
     send_task_updated_notification
 from app.v2_0.HRMS.domain.models.tasks import Tasks
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, Data, GetTasksAssignedByMe
-from app.dto.dto_classes import ResponseDTO
 
 
 async def assign_task(assigned_task, user_id, company_id, branch_id, db):

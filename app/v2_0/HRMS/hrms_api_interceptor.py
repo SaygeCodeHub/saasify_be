@@ -4,7 +4,9 @@ from typing import Optional
 from fastapi import APIRouter
 from fastapi import Depends
 
+from app.dto.dto_classes import ResponseDTO
 from app.enums.activity_status_enum import ActivityStatus
+from app.infrastructure.database import engine, get_db, Base
 from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import verify
 from app.v2_0.HRMS.application.password_handler.reset_password import initiate_pwd_reset, change_password, check_token
 from app.v2_0.HRMS.application.service.announcement_service import add_announcements, fetch_announcements, \
@@ -42,9 +44,6 @@ from app.v2_0.HRMS.domain.schemas.shifts_schemas import AddShift, UpdateShift
 from app.v2_0.HRMS.domain.schemas.task_schemas import AssignTask, UpdateTask, EditTask
 from app.v2_0.HRMS.domain.schemas.user_schemas import AddUser, UpdateUser, LoginResponse
 from app.v2_0.HRMS.domain.schemas.utility_schemas import Credentials, JsonObject, DeviceToken
-from app.dto.dto_classes import ResponseDTO
-from app.infrastructure.database import engine, get_db, Base
-from app.v3_0.schemas.form_schema import DynamicForm
 
 router = APIRouter()
 Base.metadata.create_all(bind=engine)
@@ -224,8 +223,8 @@ def load_apply_leave_screen(user_id: int, company_id: int, branch_id: int, db=De
 
 
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/applyLeave")
-def apply_leave(leave_application: ApplyLeave, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return apply_for_leave(leave_application, user_id, company_id, branch_id, db)
+async def apply_leave(leave_application: ApplyLeave, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return await apply_for_leave(leave_application, user_id, company_id, branch_id, db)
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/myLeaves")
@@ -239,9 +238,9 @@ def get_all_leaves(user_id: int, company_id: int, branch_id: int, db=Depends(get
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateLeaveStatus")
-def update_leave_status(application_response: UpdateLeave, user_id: int, company_id: int, branch_id: int,
-                        db=Depends(get_db)):
-    return modify_leave_status(application_response, user_id, company_id, branch_id, db)
+async def update_leave_status(application_response: UpdateLeave, user_id: int, company_id: int, branch_id: int,
+                              db=Depends(get_db)):
+    return await modify_leave_status(application_response, user_id, company_id, branch_id, db)
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/withdrawLeave")
@@ -302,7 +301,6 @@ def get_employee_salaries(user_id: int, company_id: int, branch_id: int, db=Depe
     return calculate_rollout(company_id, branch_id, user_id, db)
 
 
-
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/calculateDeductions")
 def deduction_calculation(user_id: int, company_id: int, branch_id: int, u_id: str, db=Depends(get_db)):
     return calculate_deduction(company_id, branch_id, user_id, u_id, db)
@@ -331,8 +329,8 @@ def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id
 
 
 @router.post("/v2.0/{company_id}/{branch_id}/{user_id}/assignTask")
-def create_task(assigned_task: AssignTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return assign_task(assigned_task, user_id, company_id, branch_id, db)
+async def create_task(assigned_task: AssignTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return await assign_task(assigned_task, user_id, company_id, branch_id, db)
 
 
 @router.get("/v2.0/{company_id}/{branch_id}/{user_id}/getTasks")
@@ -341,8 +339,8 @@ def get_my_tasks(user_id: int, company_id: int, branch_id: int, db=Depends(get_d
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/updateTaskStatus")
-def update_task(updated_task: UpdateTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    return change_task_status(updated_task, user_id, company_id, branch_id, db)
+async def update_task(updated_task: UpdateTask, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return await change_task_status(updated_task, user_id, company_id, branch_id, db)
 
 
 @router.put("/v2.0/{company_id}/{branch_id}/{user_id}/editTask")

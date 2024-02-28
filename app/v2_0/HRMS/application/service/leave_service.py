@@ -1,5 +1,6 @@
 """Service layer for Leaves"""
 from datetime import datetime, timedelta
+from http.client import HTTPException
 
 from fastapi import Depends
 
@@ -52,53 +53,6 @@ def check_remaining_leaves(user_id, leave_application, db):
     return 2
 
 
-# def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
-#     try:
-#         msg = "Leave application submitted. Change in the number of leaves will be reflected after approval."
-#         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-#
-#         if check is None:
-#             leaves = db.query(Leaves).filter(Leaves.user_id == user_id).all()
-#
-#             for leave in leaves:
-#                 if (leave.start_date <= leave_application.start_date <= leave.end_date) or (
-#                         leave.start_date <= leave_application.end_date <= leave.end_date) or (
-#                         leave_application.start_date < leave.start_date and leave_application.end_date > leave.end_date):
-#                     return ResponseDTO(204, "You can't apply for a leave on the same dates again!", {})
-#
-#             message = check_remaining_leaves(user_id, leave_application, db)
-#
-#             if message == 0:
-#                 msg = "You have exhausted your casual leaves! Salary will be deducted on approval."
-#             elif message == 1:
-#                 msg = "You have exhausted your medical leaves! Salary will be deducted on approval."
-#
-#             leave_application.user_id = user_id
-#             leave_application.company_id = company_id
-#             leave_application.branch_id = branch_id
-#             if len(leave_application.approvers) == 0:
-#                 # company = db.query(Companies).filter(Companies.company_id == company_id).first()
-#                 ucb_approvers = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
-#                     UserCompanyBranch.branch_id == branch_id).first()
-#                 leave_application.approvers = ucb_approvers.approvers
-#
-#             new_leave_application = Leaves(**leave_application.model_dump())
-#             db.add(new_leave_application)
-#             db.commit()
-#             db.refresh(new_leave_application)
-#
-#             # asyncio.run(
-#             send_leave_notification(leave_application, leave_application.approvers, user_id, company_id, branch_id,
-#                                     db))
-#             return ResponseDTO(200, msg, {})
-#
-#         else:
-#             return check
-#
-#     except Exception as exc:
-#         return ResponseDTO(204, str(exc), {})
-
-
 async def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
         msg = "Leave application submitted. Change in the number of leaves will be reflected after approval."
@@ -133,14 +87,16 @@ async def apply_for_leave(leave_application, user_id, company_id, branch_id, db)
             db.commit()
             db.refresh(new_leave_application)
 
-            # Call send_leave_notification asynchronously
             await send_leave_notification(leave_application, leave_application.approvers, user_id, company_id,
                                           branch_id, db)
             return ResponseDTO(200, msg, {})
 
         else:
             return check
-
+    except HTTPException as e:
+        return ResponseDTO(204, str(e), {})
+    except ValueError as e:
+        return ResponseDTO(204, str(e), {})
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
 
@@ -335,36 +291,45 @@ async def modify_leave_status(application_response, user_id, company_id, branch_
         else:
             return check
 
+
+    except HTTPException as e:
+
+        return ResponseDTO(204, str(e), {})
+
+    except ValueError as e:
+
+        return ResponseDTO(204, str(e), {})
+
     except Exception as exc:
-        db.rollback()
+
         return ResponseDTO(204, str(exc), {})
 
 
 def withdraw_leave_func(leave_id: int, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
-    if check is None:
-        leave_query = db.query(Leaves).filter(Leaves.leave_id == leave_id)
-        leave = leave_query.first()
-        leave_response = {}
-        if leave is None:
-            return ResponseDTO(204, "Leave entry not found!", {})
+        if check is None:
+            leave_query = db.query(Leaves).filter(Leaves.leave_id == leave_id)
+            leave = leave_query.first()
+            leave_response = {}
+            if leave is None:
+                return ResponseDTO(204, "Leave entry not found!", {})
 
-        if leave.is_leave_approved is True or leave.leave_status == LeaveStatus.REJECTED or leave.leave_status == LeaveStatus.APPROVED:
-            return ResponseDTO(200, "Leave already updated!", leave)
+            if leave.is_leave_approved is True or leave.leave_status == LeaveStatus.REJECTED or leave.leave_status == LeaveStatus.APPROVED:
+                return ResponseDTO(200, "Leave already updated!", leave)
 
-        leave_response["leave_status"] = LeaveStatus.WITHDRAWN
-        leave_response["modified_by"] = user_id
-        leave_response["modified_on"] = datetime.now()
-        leave_response["comment"] = "Leave withdrawn"
-        leave_query.update(leave_response)
-        db.commit()
+            leave_response["leave_status"] = LeaveStatus.WITHDRAWN
+            leave_response["modified_by"] = user_id
+            leave_response["modified_on"] = datetime.now()
+            leave_response["comment"] = "Leave withdrawn"
+            leave_query.update(leave_response)
+            db.commit()
 
-        return ResponseDTO(200, "Leave withdrawn successfully", {})
-    else:
-        return check
+            return ResponseDTO(200, "Leave withdrawn successfully", {})
+        else:
+            return check
 
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
+    except Exception as exc:
+        db.rollback()
+        return ResponseDTO(204, str(exc), {})
