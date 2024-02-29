@@ -1,17 +1,16 @@
 """Service layer for - Task Management"""
-import asyncio
 from datetime import datetime
 
+from app.dto.dto_classes import ResponseDTO
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.application.service.push_notification_service import send_task_assigned_notification, \
     send_task_updated_notification
-from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.tasks import Tasks
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, Data, GetTasksAssignedByMe
-from app.dto.dto_classes import ResponseDTO
 
 
-def assign_task(assigned_task, user_id, company_id, branch_id, db):
+async def assign_task(assigned_task, user_id, company_id, branch_id, db):
     """Assigns a task to an individual"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
@@ -23,7 +22,7 @@ def assign_task(assigned_task, user_id, company_id, branch_id, db):
             db.add(new_task)
             db.commit()
 
-            asyncio.run(send_task_assigned_notification(assigned_task, user_id, company_id, branch_id, db))
+            await send_task_assigned_notification(assigned_task, user_id, company_id, branch_id, db)
 
             return ResponseDTO(200, "Task Assigned!", {})
         else:
@@ -77,7 +76,7 @@ def fetch_my_tasks(user_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def change_task_status(updated_task, user_id, company_id, branch_id, db):
+async def change_task_status(updated_task, user_id, company_id, branch_id, db):
     """Updates the status of the task - DONE/CLOSED"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
@@ -92,7 +91,7 @@ def change_task_status(updated_task, user_id, company_id, branch_id, db):
             query.update({"task_status": updated_task.task_status,
                           "comment": updated_task.comment, "modified_by": user_id, "modified_on": datetime.now()})
 
-            asyncio.run(send_task_updated_notification(updated_task, user_id, company_id, branch_id, db))
+            await send_task_updated_notification(updated_task, user_id, company_id, branch_id, db)
             db.commit()
 
             return ResponseDTO(200, "Task updated successfully!", {})

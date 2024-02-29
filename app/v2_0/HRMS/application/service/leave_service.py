@@ -1,23 +1,23 @@
 """Service layer for Leaves"""
-import asyncio
 from datetime import datetime, timedelta
+from http.client import HTTPException
 
 from fastapi import Depends
 
+from app.dto.dto_classes import ResponseDTO
 from app.enums.leave_status_enum import LeaveStatus
 from app.enums.leave_type_enum import LeaveType
+from app.infrastructure.database import get_db
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.application.service.company_service import get_approver_data
 from app.v2_0.HRMS.application.service.push_notification_service import send_leave_notification, \
     send_leave_status_notification
-from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.leaves import Leaves
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.schemas.leaves_schemas import LoadApplyLeaveScreen, GetLeaves, \
     GetPendingLeaves, FetchAllLeavesResponse
-from app.dto.dto_classes import ResponseDTO
-from app.infrastructure.database import get_db
 
 
 def get_screen_apply_leave(user_id, company_id, branch_id, db):
@@ -53,7 +53,7 @@ def check_remaining_leaves(user_id, leave_application, db):
     return 2
 
 
-def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
+async def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
     try:
         msg = "Leave application submitted. Change in the number of leaves will be reflected after approval."
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
@@ -78,7 +78,6 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             leave_application.company_id = company_id
             leave_application.branch_id = branch_id
             if len(leave_application.approvers) == 0:
-                # company = db.query(Companies).filter(Companies.company_id == company_id).first()
                 ucb_approvers = db.query(UserCompanyBranch).filter(UserCompanyBranch.user_id == user_id).filter(
                     UserCompanyBranch.branch_id == branch_id).first()
                 leave_application.approvers = ucb_approvers.approvers
@@ -88,14 +87,16 @@ def apply_for_leave(leave_application, user_id, company_id, branch_id, db):
             db.commit()
             db.refresh(new_leave_application)
 
-            asyncio.run(
-                send_leave_notification(leave_application, leave_application.approvers, user_id, company_id, branch_id,
-                                        db))
+            await send_leave_notification(leave_application, leave_application.approvers, user_id, company_id,
+                                          branch_id, db)
             return ResponseDTO(200, msg, {})
 
         else:
             return check
-
+    except HTTPException as e:
+        return ResponseDTO(204, str(e), {})
+    except ValueError as e:
+        return ResponseDTO(204, str(e), {})
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
 
@@ -120,7 +121,6 @@ def fetch_leaves(user_id, company_id, branch_id, db):
                           start_date=leave.start_date, end_date=leave.end_date,
                           approvers=get_approver_names(leave.approvers, db),
                           leave_status=leave.leave_status.name, comment=leave.comment)
-
                 for leave in my_leaves
             ]
             if len(my_leaves) == 0:
@@ -260,7 +260,7 @@ def deduct_salary(leave, extra_leaves, db):
     user_query.update({"deduction": calculate_deduction, "modified_on": datetime.now()})
 
 
-def modify_leave_status(application_response, user_id, company_id, branch_id, db):
+async def modify_leave_status(application_response, user_id, company_id, branch_id, db):
     """Leaves are APPROVED or REJECTED using this API"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
@@ -285,42 +285,51 @@ def modify_leave_status(application_response, user_id, company_id, branch_id, db
             leave_query.update(application_response.__dict__)
             db.commit()
 
-            asyncio.run(send_leave_status_notification(application_response, user_id, company_id, branch_id, db))
+            await send_leave_status_notification(application_response, user_id, company_id, branch_id, db)
 
             return ResponseDTO(200, "Leave status updated!", {})
+        else:
+            return check
+
+
+    except HTTPException as e:
+
+        return ResponseDTO(204, str(e), {})
+
+    except ValueError as e:
+
+        return ResponseDTO(204, str(e), {})
+
+    except Exception as exc:
+
+        return ResponseDTO(204, str(exc), {})
+
+
+def withdraw_leave_func(leave_id: int, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    try:
+        check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
+
+        if check is None:
+            leave_query = db.query(Leaves).filter(Leaves.leave_id == leave_id)
+            leave = leave_query.first()
+            leave_response = {}
+            if leave is None:
+                return ResponseDTO(204, "Leave entry not found!", {})
+
+            if leave.is_leave_approved is True or leave.leave_status == LeaveStatus.REJECTED or leave.leave_status == LeaveStatus.APPROVED:
+                return ResponseDTO(200, "Leave already updated!", leave)
+
+            leave_response["leave_status"] = LeaveStatus.WITHDRAWN
+            leave_response["modified_by"] = user_id
+            leave_response["modified_on"] = datetime.now()
+            leave_response["comment"] = "Leave withdrawn"
+            leave_query.update(leave_response)
+            db.commit()
+
+            return ResponseDTO(200, "Leave withdrawn successfully", {})
         else:
             return check
 
     except Exception as exc:
         db.rollback()
         return ResponseDTO(204, str(exc), {})
-
-
-def withdraw_leave_func(leave_id: int, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
-    # try:
-    check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
-
-    if check is None:
-        leave_query = db.query(Leaves).filter(Leaves.leave_id == leave_id)
-        leave = leave_query.first()
-        leave_response = {}
-        if leave is None:
-            return ResponseDTO(204, "Leave entry not found!", {})
-
-        if leave.is_leave_approved is True or leave.leave_status == LeaveStatus.REJECTED or leave.leave_status == LeaveStatus.APPROVED:
-            return ResponseDTO(200, "Leave already updated!", leave)
-
-        leave_response["leave_status"] = LeaveStatus.WITHDRAWN
-        leave_response["modified_by"] = user_id
-        leave_response["modified_on"] = datetime.now()
-        leave_response["comment"] = "Leave withdrawn"
-        leave_query.update(leave_response)
-        db.commit()
-
-        return ResponseDTO(200, "Leave withdrawn successfully", {})
-    else:
-        return check
-
-# except Exception as exc:
-#     db.rollback()
-#     return ResponseDTO(204, str(exc), {})
