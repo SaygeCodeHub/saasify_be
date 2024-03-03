@@ -5,10 +5,10 @@ from pydantic import BaseModel
 
 from app.enums.features_enum import Features
 from app.enums.modules_enum import Modules
-from app.v2_0.HRMS.domain.schemas.announcement_schemas import GetAnnouncements
-from app.v2_0.HRMS.domain.schemas.branch_schemas import GetBranch
-from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
+from app.v3_0.schemas.announcement_schemas import GetAnnouncements
+from app.v3_0.schemas.branch_schemas import GetBranch
 from app.v3_0.schemas.module_schemas import ModulesMap, AvailableModulesMap
+from app.v3_0.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
 
 
 class HomeScreenApiResponse(BaseModel):

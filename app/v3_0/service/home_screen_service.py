@@ -19,9 +19,9 @@ from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
 from app.v2_0.HRMS.domain.models.user_details import UserDetails
 from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.schemas.announcement_schemas import GetAnnouncements
-from app.v2_0.HRMS.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
 from app.dto.dto_classes import ResponseDTO
+from app.v3_0.schemas.branch_schemas import GetBranch
 from app.v3_0.schemas.home_screen_schemas import Salaries, IteratedBranchSettings, HomeScreenApiResponse
 from app.v3_0.schemas.module_schemas import FeaturesMap, ModulesMap, AvailableModulesMap
 

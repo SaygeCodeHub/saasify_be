@@ -1,6 +1,6 @@
 from app.enums.form_type_enum import FormTypeEnum
 from app.v3_0.schemas.form_schema import DynamicForm, SectionWiseForm, MultifieldsInRow, FormField, TextField, \
-    UserSelection, RadioField, RadioOption, DropdownField, DropdownOption, CheckboxField, CheckboxOption, \
+    UserSelection, DropdownField, DropdownOption, \
     DatePickerField, FormButtons, UtilityButtons
 
 add_announcements = DynamicForm(
@@ -47,9 +47,7 @@ add_announcements = DynamicForm(
                                   field_type=FormTypeEnum.textField,
                                   text_field=TextField(max_lines=5, input_type="text"),
                                   user_selection=
-                                  UserSelection(text_value="",
-                                                date_picker_field=DatePickerField(
-                                                    placeholder="Select date")))
+                                  UserSelection(text_value=""))
                     ])
             ])
 
