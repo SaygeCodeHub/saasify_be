@@ -5,6 +5,11 @@ from app.enums.unit_enum import Unit
 from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
 
 
+class UnitEnumSchema(BaseModel):
+    unit_name: str
+    unit_value: int
+
+
 class InitVariant(BaseModel):
     unit: Unit
     measuring_qty: str

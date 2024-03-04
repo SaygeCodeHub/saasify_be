@@ -9,8 +9,9 @@ from app.v3_0.schemas.utility_schemas import DeviceToken
 from app.v3_0.service.build_service import add_dynamic_announcements, \
     change_dynamic_announcement_data, fetch_by_id
 from app.v3_0.service.category_service import add_category, modify_category
-from app.v3_0.service.form_plotting_service import plot_announcement_form, plot_category_form
+from app.v3_0.service.form_plotting_service import plot_announcement_form, plot_category_form, plot_product_form
 from app.v3_0.service.home_screen_service import fetch_home_screen_data
+from app.v3_0.service.product_service import add_product, modify_product
 
 router = APIRouter()
 
@@ -27,6 +28,11 @@ def build_category_form():
     return plot_category_form()
 
 
+@router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildProductForm")
+def build_product_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return plot_product_form(company_id, branch_id, user_id, db)
+
+
 """----------------------------------------------Category related APIs-------------------------------------------------------------------"""
 
 
@@ -39,6 +45,20 @@ def create_category(category: DynamicForm, company_id: int, branch_id: int, user
 def update_category(category: DynamicForm, cat_id: int, company_id: int, branch_id: int, user_id: int,
                     db=Depends(get_db)):
     return modify_category(category, cat_id, company_id, branch_id, user_id, db)
+
+
+"""----------------------------------------------Product related APIs-------------------------------------------------------------------"""
+
+
+@router.post("/v3.0/{company_id}/{branch_id}/{user_id}/addProduct")
+def create_product(product: DynamicForm, company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return add_product(product, company_id, branch_id, user_id, db)
+
+
+@router.put("/v3.0/{company_id}/{branch_id}/{user_id}/updateProduct/{prod_id}")
+def update_product(product: DynamicForm, prod_id: int, company_id: int, branch_id: int, user_id: int,
+                   db=Depends(get_db)):
+    return modify_product(product, prod_id, company_id, branch_id, user_id, db)
 
 
 """----------------------------------------------User related APIs-------------------------------------------------------------------"""

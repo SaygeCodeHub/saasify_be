@@ -3,7 +3,7 @@ from app.v3_0.schemas.form_schema import DynamicForm, SectionWiseForm, Multifiel
     UserSelection, DropdownField, DropdownOption, \
     DatePickerField, FormButtons, UtilityButtons
 
-add_announcements = DynamicForm(
+add_announcements_form = DynamicForm(
     form_name="Add New Announcements",
     buttons=[FormButtons(button_name="Add Announcement",
                          end_point="/addAnnouncements",

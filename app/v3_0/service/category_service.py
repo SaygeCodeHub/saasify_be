@@ -30,7 +30,7 @@ def add_category(category: DynamicForm, company_id, branch_id, user_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
-def modify_category(category: UpdateCategory, cat_id, company_id, branch_id, user_id, db):
+def modify_category(category: DynamicForm, cat_id, company_id, branch_id, user_id, db):
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
