@@ -54,7 +54,7 @@ def get_monthly_salary_rollout(user_id, branch_id, db):
     if Features.HR_SALARY_ROLLOUT in user.accessible_features:
         salary_query = select(UserFinance.basic_salary, UserFinance.deduction).select_from(UserFinance).join(
             UserCompanyBranch,
-            UserFinance.user_id == UserCompanyBranch.user_id).filter(
+            UserCompanyBranch.user_id==user_id).filter(
             UserCompanyBranch.branch_id == branch_id)
         # .filter(UserCompanyBranch.designations != [DesignationEnum.OWNER])
         salaries = db.execute(salary_query)
