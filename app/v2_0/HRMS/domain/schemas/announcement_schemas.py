@@ -1,5 +1,6 @@
 """Schemas for model - Announcements"""
 from datetime import date, datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -17,7 +18,6 @@ class GetAnnouncements(BaseModel):
     due_date: date
     description: str
     is_active: bool
-    published_time: datetime = datetime.now()
 
 
 class UpdateAnnouncement(Modifier):
