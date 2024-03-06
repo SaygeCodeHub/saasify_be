@@ -1,6 +1,6 @@
 from app.enums.form_type_enum import FormTypeEnum
 from app.v3_0.schemas.form_schema import DynamicForm, FormButtons, UtilityButtons, SectionWiseForm, MultifieldsInRow, \
-    FormField, UserSelection, DatePickerField, TextField
+    FormField, UserSelection, TextField
 
 add_category_form = DynamicForm(
     form_name="Add Category",

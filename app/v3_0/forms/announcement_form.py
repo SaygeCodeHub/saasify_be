@@ -10,6 +10,7 @@ add_announcements = DynamicForm(
     utility_buttons=[UtilityButtons(button_icon="",
                                     end_point="",
                                     api_method_type="")],
+
     sections=[
         SectionWiseForm(
             section_name=None,
@@ -22,7 +23,7 @@ add_announcements = DynamicForm(
                             field_type=FormTypeEnum.datePicker,
                             required=True,
                             user_selection=UserSelection(user_selected_date=None),
-                            date_picker_field=DatePickerField(placeholder="Select date"))]),
+                            date_picker_field=DatePickerField(placeholder="Select date", max_date=None))]),
                 MultifieldsInRow(
                     row_fields=[
                         FormField(
