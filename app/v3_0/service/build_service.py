@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from app.dto.dto_classes import ResponseDTO
-from app.utility.app_utility import check_if_company_and_branch_exist
+from app.utility.app_utility import check_if_company_and_branch_exist, get_value
 from app.v2_0.HRMS.domain.models.announcements import Announcements
 from app.v2_0.HRMS.domain.models.companies import Companies
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
@@ -23,14 +23,15 @@ from app.v3_0.service.home_screen_service import get_title, calculate_value, che
 from app.v3_0.service.tasks_services import map_to_model
 
 
-def plot_announcement_form():
-    return ResponseDTO(200, "Form plotted!", add_announcements)
-
-
 def add_dynamic_announcements(announcement: DynamicForm, user_id, company_id, branch_id, db):
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
+            # new_announcement = Announcements(company_id=company_id,
+            #                                  due_date=get_value("due_date", announcement),
+            #                                  description=get_value("description", announcement))
+            # # print(new_announcement.__dict__)
+            # db.add(new_announcement)
             new_announcement = AddAnnouncement(
                 **map_to_model(announcement, {"company_id": company_id}, Announcements()))
             new_announcement_data = Announcements(**new_announcement.model_dump())
@@ -45,25 +46,19 @@ def add_dynamic_announcements(announcement: DynamicForm, user_id, company_id, br
         return ResponseDTO(204, str(exc), {})
 
 
-def get_bool_value(announcement, user_selected_option_id):
-    return announcement.sections[0].fields[0].row_fields[
-        1].dropdown_field.options[user_selected_option_id - 1].value
-
-
 def change_dynamic_announcement_data(announcement: DynamicForm, user_id, company_id, branch_id, announcement_id, db):
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
             announcement_query = db.query(Announcements).filter(Announcements.announcement_id == announcement_id)
-            announcement_query.update({"due_date": announcement.sections[0].fields[0].row_fields[
-                0].user_selection.user_selected_date, "description": announcement.sections[0].fields[1].row_fields[
-                0].user_selection.text_value,
-                                       "is_active": get_bool_value(announcement,
-                                                                   announcement.sections[0].fields[0].row_fields[
-                                                                       1].user_selection.user_selected_option_id),
-                                       "modified_by": user_id,
-                                       "modified_on": datetime.now()})
+            announcement_query.update(
+                {"due_date": get_value("due_date", announcement), "description": get_value("description", announcement),
+                 "is_active": get_value("is_active", announcement),
+                 "modified_by": user_id,
+                 "modified_on": datetime.now()})
             db.commit()
+            # print(int(announcement.sections[0].fields[0].row_fields[
+            #               1].user_selection.text_value))
             return ResponseDTO(200, "Announcement updated!", {})
         else:
             return check
