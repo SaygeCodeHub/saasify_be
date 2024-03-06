@@ -7,10 +7,6 @@ add_category_form = DynamicForm(
     buttons=[FormButtons(button_name="Add Category",
                          end_point="/addCategory",
                          api_method_type="post")],
-    utility_buttons=[UtilityButtons(button_icon="",
-                                    end_point="",
-                                    api_method_type=""
-                                    )],
     sections=[
         SectionWiseForm(
             section_name=None,

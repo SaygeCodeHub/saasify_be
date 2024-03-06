@@ -23,9 +23,6 @@ add_tasks = DynamicForm(
     buttons=[FormButtons(button_name="Add Task",
                          end_point="/addTask",
                          api_method_type="post")],
-    utility_buttons=[UtilityButtons(button_icon="",
-                                    end_point="",
-                                    api_method_type="")],
     sections=[
         SectionWiseForm(
             section_name=None,
