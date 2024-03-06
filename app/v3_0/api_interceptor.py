@@ -4,7 +4,6 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app.infrastructure.database import get_db
-from app.v2_0.HRMS.domain.schemas.utility_schemas import DeviceToken
 from app.v3_0.schemas.form_schema import DynamicForm
 from app.v3_0.schemas.utility_schemas import DeviceToken
 from app.v3_0.service.build_service import add_dynamic_announcements, \
@@ -37,10 +36,10 @@ def create_category(category: DynamicForm, company_id: int, branch_id: int, user
     return add_category(category, company_id, branch_id, user_id, db)
 
 
-@router.put("/v3.0/{company_id}/{branch_id}/{user_id}/updateCategory/{cat_id}")
-def update_category(category: DynamicForm, cat_id: int, company_id: int, branch_id: int, user_id: int,
-                    db=Depends(get_db)):
-    return modify_category(category, cat_id, company_id, branch_id, user_id, db)
+# @router.put("/v3.0/{company_id}/{branch_id}/{user_id}/updateCategory/{cat_id}")
+# def update_category(category: DynamicForm, cat_id: int, company_id: int, branch_id: int, user_id: int,
+#                     db=Depends(get_db)):
+#     return modify_category(category, cat_id, company_id, branch_id, user_id, db)
 
 
 """----------------------------------------------User related APIs-------------------------------------------------------------------"""
@@ -75,6 +74,9 @@ def update_announcements(announcement: DynamicForm, user_id: int, company_id: in
 def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id: int, branch_id: int,
                          db=Depends(get_db)):
     return fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
+
+
+"""----------------------------------------------Task API-------------------------------------------------------------------"""
 
 
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildTaskForm")

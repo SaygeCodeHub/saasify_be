@@ -16,7 +16,6 @@ from app.v2_0.HRMS.domain.schemas.announcement_schemas import AddAnnouncement
 from app.v2_0.HRMS.domain.schemas.module_schemas import FeaturesMap, ModulesMap
 from app.v2_0.HRMS.domain.schemas.user_schemas import GetPersonalInfo, GetAadharDetails, GetPassportDetails, \
     GetUserFinanceSchema, GetUserBankDetailsSchema, GetUserOfficialSchema
-from app.v3_0.forms.add_announcement_form import add_announcements
 from app.v3_0.schemas.form_schema import DynamicForm
 from app.v3_0.service.home_screen_service import get_title, calculate_value, check_if_statistics, get_is_view, \
     get_build_screen_endpoint
@@ -27,15 +26,13 @@ def add_dynamic_announcements(announcement: DynamicForm, user_id, company_id, br
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
-            # new_announcement = Announcements(company_id=company_id,
-            #                                  due_date=get_value("due_date", announcement),
-            #                                  description=get_value("description", announcement))
-            # # print(new_announcement.__dict__)
-            # db.add(new_announcement)
+            # announcement = Announcements(company_id=company_id,
+            #                              due_date=get_value("due_date", announcement),
+            #                              description=get_value("description", announcement))
+            # print(announcement.__dict__)
             new_announcement = AddAnnouncement(
                 **map_to_model(announcement, {"company_id": company_id}, Announcements()))
             new_announcement_data = Announcements(**new_announcement.model_dump())
-            print(new_announcement)
             db.add(new_announcement_data)
             db.commit()
             return ResponseDTO(200, "Announcement added!", {})
