@@ -1,6 +1,8 @@
 from datetime import date
 from typing import List, Optional, Union, Any
+
 from pydantic import BaseModel
+
 from app.enums.button_type_enum import ButtonTypeEnum
 from app.enums.form_type_enum import FormTypeEnum
 
@@ -46,7 +48,8 @@ class CheckboxField(BaseModel):
 class DatePickerField(BaseModel):
     placeholder: Optional[str] = None
     min_date: Optional[str] = None
-    max_date: Optional[str] = None
+    max_date: Optional[str] = None,
+    validator: Optional[str] = 'Please fill the empty field'
 
 
 class TextField(BaseModel):

@@ -84,28 +84,32 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
         return ResponseDTO(204, str(exc), {})
 
 
+def employees_list(branch_id, db):
+    employees_query = (
+        db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
+        .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
+        .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
+        .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
+        .filter(UserCompanyBranch.branch_id == branch_id).order_by(UserDetails.user_id))
+
+    result = []
+    for details, auth, ucb, finance in employees_query:
+        payroll = finance.basic_salary - finance.deduction
+        result.append({"employee_id": auth.user_id,
+                       "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else "Invited User",
+                       "user_contact": details.user_contact, "user_email": auth.user_email,
+                       "designations": get_designation_name(ucb.designations),
+                       "current_address": details.current_address, "payroll": payroll})
+    return result
+
+
 def fetch_employees(company_id, branch_id, user_id, db):
     """Returns all the employees belonging to a particular branch"""
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-            employees_query = (
-                db.query(UserDetails, UsersAuth, UserCompanyBranch, UserFinance)
-                .join(UserCompanyBranch, UserDetails.user_id == UserCompanyBranch.user_id)
-                .join(UsersAuth, UsersAuth.user_id == UserDetails.user_id)
-                .join(UserFinance, UserFinance.user_id == UserDetails.user_id)
-                .filter(UserCompanyBranch.branch_id == branch_id).order_by(UserDetails.user_id))
-
-            result = []
-            for details, auth, ucb, finance in employees_query:
-                payroll = finance.basic_salary - finance.deduction
-                result.append({"employee_id": auth.user_id,
-                               "name": details.first_name + " " + details.last_name if details.first_name and details.last_name else "Invited User",
-                               "user_contact": details.user_contact, "user_email": auth.user_email,
-                               "designations": get_designation_name(ucb.designations),
-                               "current_address": details.current_address, "payroll": payroll})
-
+            result = employees_list(branch_id, db)
             return ResponseDTO(200, "Employees fetched!", result)
         else:
             return check

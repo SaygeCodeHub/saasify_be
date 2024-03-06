@@ -19,7 +19,7 @@ class UpdateCompany(Modifier):
     activity_status: ActivityStatus = ActivityStatus.ACTIVE
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         if self.company_name == "":
             self.company_name = None
         if self.company_name.replace(" ", "") == "":
@@ -27,7 +27,7 @@ class UpdateCompany(Modifier):
 
 
 class AddCompany(AddBranch, UpdateCompany):
-    """Contains all the fields that will be accessible to all objects of type - 'Company' """
+    """Contains all the fields that will be accessible to all objects of typ e - 'Company' """
     onboarding_date: date = datetime.now()
 
 
