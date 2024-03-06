@@ -2,9 +2,8 @@
 from datetime import datetime
 
 from sqlalchemy import select
-
-from app.dto.dto_classes import ResponseDTO
 from app.enums.features_enum import Features
+from app.dto.dto_classes import ResponseDTO
 from app.enums.leave_status_enum import LeaveStatus
 from app.enums.task_status_enum import TaskStatus
 from app.utility.app_utility import check_if_company_and_branch_exist

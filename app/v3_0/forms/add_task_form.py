@@ -52,7 +52,7 @@ add_tasks = DynamicForm(
                             field_type=FormTypeEnum.datePicker,
                             required=True,
                             user_selection=UserSelection(user_selected_date=None),
-                            date_picker_field=DatePickerField(placeholder="Select date"))]),
+                            date_picker_field=DatePickerField(placeholder="Select date", max_date=None))]),
                 MultifieldsInRow(
                     row_fields=[
                         FormField(
