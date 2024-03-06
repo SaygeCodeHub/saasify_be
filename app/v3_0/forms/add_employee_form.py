@@ -9,9 +9,6 @@ add_employee = DynamicForm(
     buttons=[FormButtons(button_name="Add Employee",
                          end_point="/addEmployee",
                          api_method_type="post")],
-    utility_buttons=[UtilityButtons(button_icon="",
-                                    end_point="",
-                                    api_method_type="")],
     sections=[
         SectionWiseForm(
             section_name="Personal Details",
@@ -133,7 +130,7 @@ add_employee = DynamicForm(
                         FormField(
                             column_name="pincode",
                             label="Pincode",
-                            field_type=FormTypeEnum.dropDown,
+                            field_type=FormTypeEnum.textField,
                             required=False,
                             user_selection=UserSelection())]),
             ]),

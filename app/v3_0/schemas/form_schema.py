@@ -102,4 +102,4 @@ class DynamicForm(BaseModel):
     form_name: str
     sections: List[SectionWiseForm]
     buttons: List[FormButtons]
-    utility_buttons: List[UtilityButtons]
+    utility_buttons: List[UtilityButtons]=[]

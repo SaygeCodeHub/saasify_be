@@ -7,9 +7,6 @@ add_announcements = DynamicForm(
     buttons=[FormButtons(button_name="Add Announcement",
                          end_point="/addAnnouncement",
                          api_method_type="post")],
-    utility_buttons=[UtilityButtons(button_icon="",
-                                    end_point="",
-                                    api_method_type="")],
 
     sections=[
         SectionWiseForm(
