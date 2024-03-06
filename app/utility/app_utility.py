@@ -6,6 +6,7 @@ from app.enums.features_enum import Features
 from app.v2_0.HRMS.domain.models.branches import Branches
 from app.v2_0.HRMS.domain.models.companies import Companies
 from app.v2_0.HRMS.domain.models.user_company_branch import UserCompanyBranch
+from app.enums.form_type_enum import FormTypeEnum
 
 
 def check_if_company_and_branch_exist(company_id, branch_id, user_id, db):
@@ -50,3 +51,29 @@ def ensure_optional_fields(self):
                 setattr(self, field, {})
             else:
                 setattr(self, field, None)
+
+
+def get_bool_value(iterated_form_obj, user_selected_option_id):
+    return iterated_form_obj.dropdown_field.options[user_selected_option_id - 1].value
+
+
+def get_value(column_name, form_obj):
+    """Iterates the form object and extracts the required values on the basis of column_name"""
+    for i in range(0, len(form_obj.sections)):
+        # The above loop will iterate the 'sections' parameter of the json body
+        for j in range(0, len(form_obj.sections[i].fields)):
+            # The above loop will iterate the 'fields' parameter of the json body
+            for k in range(0, len(form_obj.sections[i].fields[j].row_fields)):
+                # The above loop will iterate the 'row_fields' parameter of the json body
+                if form_obj.sections[i].fields[j].row_fields[k].column_name == column_name:
+
+                    if form_obj.sections[i].fields[j].row_fields[k].field_type == FormTypeEnum.textField:
+                        return form_obj.sections[i].fields[j].row_fields[k].user_selection.text_value
+
+                    elif form_obj.sections[i].fields[j].row_fields[k].field_type == FormTypeEnum.datePicker:
+                        return form_obj.sections[i].fields[j].row_fields[k].user_selection.user_selected_date
+
+                    else:
+                        return get_bool_value(form_obj.sections[i].fields[j].row_fields[
+                                                  k], form_obj.sections[i].fields[j].row_fields[
+                                                  k].user_selection.user_selected_option_id)

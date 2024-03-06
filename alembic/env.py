@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from app.infrastructure.database import Base
-from app.infrastructure import DATABASE_URL_PROD
+from app.infrastructure.db_config import DATABASE_URL_PROD
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

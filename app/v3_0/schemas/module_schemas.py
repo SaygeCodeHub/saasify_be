@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from app.enums.modules_enum import Modules
-from app.v2_0.HRMS.domain.schemas.modifier_schemas import Modifier
+from app.v3_0.schemas.modifier_schemas import Modifier
 
 
 class FeaturesMap(BaseModel):
