@@ -3,12 +3,13 @@ from datetime import datetime
 
 from sqlalchemy import select
 
+from app.dto.dto_classes import ResponseDTO
 from app.enums.features_enum import Features
 from app.enums.leave_status_enum import LeaveStatus
 from app.enums.task_status_enum import TaskStatus
+from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.application.service.leave_service import get_authorized_leave_requests
 from app.v2_0.HRMS.application.service.task_service import get_assigner_name
-from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.HRMS.domain.models.announcements import Announcements
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.branches import Branches
@@ -21,7 +22,6 @@ from app.v2_0.HRMS.domain.models.user_finance import UserFinance
 from app.v2_0.HRMS.domain.schemas.announcement_schemas import GetAnnouncements
 from app.v2_0.HRMS.domain.schemas.branch_schemas import GetBranch
 from app.v2_0.HRMS.domain.schemas.task_schemas import GetTasksAssignedToMe, GetTasksAssignedByMe
-from app.dto.dto_classes import ResponseDTO
 from app.v3_0.schemas.home_screen_schemas import Salaries, IteratedBranchSettings, HomeScreenApiResponse
 from app.v3_0.schemas.module_schemas import FeaturesMap, ModulesMap, AvailableModulesMap
 
@@ -146,16 +146,17 @@ def get_is_view(feature_name):
 
 
 def get_build_screen_endpoint(feature_name):
-    endpoint_dict = {Features.HR_ADD_ANNOUNCEMENT.name: "/v3.0/buildAnnouncementForm",
-                     Features.HR_ADD_NEW_EMPLOYEE.name: "/v3.0/buildEmployeeForm",
-                     Features.HR_APPLY_LEAVES.name: "/v3.0/buildApplyLeaveForm",
-                     Features.HR_SHIFT_MANAGEMENT.name: "/v3.0/buildShiftManagementForm",
-                     Features.HR_MARK_ATTENDANCE.name: "/v3.0/buildAttendanceTable",
-                     Features.HR_PENDING_APPROVAL.name: "/v3.0/buildPendingApprovalTable",
-                     Features.HR_SALARY_ROLLOUT.name: "/v3.0/buildSalaryTable",
-                     Features.HR_VIEW_ALL_EMPLOYEES.name: "/v3.0/buildEmployeesTable",
-                     Features.HR_MY_LEAVES.name: "/v3.0/buildMyLeavesTable",
-                     Features.HR_TIMESHEET.name: "/v3.0/buildTimesheetTable"}
+    endpoint_dict = {Features.HR_ADD_ANNOUNCEMENT.name: "/buildAnnouncementForm",
+                     Features.HR_ADD_NEW_EMPLOYEE.name: "/buildEmployeeForm",
+                     Features.HR_APPLY_LEAVES.name: "/buildApplyLeaveForm",
+                     Features.HR_SHIFT_MANAGEMENT.name: "/buildShiftManagementForm",
+                     Features.HR_MARK_ATTENDANCE.name: "/buildAttendanceTable",
+                     Features.HR_PENDING_APPROVAL.name: "/buildPendingApprovalTable",
+                     Features.HR_SALARY_ROLLOUT.name: "/buildSalaryTable",
+                     Features.HR_VIEW_ALL_EMPLOYEES.name: "/buildEmployeesTable",
+                     Features.HR_MY_LEAVES.name: "/buildMyLeavesTable",
+                     Features.HR_TIMESHEET.name: "/buildTimesheetTable",
+                     Features.HR_TASK_MANAGEMENT.name: "/buildTaskForm"}
     return endpoint_dict.get(feature_name)
 
 

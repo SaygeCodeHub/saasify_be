@@ -14,7 +14,7 @@ from app.v3_0.service.tasks_services import plot_tasks_form, add_dynamic_tasks
 router = APIRouter()
 
 
-@router.get("/v3.0/buildAnnouncementForm")
+@router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildAnnouncementForm")
 def build_announcement_form():
     return plot_announcement_form()
 
@@ -25,7 +25,7 @@ def get_user_by_id(u_id: int, company_id: int, branch_id: int, user_id: int, db=
     return fetch_by_id(u_id, user_id, company_id, branch_id, db)
 
 
-@router.post("/v3.0/{company_id}/{branch_id}/{user_id}/addAnnouncements")
+@router.post("/v3.0/{company_id}/{branch_id}/{user_id}/addAnnouncement")
 def create_announcements(announcement: DynamicForm, user_id: int, company_id: int, branch_id: int,
                          db=Depends(get_db)):
     return add_dynamic_announcements(announcement, user_id, company_id, branch_id, db)
@@ -45,7 +45,7 @@ def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id
 
 
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildTaskForm")
-def build_announcement_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+def build_task_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     return plot_tasks_form(branch_id, db)
 
 

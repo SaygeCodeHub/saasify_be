@@ -48,7 +48,8 @@ class CheckboxField(BaseModel):
 class DatePickerField(BaseModel):
     placeholder: Optional[str] = None
     min_date: Optional[str] = None
-    max_date: Optional[str] = None
+    max_date: Optional[str] = None,
+    validator: Optional[str] = 'Please fill the empty field'
 
 
 class TextField(BaseModel):

@@ -3,9 +3,9 @@ from app.v3_0.schemas.form_schema import DynamicForm, SectionWiseForm, Multifiel
     UserSelection, DatePickerField, FormButtons, UtilityButtons
 
 add_announcements = DynamicForm(
-    form_name="Add New Announcements",
+    form_name="Add New Announcement",
     buttons=[FormButtons(button_name="Add Announcement",
-                         end_point="/addAnnouncements",
+                         end_point="/addAnnouncement",
                          api_method_type="post")],
     utility_buttons=[UtilityButtons(button_icon="",
                                     end_point="",
