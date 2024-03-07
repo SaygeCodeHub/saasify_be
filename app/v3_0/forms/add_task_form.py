@@ -21,7 +21,7 @@ def tasks_priority_dropdown():
 add_tasks = DynamicForm(
     form_name="Add New Task",
     buttons=[FormButtons(button_name="Add Task",
-                         end_point="/addTask",
+                         end_point="/addTasks",
                          api_method_type="post")],
     sections=[
         SectionWiseForm(
