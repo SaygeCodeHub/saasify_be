@@ -9,7 +9,7 @@ from app.enums.form_type_enum import FormTypeEnum
 
 class UserSelection(BaseModel):
     text_value: Optional[str] = None
-    user_selected_option_id: Optional[int] = None
+    user_selected_option_id: Optional[Any] = None
     user_selected_date: Optional[date] = None
 
 
