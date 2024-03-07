@@ -21,7 +21,7 @@ def get_approver_list(user_id, db):
 
     for a in ucb_user.approvers:
         data = get_approver_data(a, db)
-        approver_data.append(DropdownOption(label=data.approver_name, value=data.id, option_id=data.id))
+        approver_data.append(DropdownOption(label=data.approver_name, value=data.id, option_id=[data.id]))
 
     return DropdownField(
         options=approver_data)

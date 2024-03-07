@@ -16,7 +16,7 @@ class UserSelection(BaseModel):
 class DropdownOption(BaseModel):
     label: str
     value: Union[int, str, float, bool, Any]
-    option_id: Optional[int]
+    option_id: Optional[Any]
 
 
 class DropdownField(BaseModel):
