@@ -8,9 +8,10 @@ from app.v3_0.schemas.form_schema import DynamicForm
 from app.v3_0.schemas.utility_schemas import DeviceToken
 from app.v3_0.service.build_service import add_dynamic_announcements, \
     change_dynamic_announcement_data, fetch_by_id
-from app.v3_0.service.category_service import add_category, modify_category
+from app.v3_0.service.category_service import add_category
 from app.v3_0.service.form_plotting_service import plot_announcement_form, plot_category_form
 from app.v3_0.service.home_screen_service import fetch_home_screen_data
+from app.v3_0.service.leaves_srevice import build_apply_leave_form, add_dynamic_leaves
 from app.v3_0.service.tasks_services import plot_tasks_form, add_dynamic_tasks
 
 router = APIRouter()
@@ -87,3 +88,16 @@ def build_task_form(company_id: int, branch_id: int, user_id: int, db=Depends(ge
 @router.post("/v3.0/{company_id}/{branch_id}/{user_id}/addTasks")
 def create_tasks(tasks: DynamicForm, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
     return add_dynamic_tasks(tasks, company_id, branch_id, user_id, db)
+
+
+"""----------------------------------------------Leaves API-------------------------------------------------------------------"""
+
+
+@router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildApplyLeaveForm")
+def build_leave_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return build_apply_leave_form(company_id, branch_id, user_id, db)
+
+
+@router.post("/v3.0/{company_id}/{branch_id}/{user_id}/addLeave")
+async def create_dynamic_leaves(new_leave: DynamicForm, user_id: int, company_id: int, branch_id: int, db=Depends(get_db)):
+    return await add_dynamic_leaves(new_leave, company_id, branch_id, user_id, db)
