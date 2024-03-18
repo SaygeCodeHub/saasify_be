@@ -41,6 +41,8 @@ def add_dynamic_announcements(announcement: DynamicForm, user_id, company_id, br
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def change_dynamic_announcement_data(announcement: DynamicForm, user_id, company_id, branch_id, announcement_id, db):
@@ -62,6 +64,8 @@ def change_dynamic_announcement_data(announcement: DynamicForm, user_id, company
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def fetch_by_id(u_id, user_id, company_id, branch_id, db):
@@ -134,3 +138,5 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()

@@ -28,6 +28,8 @@ def add_category(category: DynamicForm, company_id, branch_id, user_id, db):
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def modify_category(category: UpdateCategory, cat_id, company_id, branch_id, user_id, db):
@@ -46,6 +48,8 @@ def modify_category(category: UpdateCategory, cat_id, company_id, branch_id, use
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def remove_category(cat_id, company_id, branch_id, user_id, db):
@@ -61,6 +65,8 @@ def remove_category(cat_id, company_id, branch_id, user_id, db):
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def get_variants(product_id, db):
@@ -108,3 +114,5 @@ def fetch_category_with_products(requirement, company_id, branch_id, user_id, db
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()

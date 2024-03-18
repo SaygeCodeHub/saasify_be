@@ -78,6 +78,9 @@ def modify_branch_settings(settings: UpdateBranchSettings, user_id, company_id, 
     except Exception as exc:
         db.rollback()
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
+
 
 
 def get_approver_data(approver_id, db):
@@ -112,6 +115,8 @@ def fetch_branch_settings(user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def import_hq_settings(branch_id, company_id, user_id, db):
@@ -202,6 +207,8 @@ def add_new_branch(branch, user_id, branch_id, company_id, db):
     except Exception as exc:
         db.rollback()
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def get_accessible_modules(new_branch, db):
@@ -252,6 +259,8 @@ def fetch_branches(user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def modify_branch(branch: UpdateBranch, user_id, company_id, branch_id, bran_id, db):
@@ -277,48 +286,52 @@ def modify_branch(branch: UpdateBranch, user_id, company_id, branch_id, bran_id,
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def add_company(company, user_id, db):
     """Creates a company and adds a branch to it"""
-    # try:
-    user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
-    if user_exists is None:
-        return ResponseDTO(404, "User does not exist!", {})
+    try:
+        user_exists = db.query(UsersAuth).filter(UsersAuth.user_id == user_id).first()
+        if user_exists is None:
+            return ResponseDTO(404, "User does not exist!", {})
 
-    if company.company_name is None:
-        return ResponseDTO(204, "Please enter company name!", {})
+        if company.company_name is None:
+            return ResponseDTO(204, "Please enter company name!", {})
 
-    new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
-                            activity_status=company.activity_status)
-    db.add(new_company)
-    db.flush()
+        new_company = Companies(company_name=company.company_name, owner=user_id, modified_by=user_id,
+                                activity_status=company.activity_status)
+        db.add(new_company)
+        db.flush()
 
-    add_company_to_ucb(new_company, user_id, db)
+        add_company_to_ucb(new_company, user_id, db)
 
-    branch = AddBranch
-    branch.branch_name = company.branch_name
-    branch.is_head_quarter = company.is_head_quarter
-    init_branch = add_init_branch(branch, user_id, new_company.company_id, db)
+        branch = AddBranch
+        branch.branch_name = company.branch_name
+        branch.is_head_quarter = company.is_head_quarter
+        init_branch = add_init_branch(branch, user_id, new_company.company_id, db)
 
-    module_start_date = datetime.now().date()
-    module_end_date = module_start_date + relativedelta(months=6)
-    new_module_subscription = ModuleSubscriptions(branch_id=init_branch.branch_id,
-                                                  company_id=new_company.company_id,
-                                                  module_name=[Modules.HR],
-                                                  start_date=module_start_date,
-                                                  end_date=module_end_date)
-    db.add(new_module_subscription)
+        module_start_date = datetime.now().date()
+        module_end_date = module_start_date + relativedelta(months=6)
+        new_module_subscription = ModuleSubscriptions(branch_id=init_branch.branch_id,
+                                                      company_id=new_company.company_id,
+                                                      module_name=[Modules.HR],
+                                                      start_date=module_start_date,
+                                                      end_date=module_end_date)
+        db.add(new_module_subscription)
 
-    db.commit()
+        db.commit()
 
-    return ResponseDTO(200, "Company created successfully",
-                       AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
-                                          branch=init_branch))
+        return ResponseDTO(200, "Company created successfully",
+                           AddCompanyResponse(company_name=new_company.company_name, company_id=new_company.company_id,
+                                              branch=init_branch))
 
 
-# except Exception as exc:
-#     return ResponseDTO(204, str(exc), {})
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def fetch_company(user_id, company_id, branch_id, db):
@@ -349,6 +362,8 @@ def fetch_company(user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def modify_company(company, user_id, company_id, branch_id, comp_id, db):
@@ -378,6 +393,8 @@ def modify_company(company, user_id, company_id, branch_id, comp_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def get_designation_names(designations):

@@ -13,8 +13,7 @@ def leave_type_dropdown():
     dropdown_options = []
     for leave_type in LeaveType:
         dropdown_options.append(
-            DropdownOption(label=format_enum_member(leave_type.name), value=leave_type.value,
-                           option_id=leave_type.value))
+            DropdownOption(label=format_enum_member(leave_type.name), value=leave_type.value))
     return DropdownField(
         options=dropdown_options)
 
@@ -27,9 +26,9 @@ add_leaves = DynamicForm(
     sections=[
         SectionWiseForm(
             section_name=None,
-            fields=[
+            row=[
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="leave_type",
                             label="Leave Type",
@@ -59,7 +58,7 @@ add_leaves = DynamicForm(
                             user_selection=UserSelection()),
                     ]),
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="leave_reason",
                             label="Reason for Leave",

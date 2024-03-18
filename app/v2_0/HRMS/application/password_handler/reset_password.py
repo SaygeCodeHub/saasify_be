@@ -4,9 +4,10 @@ import smtplib
 import string
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from app.dto.dto_classes import ResponseDTO
 from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import hash_pwd
 from app.v2_0.HRMS.domain.models.user_auth import UsersAuth
-from app.dto.dto_classes import ResponseDTO
 
 """-------------------------------Update password code starts below this line-----------------------------"""
 
@@ -28,28 +29,35 @@ def check_token(obj, db):
                 return change_password(obj, db)
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def change_password(obj, db):
     """Updates the password and makes the change_password_token null in db"""
-    if obj.email is None:
-        return ResponseDTO(204, "Please enter email.", {})
-    if obj.password is None:
-        return ResponseDTO(204, "Please enter password.", {})
-    user_query = db.query(UsersAuth).filter(UsersAuth.user_email == obj.model_dump()["email"])
-    user = user_query.first()
+    try:
+        if obj.email is None:
+            return ResponseDTO(204, "Please enter email.", {})
+        if obj.password is None:
+            return ResponseDTO(204, "Please enter password.", {})
+        user_query = db.query(UsersAuth).filter(UsersAuth.user_email == obj.model_dump()["email"])
+        user = user_query.first()
 
-    if user is None:
-        return ResponseDTO(404, "User with this email does not exist!", {})
+        if user is None:
+            return ResponseDTO(404, "User with this email does not exist!", {})
 
-    if user.change_password_token != obj.model_dump()["token"]:
-        return ResponseDTO(204, "Reset token doesn't match", {})
+        if user.change_password_token != obj.model_dump()["token"]:
+            return ResponseDTO(204, "Reset token doesn't match", {})
 
-    hashed_pwd = hash_pwd(obj.model_dump()["password"])
-    user_query.update({"change_password_token": None, "password": hashed_pwd})
-    db.commit()
+        hashed_pwd = hash_pwd(obj.model_dump()["password"])
+        user_query.update({"change_password_token": None, "password": hashed_pwd})
+        db.commit()
 
-    return ResponseDTO(200, "Password updated successfully!", {})
+        return ResponseDTO(200, "Password updated successfully!", {})
+    except Exception as exc:
+        return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 """-------------------------------Code below this line sends the change_password_token to an individual-----------------------------"""
@@ -114,3 +122,5 @@ def initiate_pwd_reset(email, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
