@@ -19,8 +19,7 @@ def tasks_employee_dropdown(branch_id: int, db=Depends(get_db)):
     employees = employees_list(branch_id, db)
     for employee in employees:
         dropdown_options.append(
-            DropdownOption(label=employee['user_email'], value=employee['employee_id'],
-                           option_id=employee['employee_id']))
+            DropdownOption(label=employee['user_email'], value=employee['employee_id']))
     return DropdownField(
         options=dropdown_options)
 
@@ -28,8 +27,8 @@ def tasks_employee_dropdown(branch_id: int, db=Depends(get_db)):
 def add_dropdown_field_to_schema(schema, column_name, dropdown_field):
     # Navigate through the schema hierarchy to find the appropriate location
     for section in schema.sections:
-        for field_group in section.fields:
-            for field in field_group.row_fields:
+        for field_group in section.row:
+            for field in field_group.fields:
                 if field.column_name == column_name:
                     # Set the dropdown_field at the found location
                     field.dropdown_field = dropdown_field
@@ -37,14 +36,19 @@ def add_dropdown_field_to_schema(schema, column_name, dropdown_field):
 
 
 def plot_tasks_form(branch_id: int, db=Depends(get_db)):
-    """The below step is to fetch the data of dropdowns that need an API call"""
-    add_tasks.sections[0].fields[1].row_fields[0].dropdown_field = tasks_employee_dropdown(branch_id, db)
-    add_tasks.sections[0].fields[1].row_fields[1].dropdown_field = tasks_employee_dropdown(branch_id, db)
+    try:
+        """The below step is to fetch the data of dropdowns that need an API call"""
+        add_tasks.sections[0].row[1].fields[0].dropdown_field = tasks_employee_dropdown(branch_id, db)
+        add_tasks.sections[0].row[1].fields[1].dropdown_field = tasks_employee_dropdown(branch_id, db)
 
-    """Another way of doing the above step"""
-    # add_dropdown_field_to_schema(add_tasks, 'monitored_by', tasks_employee_dropdown(branch_id, db))
-    # add_dropdown_field_to_schema(add_tasks, 'assigned_to', tasks_employee_dropdown(branch_id, db))
-    return ResponseDTO(200, "Form plotted!", add_tasks)
+        """Another way of doing the above step"""
+        # add_dropdown_field_to_schema(add_tasks, 'monitored_by', tasks_employee_dropdown(branch_id, db))
+        # add_dropdown_field_to_schema(add_tasks, 'assigned_to', tasks_employee_dropdown(branch_id, db))
+        return ResponseDTO(200, "Form plotted!", add_tasks)
+    except Exception as e:
+        return ResponseDTO(204, str(e), {})
+    finally:
+        db.close()
 
 
 def map_to_model(form: DynamicForm, mapped_values, model: Type[Base]):
@@ -52,8 +56,8 @@ def map_to_model(form: DynamicForm, mapped_values, model: Type[Base]):
     Still in testing will be moved to app_util"""
 
     for section in form.sections:
-        for field_group in section.fields:
-            for field in field_group.row_fields:
+        for field_group in section.row:
+            for field in field_group.fields:
                 column_name = field.column_name
                 if column_name and hasattr(model, column_name):
                     if field.required:
@@ -85,3 +89,5 @@ def add_dynamic_tasks(task: DynamicForm, company_id: int, branch_id: int, user_i
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()

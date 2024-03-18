@@ -1,5 +1,5 @@
 from app.enums.form_type_enum import FormTypeEnum
-from app.v3_0.schemas.form_schema import DynamicForm, FormButtons, UtilityButtons, SectionWiseForm, MultifieldsInRow, \
+from app.v3_0.schemas.form_schema import DynamicForm, FormButtons, SectionWiseForm, MultifieldsInRow, \
     FormField, UserSelection, TextField
 
 add_category_form = DynamicForm(
@@ -10,8 +10,8 @@ add_category_form = DynamicForm(
     sections=[
         SectionWiseForm(
             section_name=None,
-            fields=[MultifieldsInRow(
-                row_fields=[
+            row=[MultifieldsInRow(
+                fields=[
                     FormField(
                         column_name="name",
                         label="Name",
@@ -19,8 +19,7 @@ add_category_form = DynamicForm(
                         required=True,
                         text_field=TextField(
                             max_lines=1, input_type="text"),
-                        user_selection=UserSelection(text_value="")
-                    ),
+                        user_selection=UserSelection(text_value="")),
                     FormField(column_name="description", label="Description", required=True,
                               field_type=FormTypeEnum.textField,
                               text_field=TextField(max_lines=5, input_type="text"),

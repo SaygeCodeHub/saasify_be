@@ -11,18 +11,18 @@ add_announcements = DynamicForm(
     sections=[
         SectionWiseForm(
             section_name=None,
-            fields=[
+            row=[
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="due_date",
                             label="Due Date",
                             field_type=FormTypeEnum.datePicker,
                             required=True,
                             user_selection=UserSelection(user_selected_date=None),
-                            date_picker_field=DatePickerField(placeholder="Select date", max_date=None))]),
+                            date_picker_field=DatePickerField(placeholder="Select date"))]),
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="description",
                             label="Description",

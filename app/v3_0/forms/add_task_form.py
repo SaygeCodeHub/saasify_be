@@ -1,7 +1,7 @@
 from app.enums.form_type_enum import FormTypeEnum
 from app.enums.task_priority_enum import TaskPriority
 from app.v3_0.schemas.form_schema import DynamicForm, SectionWiseForm, MultifieldsInRow, FormField, TextField, \
-    UserSelection, DatePickerField, FormButtons, UtilityButtons, DropdownOption, DropdownField
+    UserSelection, DatePickerField, FormButtons, DropdownOption, DropdownField
 
 
 def format_enum_member(enum_member: str):
@@ -13,7 +13,7 @@ def tasks_priority_dropdown():
     dropdown_options = []
     for priority in TaskPriority:
         dropdown_options.append(
-            DropdownOption(label=format_enum_member(priority.name), value=priority.value, option_id=priority.value))
+            DropdownOption(label=format_enum_member(priority.name), value=priority.value))
     return DropdownField(
         options=dropdown_options)
 
@@ -26,9 +26,9 @@ add_tasks = DynamicForm(
     sections=[
         SectionWiseForm(
             section_name=None,
-            fields=[
+            row=[
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="title",
                             label="Title",
@@ -51,7 +51,7 @@ add_tasks = DynamicForm(
                             user_selection=UserSelection(user_selected_date=None),
                             date_picker_field=DatePickerField(placeholder="Select date", max_date=None))]),
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="monitored_by",
                             label="Monitored By",
@@ -65,7 +65,7 @@ add_tasks = DynamicForm(
                             required=True,
                             user_selection=UserSelection())]),
                 MultifieldsInRow(
-                    row_fields=[
+                    fields=[
                         FormField(
                             column_name="task_description",
                             label="Description",

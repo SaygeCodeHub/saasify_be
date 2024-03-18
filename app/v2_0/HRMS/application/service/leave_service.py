@@ -291,17 +291,13 @@ async def modify_leave_status(application_response, user_id, company_id, branch_
         else:
             return check
 
-
     except HTTPException as e:
-
         return ResponseDTO(204, str(e), {})
 
     except ValueError as e:
-
         return ResponseDTO(204, str(e), {})
 
     except Exception as exc:
-
         return ResponseDTO(204, str(exc), {})
 
 

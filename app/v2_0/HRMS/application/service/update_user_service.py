@@ -56,6 +56,8 @@ def user_update_func(user: UpdateUser, user_id, company_id, branch_id, u_id, db=
     except Exception as e:
         db.rollback()
         return ResponseDTO(204, str(e), {})
+    finally:
+        db.close()
 
 
 def add_user_finances(user, user_id, new_employee, db):
