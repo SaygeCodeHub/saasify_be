@@ -142,7 +142,7 @@ def fetch_my_leaves(buildScreen: BuildScreen, company_id: int, branch_id: int, u
                     {"leave_type": leave.leave_type.name, "id": leave.leave_id, "leave_reason": leave.leave_reason,
                      "start_date": leave.start_date.strftime("%d/%m/%Y"),
                      "end_date": leave.end_date.strftime("%d/%m/%Y"),
-                     "date": f"{leave.start_date.strftime("%d/%m/%Y")} - {leave.end_date.strftime("%d/%m/%Y")}",
+                     "date": f'{leave.start_date.strftime("%d/%m/%Y")} - {leave.end_date.strftime("%d/%m/%Y")}',
                      "approvers": get_approver_names(leave.approvers, db)[0],
                      "leave_status": leave.leave_status, "comment": leave.comment,
                      "status_color": get_leaves_color_code(leave.leave_status.name),
@@ -205,7 +205,7 @@ def fetch_pending_leaves(buildScreen: BuildScreen, company_id: int, branch_id: i
                          "leave_reason": leave.leave_reason,
                          "start_date": leave.start_date.strftime("%d/%m/%Y"),
                          "end_date": leave.end_date.strftime("%d/%m/%Y"),
-                         "date": f"{leave.start_date.strftime("%d/%m/%Y")} - {leave.end_date.strftime("%d/%m/%Y")}",
+                         "date": f'{leave.start_date.strftime("%d/%m/%Y")} - {leave.end_date.strftime("%d/%m/%Y")}',
                          "approvers": get_approver_names(leave.approvers, db)[0],
                          "leave_status": leave.leave_status, "comment": leave.comment,
                          "status_color": get_leaves_color_code(leave.leave_status.name),
@@ -224,7 +224,6 @@ def fetch_pending_leaves(buildScreen: BuildScreen, company_id: int, branch_id: i
         return ResponseDTO(204, str(exc), {})
     finally:
         db.close()
-
 
 # async def modify_leave_status(application_response, user_id, company_id, branch_id, db):
 #     """Leaves are APPROVED or REJECTED using this API"""
