@@ -125,6 +125,8 @@ def login(credentials: Credentials, db=Depends(get_db)):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 @router.post("/v2.0/forgotPassword")

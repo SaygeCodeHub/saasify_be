@@ -82,6 +82,8 @@ def invite_employee(employee, user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def employees_list(branch_id, db):
@@ -116,6 +118,8 @@ def fetch_employees(company_id, branch_id, user_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), [])
+    finally:
+        db.close()
 
 
 def get_branch_name(branch_id, db):
@@ -175,3 +179,6 @@ def modify_activity_status(status: UpdateActivityStatus, user_id, company_id, br
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
+

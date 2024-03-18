@@ -1,11 +1,11 @@
 """Service layer for Users"""
 from datetime import datetime
 
-from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import hash_pwd
-from app.v2_0.HRMS.application.service.home_screen_service import calculate_value, check_if_statistics, get_title, \
-    get_is_view, get_build_screen_endpoint
-from app.v2_0.HRMS.application.service.ucb_service import add_user_to_ucb
+from app.dto.dto_classes import ResponseDTO
 from app.utility.app_utility import check_if_company_and_branch_exist
+from app.v2_0.HRMS.application.password_handler.pwd_encrypter_decrypter import hash_pwd
+from app.v2_0.HRMS.application.service.home_screen_service import calculate_value, check_if_statistics, get_title
+from app.v2_0.HRMS.application.service.ucb_service import add_user_to_ucb
 from app.v2_0.HRMS.domain.models.branch_settings import BranchSettings
 from app.v2_0.HRMS.domain.models.companies import Companies
 from app.v2_0.HRMS.domain.models.leaves import Leaves
@@ -21,7 +21,6 @@ from app.v2_0.HRMS.domain.schemas.module_schemas import ModulesMap, FeaturesMap
 from app.v2_0.HRMS.domain.schemas.user_schemas import GetAadharDetails, \
     GetPassportDetails, GetPersonalInfo, GetUserOfficialSchema, \
     GetUserFinanceSchema, GetUserBankDetailsSchema, UserBankDetailsSchema, UserOfficialSchema, PersonalInfo, AddUser
-from app.dto.dto_classes import ResponseDTO
 
 
 def add_user_details(user, user_id, db):
@@ -90,6 +89,8 @@ def add_user(user: AddUser, db):
     except Exception as exc:
         db.rollback()
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def get_designations(user_id, db):
@@ -165,6 +166,8 @@ def fetch_by_id(u_id, user_id, company_id, branch_id, db):
 
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()
 
 
 def update_personal_info(personal_data, user_query, user_id):
@@ -437,3 +440,5 @@ def remove_user(u_id, user_id, company_id, branch_id, db):
             return check
     except Exception as exc:
         return ResponseDTO(204, str(exc), {})
+    finally:
+        db.close()

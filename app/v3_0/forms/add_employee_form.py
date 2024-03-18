@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.enums.form_type_enum import FormTypeEnum
 from app.v3_0.schemas.form_schema import DynamicForm, SectionWiseForm, MultifieldsInRow, FormField, TextField, \
-    UserSelection, FormButtons, UtilityButtons, DatePickerField, DropdownField, DropdownOption
+    UserSelection, FormButtons, DatePickerField, DropdownField, DropdownOption, CheckboxOption, CheckboxField
 
 add_employee = DynamicForm(
     form_name="Add Employee",
@@ -12,253 +12,364 @@ add_employee = DynamicForm(
     sections=[
         SectionWiseForm(
             section_name="Personal Details",
-            fields=[
+            row=[
                 MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="first_name",
-                            label="First Name",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="middle_name",
-                            label="Middle Name",
-                            required=False,
-                            field_type=FormTypeEnum.textField,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="last_name",
-                            label="Last Name",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value=""))]),
+                    fields=[
+                        FormField(column_name="first_name",
+                                  label="First Name",
+                                  field_type=FormTypeEnum.textField,
+                                  required=True,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value="")),
+                        FormField(column_name="middle_name",
+                                  label="Middle Name",
+                                  required=False,
+                                  field_type=FormTypeEnum.textField,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value="")),
+                        FormField(column_name="last_name",
+                                  label="Last Name",
+                                  field_type=FormTypeEnum.textField,
+                                  required=True,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value=""))]),
                 MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="user_email",
-                            label="Email",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="email", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="user_contact",
-                            label="Mobile Number",
-                            required=False,
-                            field_type=FormTypeEnum.textField,
-                            text_field=TextField(max_lines=1, input_type="number", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="alternate_contact",
-                            label="Alternate Mobile Number",
-                            field_type=FormTypeEnum.textField,
-                            required=False,
-                            text_field=TextField(max_lines=1, input_type="number", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value=""))]),
+                    fields=[
+                        FormField(column_name="user_email",
+                                  label="Email",
+                                  field_type=FormTypeEnum.textField,
+                                  required=True,
+                                  text_field=TextField(max_lines=1, input_type="email", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value="")),
+                        FormField(column_name="user_contact",
+                                  label="Mobile Number",
+                                  required=False,
+                                  field_type=FormTypeEnum.textField,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value="")),
+                        FormField(column_name="alternate_contact",
+                                  label="Alternate Mobile Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
                 MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="user_birthdate",
-                            label="Date of Birth",
-                            field_type=FormTypeEnum.datePicker,
-                            required=False,
-                            date_picker_field=DatePickerField(min_date="1900-01-01", max_date=datetime.now().date()),
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="gender",
-                            label="Gender",
-                            required=False,
-                            field_type=FormTypeEnum.dropDown,
-                            dropdown_field=DropdownField(
-                                options=[DropdownOption(label="Male", value="Male", option_id=0),
-                                         DropdownOption(label="Female", value="Female", option_id=1),
-                                         DropdownOption(label="Other", value="Other", option_id=2)]),
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="nationality",
-                            label="Nationality",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="marriage_status",
-                            label="Marital Status",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection())]),
+                    fields=[
+                        FormField(column_name="user_birthdate",
+                                  label="Date of Birth",
+                                  field_type=FormTypeEnum.datePicker,
+                                  required=False,
+                                  date_picker_field=DatePickerField(min_date="1900-01-01",
+                                                                    max_date=str(datetime.now().date())),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="gender",
+                                  label="Gender",
+                                  required=False,
+                                  field_type=FormTypeEnum.dropDown,
+                                  dropdown_field=DropdownField(
+                                      options=[DropdownOption(label="Male", value="Male"),
+                                               DropdownOption(label="Female", value="Female"),
+                                               DropdownOption(label="Other", value="Other")]),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="nationality",
+                                  label="Nationality",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  user_selection=UserSelection()),
+                        FormField(column_name="marriage_status",
+                                  label="Marital Status",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  dropdown_field=DropdownField(
+                                      options=[DropdownOption(label="Married", value="Married"),
+                                               DropdownOption(label="Unmarried", value="Unmarried")]),
+                                  user_selection=UserSelection())]),
                 MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="current_address",
-                            label="Current Address",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="permanent_address",
-                            label="Permanent Address",
-                            required=False,
-                            field_type=FormTypeEnum.textField,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value=""))]),
+                    fields=[
+                        FormField(column_name="current_address",
+                                  label="Current Address",
+                                  field_type=FormTypeEnum.textField,
+                                  required=True,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value="")),
+                        FormField(column_name="permanent_address",
+                                  label="Permanent Address",
+                                  required=False,
+                                  field_type=FormTypeEnum.textField,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value=""))]),
                 MultifieldsInRow(
-                    row_fields=[FormField(
-                        column_name="state",
-                        label="State",
-                        required=False,
-                        field_type=FormTypeEnum.dropDown,
-                        user_selection=UserSelection()),
-                        FormField(
-                            column_name="city",
-                            label="City",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="pincode",
-                            label="Pincode",
-                            field_type=FormTypeEnum.textField,
-                            required=False,
-                            user_selection=UserSelection())]),
+                    fields=[
+                        FormField(column_name="state",
+                                  label="State",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="city",
+                                  label="City",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="pincode",
+                                  label="Pincode",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection())]),
             ]),
         SectionWiseForm(
-            section_name="Document Details",
-            fields=[
+            section_name="Aadhar Details",
+            row=[
                 MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="first_name",
-                            label="First Name",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="middle_name",
-                            label="Middle Name",
-                            required=False,
-                            field_type=FormTypeEnum.textField,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="last_name",
-                            label="Last Name",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value=""))]),
-                MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="user_email",
-                            label="Email",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="email", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="user_contact",
-                            label="Mobile Number",
-                            required=False,
-                            field_type=FormTypeEnum.textField,
-                            text_field=TextField(max_lines=1, input_type="number", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="alternate_contact",
-                            label="Alternate Mobile Number",
-                            field_type=FormTypeEnum.textField,
-                            required=False,
-                            text_field=TextField(max_lines=1, input_type="number", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value=""))]),
-                MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="user_birthdate",
-                            label="Date of Birth",
-                            field_type=FormTypeEnum.datePicker,
-                            required=False,
-                            date_picker_field=DatePickerField(min_date="1900-01-01", max_date=datetime.now().date()),
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="gender",
-                            label="Gender",
-                            required=False,
-                            field_type=FormTypeEnum.dropDown,
-                            dropdown_field=DropdownField(
-                                options=[DropdownOption(label="Male", value="Male", option_id=0),
-                                         DropdownOption(label="Female", value="Female", option_id=1),
-                                         DropdownOption(label="Other", value="Other", option_id=2)]),
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="nationality",
-                            label="Nationality",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="marriage_status",
-                            label="Marital Status",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection())]),
-                MultifieldsInRow(
-                    row_fields=[
-                        FormField(
-                            column_name="current_address",
-                            label="Current Address",
-                            field_type=FormTypeEnum.textField,
-                            required=True,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value="")),
-                        FormField(
-                            column_name="permanent_address",
-                            label="Permanent Address",
-                            required=False,
-                            field_type=FormTypeEnum.textField,
-                            text_field=TextField(max_lines=1, input_type="text", readOnly=False),
-                            user_selection=
-                            UserSelection(text_value=""))]),
-                MultifieldsInRow(
-                    row_fields=[FormField(
-                        column_name="state",
-                        label="State",
-                        required=False,
-                        field_type=FormTypeEnum.dropDown,
-                        user_selection=UserSelection()),
-                        FormField(
-                            column_name="city",
-                            label="City",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection()),
-                        FormField(
-                            column_name="pincode",
-                            label="Pincode",
-                            field_type=FormTypeEnum.dropDown,
-                            required=False,
-                            user_selection=UserSelection())]),
+                    fields=[
+                        FormField(column_name="aadhar_number",
+                                  label="Aadhar Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="name_as_per_aadhar",
+                                  label="Name as per Aadhar",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="pan_number",
+                                  label="PAN Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="passport_number",
+                                  label="Passport Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
             ]),
-
+        SectionWiseForm(
+            section_name="Passport Details",
+            row=[
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="passport_num",
+                                  label="Passport Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="passport_fname",
+                                  label="First Name",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="passport_lname",
+                                  label="Last Name",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="expiry_date",
+                                  label="Expiry Date",
+                                  field_type=FormTypeEnum.datePicker,
+                                  required=False,
+                                  date_picker_field=DatePickerField(),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="issue_date",
+                                  label="Issue Date",
+                                  field_type=FormTypeEnum.datePicker,
+                                  required=False,
+                                  date_picker_field=DatePickerField(),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="mobile_number",
+                                  label="Mobile Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="current_address",
+                                  label="Current Address",
+                                  field_type=FormTypeEnum.textField,
+                                  required=True,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value="")),
+                        FormField(column_name="permanent_address",
+                                  label="Permanent Address",
+                                  required=False,
+                                  field_type=FormTypeEnum.textField,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=
+                                  UserSelection(text_value=""))])]),
+        SectionWiseForm(
+            section_name="Finances",
+            row=[
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="basic_salary",
+                                  label="Salary",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="BOA",
+                                  label="Basket of Allowances",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="bonus",
+                                  label="Bonus",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="performance_bonus",
+                                  label="Performance Bonus",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="PF",
+                                  label="Provisional Fund",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="deduction",
+                                  label="Deduction",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="gratuity",
+                                  label="Gratuity",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="fixed_monthly_gross",
+                                  label="Fixed Monthly Gross",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="total_annual_gross",
+                                  label="Total Annual Gross",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value=""))]),
+            ]),
+        SectionWiseForm(
+            section_name="Bank Details",
+            row=[
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="bank_name",
+                                  label="Bank Name",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="branch_name",
+                                  label="Branch Name",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_onlyvvvvvvv=False),
+                                  user_selection=UserSelection(text_value=""))]),
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="account_number",
+                                  label="Account Number",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="ifsc_code",
+                                  label="IFSC Code",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="account_type",
+                                  label="Account Type",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="number", read_only=False),
+                                  user_selection=UserSelection(text_value="")),
+                        FormField(column_name="country",
+                                  label="Country",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  dropdown_field=DropdownField(options=[DropdownOption(label="India", value="India")]),
+                                  user_selection=UserSelection())]),
+            ]),
+        SectionWiseForm(
+            section_name="Official Details",
+            row=[
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="designations",
+                                  label="Designations",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  user_selection=UserSelection()),
+                        FormField(column_name="doj",
+                                  label="Date of Joining",
+                                  field_type=FormTypeEnum.datePicker,
+                                  required=False,
+                                  date_picker_field=DatePickerField(),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="job_confirmation",
+                                  label="Job Confirmation",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  dropdown_field=DropdownField(options=[DropdownOption(label="Yes", value=True),
+                                                                        DropdownOption(label="No", value=False)]),
+                                  user_selection=UserSelection())]),
+                MultifieldsInRow(
+                    fields=[
+                        FormField(column_name="reporting_manager",
+                                  label="Reporting Manager",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  user_selection=UserSelection()),
+                        FormField(column_name="approvers",
+                                  label="Approvers",
+                                  field_type=FormTypeEnum.dropDown,
+                                  required=False,
+                                  user_selection=UserSelection()),
+                        FormField(column_name="current_address",
+                                  label="Current Address",
+                                  field_type=FormTypeEnum.textField,
+                                  required=False,
+                                  text_field=TextField(max_lines=1, input_type="text", read_only=False),
+                                  user_selection=UserSelection()),
+                        FormField(column_name="accessible_modules",
+                                  label="Accessible Features",
+                                  field_type=FormTypeEnum.checkbox,
+                                  required=False,
+                                  checkbox_field=CheckboxField(options=[CheckboxOption(label="HR", value="HR")]),
+                                  user_selection=UserSelection())]),
+            ]),
     ]
-
 )
