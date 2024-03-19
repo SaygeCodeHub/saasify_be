@@ -163,7 +163,8 @@ def get_build_screen_endpoint(feature_name):
                      Features.HR_VIEW_ALL_EMPLOYEES.name: "/getAllEmployees",
                      Features.HR_MY_LEAVES.name: "/getMyLeaves",
                      Features.HR_TIMESHEET.name: "/buildTimesheetTable",
-                     Features.HR_TASK_MANAGEMENT.name: "/buildTaskForm"}
+                     Features.HR_ADD_TASK.name: "/buildTaskForm",
+                     Features.POS_ADD_CATEGORY: "/buildCategoryForm"}
     return endpoint_dict.get(feature_name)
 
 

@@ -26,10 +26,6 @@ def add_dynamic_announcements(announcement: DynamicForm, user_id, company_id, br
     try:
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
         if check is None:
-            # announcement = Announcements(company_id=company_id,
-            #                              due_date=get_value("due_date", announcement),
-            #                              description=get_value("description", announcement))
-            # print(announcement.__dict__)
             new_announcement = AddAnnouncement(
                 **map_to_model(announcement, {"company_id": company_id}, Announcements()))
             new_announcement_data = Announcements(**new_announcement.model_dump())

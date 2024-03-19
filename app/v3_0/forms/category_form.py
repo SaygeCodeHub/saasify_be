@@ -10,24 +10,21 @@ add_category_form = DynamicForm(
     sections=[
         SectionWiseForm(
             section_name=None,
-            row=[MultifieldsInRow(
-                fields=[
-                    FormField(
-                        column_name="name",
-                        label="Name",
-                        field_type=FormTypeEnum.textField,
-                        required=True,
-                        text_field=TextField(
-                            max_lines=1, input_type="text"),
-                        user_selection=UserSelection(text_value="")),
-                    FormField(column_name="description", label="Description", required=True,
-                              field_type=FormTypeEnum.textField,
-                              text_field=TextField(max_lines=5, input_type="text"),
-                              user_selection=
-                              UserSelection(text_value=""))
-                ]),
+            row=[
+                MultifieldsInRow(
+                    fields=[
+                        FormField(
+                            column_name="name",
+                            label="Name",
+                            field_type=FormTypeEnum.textField,
+                            required=True,
+                            text_field=TextField(
+                                max_lines=1, input_type="text"),
+                            user_selection=UserSelection(text_value="")),
+                        FormField(column_name="description", label="Description", required=True,
+                                  field_type=FormTypeEnum.textField,
+                                  text_field=TextField(max_lines=5, input_type="text"),
+                                  user_selection=UserSelection())])
             ])
-
     ]
-
 )
