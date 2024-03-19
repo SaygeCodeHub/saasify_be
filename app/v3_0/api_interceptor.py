@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app.infrastructure.database import get_db
+from app.v3_0.forms.product_form import add_product_form
 from app.v3_0.schemas.form_schema import DynamicForm
 from app.v3_0.schemas.screen_schema import BuildScreen
 from app.v3_0.schemas.utility_schemas import DeviceToken
@@ -27,12 +28,12 @@ def build_announcement_form(company_id: int, branch_id: int, user_id: int, db=De
     return plot_announcement_form(db)
 
 
-@router.get("/v3.0/buildCategoryForm")
+"""----------------------------------------------Category related APIs-------------------------------------------------------------------"""
+
+
+@router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildCategoryForm")
 def build_category_form():
     return plot_category_form()
-
-
-"""----------------------------------------------Category related APIs-------------------------------------------------------------------"""
 
 
 @router.post("/v3.0/{company_id}/{branch_id}/{user_id}/addCategory")
@@ -44,6 +45,14 @@ def create_category(category: DynamicForm, company_id: int, branch_id: int, user
 # def update_category(category: DynamicForm, cat_id: int, company_id: int, branch_id: int, user_id: int,
 #                     db=Depends(get_db)):
 #     return modify_category(category, cat_id, company_id, branch_id, user_id, db)
+
+
+"""----------------------------------------------Product related APIs-------------------------------------------------------------------"""
+
+
+@router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildProductForm")
+def build_category_form():
+    return add_product_form()
 
 
 """----------------------------------------------User related APIs-------------------------------------------------------------------"""

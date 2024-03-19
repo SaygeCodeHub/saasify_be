@@ -1,15 +1,16 @@
 """Service layer for model - Categories"""
 from datetime import datetime
 
+from app.dto.dto_classes import ResponseDTO
 from app.utility.app_utility import check_if_company_and_branch_exist, get_value
 from app.v2_0.POS.domain.models.categories import Categories
 from app.v2_0.POS.domain.models.product_variants import ProductVariants
 from app.v2_0.POS.domain.models.products import Products
-from app.dto.dto_classes import ResponseDTO
 from app.v3_0.schemas.category_schemas import AddCategory, UpdateCategory, GetCategoriesWithProducts, GetCategories
 from app.v3_0.schemas.form_schema import DynamicForm
 from app.v3_0.schemas.product_schemas import GetProducts
 from app.v3_0.schemas.variant_schemas import GetVariants
+from app.v3_0.service.tasks_services import map_to_model
 
 
 def add_category(category: DynamicForm, company_id, branch_id, user_id, db):
@@ -17,10 +18,10 @@ def add_category(category: DynamicForm, company_id, branch_id, user_id, db):
         check = check_if_company_and_branch_exist(company_id, branch_id, user_id, db)
 
         if check is None:
-            new_category = Categories(company_id=company_id, branch_id=branch_id, name=get_value("name", category),
-                                      description=get_value("description", category))
-            # print(new_category.__dict__)
-            db.add(new_category)
+            new_category = AddCategory(
+                **map_to_model(category, {"company_id": company_id, "branch_id": branch_id}, Categories()))
+            new_category_data = Categories(**new_category.model_dump())
+            db.add(new_category_data)
             db.commit()
 
             return ResponseDTO(200, "Category added!", {})
