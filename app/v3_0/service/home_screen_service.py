@@ -160,7 +160,7 @@ def get_build_screen_endpoint(feature_name):
                      Features.HR_MARK_ATTENDANCE.name: "/buildAttendanceTable",
                      Features.HR_PENDING_APPROVAL.name: "/getPendingLeaves",
                      Features.HR_SALARY_ROLLOUT.name: "/buildSalaryTable",
-                     Features.HR_VIEW_ALL_EMPLOYEES.name: "/buildEmployeesTable",
+                     Features.HR_VIEW_ALL_EMPLOYEES.name: "/getAllEmployees",
                      Features.HR_MY_LEAVES.name: "/getMyLeaves",
                      Features.HR_TIMESHEET.name: "/buildTimesheetTable",
                      Features.HR_TASK_MANAGEMENT.name: "/buildTaskForm"}

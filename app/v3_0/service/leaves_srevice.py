@@ -148,6 +148,7 @@ def fetch_my_leaves(buildScreen: BuildScreen, company_id: int, branch_id: int, u
                      "status_color": get_leaves_color_code(leave.leave_status.name),
                      "show_details": {"button_name": "Show Details",
                                       "button_action": ButtonActionEnum.pop_up}})
+
             data.view_data = result
 
             if len(my_leaves) == 0:

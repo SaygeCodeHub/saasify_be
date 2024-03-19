@@ -62,9 +62,9 @@ def map_to_model(form: DynamicForm, mapped_values, model: Type[Base]):
                 if column_name and hasattr(model, column_name):
                     if field.required:
                         if field.user_selection:
-                            if field.user_selection.user_selected_date is None and field.user_selection.text_value is None and field.user_selection.user_selected_option_id is None:
+                            if field.user_selection.user_selected_date is None and field.user_selection.text_value is None and field.user_selection.user_selected_value is None:
                                 raise MissingRequiredFieldError(f"Required field '{field.label}' is missing input.")
-                            value = field.user_selection.user_selected_date or field.user_selection.text_value or field.user_selection.user_selected_option_id
+                            value = field.user_selection.user_selected_date or field.user_selection.text_value or field.user_selection.user_selected_value
                         else:
                             raise MissingRequiredFieldError(f"Required field '{field.label}' is missing input.")
                     else:

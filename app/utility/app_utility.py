@@ -53,8 +53,8 @@ def ensure_optional_fields(self):
                 setattr(self, field, None)
 
 
-def get_bool_value(iterated_form_obj, user_selected_option_id):
-    return iterated_form_obj.dropdown_field.options[user_selected_option_id - 1].value
+def get_bool_value(iterated_form_obj, user_selected_value):
+    return iterated_form_obj.dropdown_field.options[user_selected_value - 1].value
 
 
 def get_value(column_name, form_obj):
@@ -76,4 +76,4 @@ def get_value(column_name, form_obj):
                     else:
                         return get_bool_value(form_obj.sections[i].fields[j].row_fields[
                                                   k], form_obj.sections[i].fields[j].row_fields[
-                                                  k].user_selection.user_selected_option_id)
+                                                  k].user_selection.user_selected_value)

@@ -10,7 +10,7 @@ from app.v3_0.schemas.utility_schemas import DeviceToken
 from app.v3_0.service.build_service import add_dynamic_announcements, \
     change_dynamic_announcement_data, fetch_by_id
 from app.v3_0.service.category_service import add_category
-from app.v3_0.service.employees_schema import build_add_employee_form
+from app.v3_0.service.employees_schema import build_add_employee_form, fetch_all_employees
 from app.v3_0.service.form_plotting_service import plot_announcement_form, plot_category_form
 from app.v3_0.service.home_screen_service import fetch_home_screen_data
 from app.v3_0.service.leaves_srevice import build_apply_leave_form, add_dynamic_leaves, fetch_my_leaves, \
@@ -132,3 +132,8 @@ def build_update_leave_status(u_id: int, status: str, company_id: int, branch_id
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildEmployeeForm")
 def build_employee_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
     return build_add_employee_form(company_id, branch_id, user_id, db)
+
+
+@router.post("/v3.0/{company_id}/{branch_id}/{user_id}/getAllEmployees")
+def build_employee_form(buildScreen: BuildScreen, company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+    return fetch_all_employees(buildScreen, company_id, branch_id, user_id, db)
