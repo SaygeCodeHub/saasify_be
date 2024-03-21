@@ -19,3 +19,4 @@ class Features(PyEnum):
     POS_ADD_PRODUCT = 4.2
     POS_VIEW_PRODUCTS = 4.3
     POS_INVENTORY = 4.4
+    POS_POS = 4.5

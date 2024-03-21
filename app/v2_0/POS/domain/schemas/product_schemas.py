@@ -25,4 +25,5 @@ class GetProducts(BaseModel):
     product_name: str
     description: str
     product_id: int
+    product_image: str
     variants: List[GetVariants]
