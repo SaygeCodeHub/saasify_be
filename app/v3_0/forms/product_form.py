@@ -1,6 +1,6 @@
 from app.enums.form_type_enum import FormTypeEnum
 from app.v3_0.schemas.form_schema import DynamicForm, FormButtons, SectionWiseForm, MultifieldsInRow, \
-    FormField, UserSelection, TextField, DropdownField
+    FormField, UserSelection, TextField
 
 add_product_form = DynamicForm(
     form_name="Add Product",
@@ -25,7 +25,9 @@ add_product_form = DynamicForm(
                         FormField(column_name="description", label="Product Description", required=True,
                                   field_type=FormTypeEnum.textField,
                                   text_field=TextField(max_lines=5, input_type="text"),
-                                  user_selection=UserSelection()),
+                                  user_selection=UserSelection())]),
+                MultifieldsInRow(
+                    fields=[
                         FormField(column_name="variant_name", label="Variant Name", required=True,
                                   field_type=FormTypeEnum.textField,
                                   text_field=TextField(max_lines=1, input_type="text"),
@@ -37,8 +39,7 @@ add_product_form = DynamicForm(
                         FormField(column_name="stock_qty", label="Stock Quantity", required=True,
                                   field_type=FormTypeEnum.textField,
                                   text_field=TextField(max_lines=1, input_type="text"),
-                                  user_selection=UserSelection()),
-                    ])
+                                  user_selection=UserSelection())]),
             ])
     ]
 )

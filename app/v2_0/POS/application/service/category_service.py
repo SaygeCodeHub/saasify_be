@@ -1,6 +1,7 @@
 """Service layer for model - Categories"""
 from datetime import datetime
 
+from app.dto.dto_classes import ResponseDTO
 from app.utility.app_utility import check_if_company_and_branch_exist
 from app.v2_0.POS.domain.models.categories import Categories
 from app.v2_0.POS.domain.models.product_variants import ProductVariants
@@ -9,7 +10,6 @@ from app.v2_0.POS.domain.schemas.category_schemas import AddCategory, UpdateCate
     GetCategories
 from app.v2_0.POS.domain.schemas.product_schemas import GetProducts
 from app.v2_0.POS.domain.schemas.variant_schemas import GetVariants
-from app.dto.dto_classes import ResponseDTO
 
 
 def add_category(category: AddCategory, company_id, branch_id, user_id, db):
@@ -65,7 +65,8 @@ def remove_category(cat_id, company_id, branch_id, user_id, db):
 
 def get_variants(product_id, db):
     variants = db.query(ProductVariants).filter(ProductVariants.product_id == product_id).all()
-    result = [GetVariants(variant_id=variant.variant_id, variant_name=variant.variant_name, measuring_qty=variant.measuring_qty,
+    result = [GetVariants(variant_id=variant.variant_id, variant_name=variant.variant_name,
+                          measuring_qty=variant.measuring_qty,
                           unit=variant.unit.name.title(), price=variant.price)
               for variant in variants
               ]
@@ -76,7 +77,7 @@ def get_products(category_id, db):
     products = db.query(Products).filter(Products.category_id == category_id).all()
     result = [
         GetProducts(product_name=product.product_name, description=product.description, product_id=product.product_id,
-                    variants=get_variants(product.product_id, db))
+                    product_image=product.image, variants=get_variants(product.product_id, db))
         for product in products
     ]
 

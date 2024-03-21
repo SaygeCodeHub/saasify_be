@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildAnnouncementForm")
-def build_announcement_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+def build_announcement_form(db=Depends(get_db)):
     return plot_announcement_form(db)
 
 
@@ -51,7 +51,7 @@ def create_category(category: DynamicForm, company_id: int, branch_id: int, user
 
 
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildProductForm")
-def build_category_form():
+def build_product_form():
     return add_product_form()
 
 
@@ -93,7 +93,7 @@ def get_home_screen_data(device_token_obj: DeviceToken, user_id: int, company_id
 
 
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildTaskForm")
-def build_task_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+def build_task_form(branch_id: int, db=Depends(get_db)):
     return plot_tasks_form(branch_id, db)
 
 
@@ -139,8 +139,8 @@ def build_update_leave_status(u_id: int, status: str, company_id: int, branch_id
 
 
 @router.get("/v3.0/{company_id}/{branch_id}/{user_id}/buildEmployeeForm")
-def build_employee_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
-    return build_add_employee_form(company_id, branch_id, user_id, db)
+def build_employee_form(branch_id: int, db=Depends(get_db)):
+    return build_add_employee_form(branch_id, db)
 
 
 @router.post("/v3.0/{company_id}/{branch_id}/{user_id}/getAllEmployees")

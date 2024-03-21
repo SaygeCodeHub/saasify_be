@@ -28,7 +28,7 @@ def employee_designation_dropdown(enums):
         options=dropdown_options)
 
 
-def build_add_employee_form(company_id: int, branch_id: int, user_id: int, db=Depends(get_db)):
+def build_add_employee_form(branch_id: int,db=Depends(get_db)):
     try:
         add_employee.sections[5].row[0].fields[0].dropdown_field = employee_designation_dropdown(DesignationEnum)
         add_employee.sections[5].row[1].fields[0].dropdown_field = tasks_employee_dropdown(branch_id, db)
