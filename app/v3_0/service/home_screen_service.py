@@ -2,8 +2,9 @@
 from datetime import datetime
 
 from sqlalchemy import select
-from app.enums.features_enum import Features
+
 from app.dto.dto_classes import ResponseDTO
+from app.enums.features_enum import Features
 from app.enums.leave_status_enum import LeaveStatus
 from app.enums.task_status_enum import TaskStatus
 from app.utility.app_utility import check_if_company_and_branch_exist
@@ -168,6 +169,22 @@ def get_build_screen_endpoint(feature_name):
     return endpoint_dict.get(feature_name)
 
 
+def get_screen_route_name(feature_name):
+    endpoint_dict = {Features.HR_ADD_ANNOUNCEMENT.name: "FormScreen",
+                     Features.HR_ADD_NEW_EMPLOYEE.name: "FormScreen",
+                     Features.HR_APPLY_LEAVES.name: "FormScreen",
+                     Features.HR_SHIFT_MANAGEMENT.name: "ShiftManagementScreen",
+                     Features.HR_PENDING_APPROVAL.name: "ViewListScreen",
+                     Features.HR_SALARY_ROLLOUT.name: "ViewListScreen",
+                     Features.HR_VIEW_ALL_EMPLOYEES.name: "ViewListScreen",
+                     Features.HR_MY_LEAVES.name: "ViewListScreen",
+                     Features.HR_TIMESHEET.name: "ViewListScreen",
+                     Features.HR_ADD_TASK.name: "FormScreen",
+                     Features.POS_ADD_CATEGORY.name: "FormScreen",
+                     Features.POS_POS.name: "POSScreen"}
+    return endpoint_dict.get(feature_name)
+
+
 def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db):
     """Fetches data to be shown on the home screen"""
     try:
@@ -204,15 +221,16 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
                 accessible_features = []
                 for features in iterated_result.accessible_features:
                     if features.name.startswith(acm.name):
-                        accessible_features.append(FeaturesMap(feature_key=features.name, feature_id=features.value,
-                                                               title=get_title(features.name),
-                                                               icon="",
-                                                               value=calculate_value(
-                                                                   features.name, user_id, company_id, branch_id, db),
-                                                               is_statistics=check_if_statistics(features.name),
-                                                               is_view=get_is_view(features.name),
-                                                               build_screen_endpoint=get_build_screen_endpoint(
-                                                                   features.name)))
+                        accessible_features.append(
+                            FeaturesMap(feature_key=features.name, feature_id=features.value,
+                                        title=get_title(features.name),
+                                        icon="",
+                                        value=calculate_value(
+                                            features.name, user_id, company_id, branch_id, db),
+                                        is_statistics=check_if_statistics(features.name),
+                                        is_view=get_is_view(features.name),
+                                        route_name=get_screen_route_name(features.name),
+                                        build_screen_endpoint=get_build_screen_endpoint(features.name)))
                 accessible_modules.append(
                     ModulesMap(module_key=acm.name, module_id=acm.value, title=acm.name, icon="",
                                accessible_features=accessible_features))
@@ -275,4 +293,3 @@ def fetch_home_screen_data(device_token_obj, user_id, company_id, branch_id, db)
         return ResponseDTO(204, str(exc), {})
     finally:
         db.close()
-
